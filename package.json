@@ -4,6 +4,9 @@
   "description": "",
   "main": "origami-simulator.js",
   "keywords": [],
+  "scripts": {
+    "test": "node tests/test.js"
+  },
   "author": "Amanda Ghassaei",
   "license": "MIT",
   "repository": "https://github.com/amandaghassaei/OrigamiSimulator",

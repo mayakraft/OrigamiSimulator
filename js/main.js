@@ -9,10 +9,13 @@ import GPUMath from "./dynamic/GPUMath";
 import DynamicSolver from "./dynamic/dynamicSolver";
 import Model from "./model";
 import Pattern from "./pattern";
+import { document } from "./environment/window";
+
 // import Controls from "./controls"; // this file is all kinds of front-end hardcoded
-// import Importer from "./importer";
-// import Vive from "./VRInterface";
-// import VideoAnimator from "./videoAnimator";
+// import Importer from "./importer"; // also needs refactoring
+// import Vive from "./VRInterface";  // haven't touched yet
+// import VideoAnimator from "./videoAnimator"; // haven't touched yet
+
 
 /**
  * return a copy of the user's options object that contains only keys
@@ -34,7 +37,11 @@ const OrigamiSimulator = function (options) {
     JSON.parse(JSON.stringify(defaults)),
     validateUserOptions(options)
   );
+  app.append = document.body;
 
+  /**
+   * initializer for the app
+   */
   const init = function () {
     app.threeView = ThreeView(app);
     // app.controls = Controls(app);

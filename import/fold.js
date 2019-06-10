@@ -2487,8 +2487,10 @@ convert.convertTo = function(data, toExt) {
 var oripa = {};
 var DOMParser, ref, x, y;
 
-if (window == null || typeof window.DOMParser === "undefined" || window.DOMParser === null) {
+if (typeof window === "undefined") {
   DOMParser = require('xmldom').DOMParser;
+} else {
+  DOMParser = window.DOMParser;
 }
 
 oripa.type2fold = {

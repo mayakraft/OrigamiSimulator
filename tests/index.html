@@ -6,19 +6,20 @@
 <style type="text/css">
 html, body{ height: 100%; }
 body { margin: 0px; }
-canvas, #simulator-container {
+div, canvas {
   width: 100%;
   height: 100%;
 }
-#gpuMathCanvas, #fileSelector { display: none; }
-#fold-percent-slider { width: 100px; }
-#simulator-controls {
+.simulator-controls {
+  height: initial;
   position: absolute;
   top: 0;
   left: 0;
-  width: 100%;
   z-index: 1;
   text-align: center;
+}
+#fold-percent-slider {
+  width: 100px;
 }
 </style>
 
@@ -26,12 +27,7 @@ canvas, #simulator-container {
 <body>
   <script type="text/javascript" src="../origami-simulator.js"></script>
 
-  <canvas id="gpuMathCanvas"></canvas>
-  <input id="fileSelector" type="file">
-  <!-- end origami simulator -->
-
-  <div id="simulator-container"></div>
-  <div id="simulator-controls">
+  <div class="simulator-controls">
     <button id="button-material-color">material</button>
     <button id="button-material-strain">strain</button>
     <button id="button-control-rotate">rotate</button>
@@ -40,21 +36,23 @@ canvas, #simulator-container {
     <span>Fold: <span id="fold-percent-label">50</span>%</span>
   </div>
 
+  <!-- SVG file for testing -->
   <svg id="two-fold" display="none" version="1.1" xmlns="http://www.w3.org/2000/svg" width="1" height="1" viewBox="0 0 1 1"><rect width="1" height="1" fill="white" stroke="black"></rect><line x1="0" y1="0" x2="0.5" y2="0.5" stroke="red"></line><line x1="0.5" y1="0.5" x2="1" y2="1" stroke="red"></line><line y1="1" x2="0.5" y2="0.5" stroke="red"></line><line x1="1" x2="0.5" y2="0.5" stroke="blue"></line></svg>
 
 <script>
-let app = OrigamiSimulator();
+const app = OrigamiSimulator();
+// const container = document.querySelector("#simulator-container");
+// const app = OrigamiSimulator({ append: container });
 
 window.addEventListener("load", () => {
   app.loadSVG(document.querySelector("#two-fold"));
 });
 
 document.getElementById("fold-percent-slider").oninput = function (e) {
-  const valueString = document.getElementById("fold-percent-slider").value;
-  const val = parseInt(valueString, 10);
+  const val = parseInt(e.target.value, 10);
   app.creasePercent = val / 100;
   app.shouldChangeCreasePercent = true;
-  document.getElementById("fold-percent-label").innerHTML = valueString;
+  document.querySelector("#fold-percent-label").innerHTML = e.target.value;
 };
 
 document.getElementById("button-material-color").onclick = function () {

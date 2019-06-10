@@ -4,6 +4,7 @@
 
 import * as THREE from "../import/three.module";
 import Node from "./node";
+import { document } from "./environment/window";
 
 function init3DUI(globals) {
   const raycaster = new THREE.Raycaster();
@@ -56,8 +57,7 @@ function init3DUI(globals) {
 
     // let bounds = e.target.getBoundingClientRect();
     // i know what we're targeting. target it directly
-    const bounds = document.querySelector("#simulator-container")
-      .getBoundingClientRect();
+    const bounds = globals.append.getBoundingClientRect();
     // e.preventDefault();
     // mouse.x = (e.clientX/window.innerWidth)*2-1;
     // mouse.y = - (e.clientY/window.innerHeight)*2+1;
