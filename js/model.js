@@ -241,7 +241,7 @@ function initModel(globals) {
 
   function setGeoUpdates() {
     geometry.attributes.position.needsUpdate = true;
-    if (globals.colorMode == "axialStrain") geometry.attributes.color.needsUpdate = true;
+    if (globals.colorMode === "axialStrain") geometry.attributes.color.needsUpdate = true;
     if (globals.userInteractionEnabled || globals.vrEnabled) geometry.computeBoundingBox();
   }
 

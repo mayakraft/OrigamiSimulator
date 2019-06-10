@@ -2,6 +2,11 @@
  * Created by ghassaei on 10/7/16.
  */
 
+/**
+ * careful, no object pointers. this object gets copied (parse/stringify)
+ * before it's deployed
+ */
+
 const globalDefaults = {
   navMode: "simulation",
   scale: 1,
@@ -92,7 +97,11 @@ const globalDefaults = {
   capturerFrames: 0,
   shouldScaleCanvas: false,
   isGif: false,
-  shouldAnimateFoldPercent: false
+  shouldAnimateFoldPercent: false,
+
+  // new options for node module
+  // the <canvas> will be appended to this element
+  append: null // to be set to document.body
 };
 
 export default globalDefaults;

@@ -8,8 +8,10 @@ import { TrackballControls } from "../import/trackballcontrols";
 function initThreeView(globals) {
   // todo, make sure whatever is calling this is waiting for DOM to load
   // to get the client rect below
-  const container = document.querySelector("#simulator-container");
-  const rect = container.getBoundingClientRect();
+  const container = globals.append;
+  const rect = (container != null
+    ? container.getBoundingClientRect()
+    : { x: 0, y: 0, width: 320, height: 240 });
 
   const scene = new THREE.Scene();
   const modelWrapper = new THREE.Object3D();
@@ -21,95 +23,17 @@ function initThreeView(globals) {
   // var svgRenderer = new THREE.SVGRenderer();
   let controls;
 
-  init();
-
-  function init() {
-    // const container = $("#simulator-container");
-    // const rect = document.querySelector("#simulator-container")
-    //   .getBoundingClientRect();
-    renderer.setPixelRatio(window.devicePixelRatio);
-    renderer.setSize(rect.width, rect.height);
-    container.append(renderer.domElement);
-
-    scene.background = new THREE.Color(0xffffff); // new THREE.Color(0xe6e6e6);
-    setBackgroundColor();
-    scene.add(modelWrapper);
-
-    // shining from above
-    const directionalLight1 = new THREE.DirectionalLight(0xffffff, 0.7);
-    directionalLight1.position.set(100, 100, 100);
-    scene.add(directionalLight1);
-
-    // shining from below
-    const directionalLight2 = new THREE.DirectionalLight(0xffffff, 0.6);
-    directionalLight2.position.set(0, -100, 0);
-    scene.add(directionalLight2);
-
-    const spotLight1 = new THREE.SpotLight(0xffffff, 0.3);
-    spotLight1.position.set(0, 100, 200);
-    scene.add(spotLight1);
-
-    const ambientLight = new THREE.AmbientLight(0xffffff, 0.2);
-    scene.add(ambientLight);
-
-    // var directionalLight4 = new THREE.DirectionalLight(0xffffff, 0.3);
-    // directionalLight4.position.set(0, -100, 0);
-    // scene.add(directionalLight4);
-    // var directionalLight3 = new THREE.DirectionalLight(0xffffff, 0.8);
-    // directionalLight3.position.set(-100, -30, 0);
-    // scene.add(directionalLight3);
-    // var directionalLight6 = new THREE.DirectionalLight(0xffffff, 0.3);
-    // directionalLight6.position.set(0, 30, 100);
-    // scene.add(directionalLight6);
-    // var directionalLight5 = new THREE.DirectionalLight(0xffffff, 0.3);
-    // directionalLight5.position.set(0, 30, -100);
-    // scene.add(directionalLight5);
-
-    // var ambientLight = new THREE.AmbientLight(0xffffff, 0.1);
-    // scene.add(ambientLight);
-    // scene.fog = new THREE.FogExp2(0xf4f4f4, 1.7);
-    // renderer.setClearColor(scene.fog.color);
-
-    scene.add(camera);
-
-    resetCamera();
-
-    controls = new TrackballControls(camera, renderer.domElement);
-    controls.rotateSpeed = 4.0;
-    controls.zoomSpeed = 15;
-    controls.noPan = true;
-    controls.staticMoving = true;
-    controls.dynamicDampingFactor = 0.3;
-    controls.minDistance = 0.1;
-    controls.maxDistance = 30;
-
-
-    renderer.shadowMap.enabled = true;
-    renderer.shadowMap.type = THREE.PCFSoftShadowMap;
-
-    // spotLight1.castShadow = true;
-    // spotLight1.shadowDarkness = 0.5;
-
-    // controls.addEventListener("change", render);
-
-    _render(); // render before model loads
-
-
-    directionalLight1.castShadow = true;
-    // directionalLight1.shadowMapWidth = 4096; // default is 512
-    // directionalLight1.shadowMapHeight = 4096; // default is 512
-    // directionalLight1.shadow.mapSize.Width = 8192; // default is 512
-    // directionalLight1.shadow.mapSize.Height = 8192; // default is 512
-    directionalLight1.shadow.mapSize.width = 4096;
-    directionalLight1.shadow.mapSize.height = 4096;
-    directionalLight1.shadow.camera.near = 0.5;
-    directionalLight1.shadow.camera.far = 500;
-
-    // directionalLight2.castShadow = true;
-    // directionalLight3.castShadow = true;
-    // directionalLight4.castShadow = true;
-    // directionalLight5.castShadow = true;
-    // directionalLight6.castShadow = true;
+  function setCameraX(sign) {
+    controls.reset(new THREE.Vector3(sign, 0, 0));
+  }
+  function setCameraY(sign) {
+    controls.reset(new THREE.Vector3(0, sign, 0));
+  }
+  function setCameraZ(sign) {
+    controls.reset(new THREE.Vector3(0, 0, sign));
+  }
+  function setCameraIso() {
+    controls.reset(new THREE.Vector3(1, 1, 1));
   }
 
   function resetCamera() {
@@ -130,35 +54,7 @@ function initThreeView(globals) {
     if (controls) setCameraIso();
   }
 
-  function setCameraX(sign) {
-    controls.reset(new THREE.Vector3(sign, 0, 0));
-  }
-  function setCameraY(sign) {
-    controls.reset(new THREE.Vector3(0, sign, 0));
-  }
-  function setCameraZ(sign) {
-    controls.reset(new THREE.Vector3(0, 0, sign));
-  }
-  function setCameraIso() {
-    controls.reset(new THREE.Vector3(1, 1, 1));
-  }
-
-  function startAnimation() {
-    console.log("starting animation");
-    renderer.setAnimationLoop(_loop);
-  }
-
-  function pauseSimulation() {
-    globals.simulationRunning = false;
-    console.log("pausing simulation");
-  }
-
-  function startSimulation() {
-    console.log("starting simulation");
-    globals.simulationRunning = true;
-  }
-
-  function _render() {
+  function render() {
     if (globals.vrEnabled) {
       globals.vive.render();
       return;
@@ -180,7 +76,7 @@ function initThreeView(globals) {
     }
   }
 
-  function _loop() {
+  function loop() {
     if (globals.needsSync) {
       globals.model.sync();
     }
@@ -189,11 +85,26 @@ function initThreeView(globals) {
     }
     if (globals.simulationRunning) globals.model.step();
     if (globals.vrEnabled) {
-      _render();
+      render();
       return;
     }
     controls.update();
-    _render();
+    render();
+  }
+
+  function startAnimation() {
+    console.log("starting animation");
+    renderer.setAnimationLoop(loop);
+  }
+
+  function pauseSimulation() {
+    globals.simulationRunning = false;
+    console.log("pausing simulation");
+  }
+
+  function startSimulation() {
+    console.log("starting simulation");
+    globals.simulationRunning = true;
   }
 
   function sceneAddModel(object) {
@@ -201,7 +112,6 @@ function initThreeView(globals) {
   }
 
   function onWindowResize() {
-
     if (globals.vrEnabled) {
       globals.warn("Can't resize window when in VR mode.");
       return;
@@ -257,7 +167,8 @@ function initThreeView(globals) {
   //     var svgUrl = URL.createObjectURL(svgBlob);
   //     var downloadLink = document.createElement("a");
   //     downloadLink.href = svgUrl;
-  //     downloadLink.download =  globals.filename + " : " + parseInt(globals.creasePercent*100) +  "PercentFolded.svg";
+  //     downloadLink.download = globals.filename + " : "
+  //       + parseInt(globals.creasePercent*100) +  "PercentFolded.svg";
   //     document.body.appendChild(downloadLink);
   //     downloadLink.click();
   //     document.body.removeChild(downloadLink);
@@ -270,6 +181,62 @@ function initThreeView(globals) {
   function setBackgroundColor(color = globals.backgroundColor) {
     scene.background.setStyle(`#${color}`);
   }
+
+  function init() {
+    // const container = $("#simulator-container");
+    // const rect = document.querySelector("#simulator-container")
+    //   .getBoundingClientRect();
+    renderer.setPixelRatio(window.devicePixelRatio);
+    renderer.setSize(rect.width, rect.height);
+    container.append(renderer.domElement);
+
+    scene.background = new THREE.Color(0xffffff); // new THREE.Color(0xe6e6e6);
+    setBackgroundColor();
+    scene.add(modelWrapper);
+
+    // shining from above
+    const directionalLight1 = new THREE.DirectionalLight(0xffffff, 0.7);
+    directionalLight1.position.set(100, 100, 100);
+    scene.add(directionalLight1);
+
+    // shining from below
+    const directionalLight2 = new THREE.DirectionalLight(0xffffff, 0.6);
+    directionalLight2.position.set(0, -100, 0);
+    scene.add(directionalLight2);
+
+    const spotLight1 = new THREE.SpotLight(0xffffff, 0.3);
+    spotLight1.position.set(0, 100, 200);
+    scene.add(spotLight1);
+
+    const ambientLight = new THREE.AmbientLight(0xffffff, 0.2);
+    scene.add(ambientLight);
+
+    scene.add(camera);
+
+    resetCamera();
+
+    controls = new TrackballControls(camera, renderer.domElement);
+    controls.rotateSpeed = 4.0;
+    controls.zoomSpeed = 15;
+    controls.noPan = true;
+    controls.staticMoving = true;
+    controls.dynamicDampingFactor = 0.3;
+    controls.minDistance = 0.1;
+    controls.maxDistance = 30;
+
+    renderer.shadowMap.enabled = true;
+    renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+
+    render(); // render before model loads
+
+    directionalLight1.castShadow = true;
+    directionalLight1.shadow.mapSize.width = 2048;
+    directionalLight1.shadow.mapSize.height = 2048;
+    directionalLight1.shadow.camera.near = 0.5;
+    directionalLight1.shadow.camera.far = 500;
+  }
+
+  init();
 
   return {
     sceneAddModel,

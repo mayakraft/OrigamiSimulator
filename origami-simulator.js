@@ -71,7 +71,8 @@
     capturerFrames: 0,
     shouldScaleCanvas: false,
     isGif: false,
-    shouldAnimateFoldPercent: false
+    shouldAnimateFoldPercent: false,
+    append: null
   };
 
   if ( Number.EPSILON === undefined ) {
@@ -26080,14 +26081,109 @@
   TrackballControls.prototype.constructor = TrackballControls;
 
   function initThreeView(globals) {
-    const container = document.querySelector("#simulator-container");
-    const rect = container.getBoundingClientRect();
+    const container = globals.append;
+    const rect = (container != null
+      ? container.getBoundingClientRect()
+      : { x: 0, y: 0, width: 320, height: 240 });
     const scene = new Scene();
     const modelWrapper = new Object3D();
     const camera = new PerspectiveCamera(60, rect.width / rect.height, 0.1, 500);
     const renderer = new WebGLRenderer({ antialias: true });
     let controls;
-    init();
+    function setCameraX(sign) {
+      controls.reset(new Vector3(sign, 0, 0));
+    }
+    function setCameraY(sign) {
+      controls.reset(new Vector3(0, sign, 0));
+    }
+    function setCameraZ(sign) {
+      controls.reset(new Vector3(0, 0, sign));
+    }
+    function setCameraIso() {
+      controls.reset(new Vector3(1, 1, 1));
+    }
+    function resetCamera() {
+      camera.zoom = 7;
+      camera.fov = 100;
+      camera.updateProjectionMatrix();
+      camera.position.x = 4;
+      camera.position.y = 4;
+      camera.position.z = 4;
+      if (controls) setCameraIso();
+    }
+    function render() {
+      if (globals.vrEnabled) {
+        globals.vive.render();
+        return;
+      }
+      renderer.render(scene, camera);
+      if (globals.capturer) {
+        if (globals.capturer === "png") {
+          const canvas = globals.threeView.renderer.domElement;
+          canvas.toBlob((blob) => {
+            saveAs(blob, `${globals.screenRecordFilename}.png`);
+          }, "image/png");
+          globals.capturer = null;
+          globals.shouldScaleCanvas = false;
+          globals.shouldAnimateFoldPercent = false;
+          globals.threeView.onWindowResize();
+          return;
+        }
+        globals.capturer.capture(renderer.domElement);
+      }
+    }
+    function loop() {
+      if (globals.needsSync) {
+        globals.model.sync();
+      }
+      if (globals.simNeedsSync) {
+        globals.model.syncSolver();
+      }
+      if (globals.simulationRunning) globals.model.step();
+      if (globals.vrEnabled) {
+        render();
+        return;
+      }
+      controls.update();
+      render();
+    }
+    function startAnimation() {
+      console.log("starting animation");
+      renderer.setAnimationLoop(loop);
+    }
+    function pauseSimulation() {
+      globals.simulationRunning = false;
+      console.log("pausing simulation");
+    }
+    function startSimulation() {
+      console.log("starting simulation");
+      globals.simulationRunning = true;
+    }
+    function sceneAddModel(object) {
+      modelWrapper.add(object);
+    }
+    function onWindowResize() {
+      if (globals.vrEnabled) {
+        globals.warn("Can't resize window when in VR mode.");
+        return;
+      }
+      camera.aspect = window.innerWidth / window.innerHeight;
+      camera.updateProjectionMatrix();
+      let scale = 1;
+      if (globals.shouldScaleCanvas) scale = globals.capturerScale;
+      renderer.setSize(scale * window.innerWidth * 0.5, scale * window.innerHeight * 0.5);
+      controls.handleResize();
+    }
+    function enableControls(state) {
+      controls.enabled = state;
+      controls.enableRotate = state;
+    }
+    function resetModel() {
+      modelWrapper.rotation.set(0, 0, 0);
+    }
+    function setBackgroundColor(color = globals.backgroundColor) {
+      scene.background.setStyle(`#${color}`);
+    }
     function init() {
       renderer.setPixelRatio(window.devicePixelRatio);
       renderer.setSize(rect.width, rect.height);
@@ -26118,107 +26214,14 @@
       controls.maxDistance = 30;
       renderer.shadowMap.enabled = true;
       renderer.shadowMap.type = PCFSoftShadowMap;
-      _render();
+      render();
       directionalLight1.castShadow = true;
-      directionalLight1.shadow.mapSize.width = 4096;
-      directionalLight1.shadow.mapSize.height = 4096;
+      directionalLight1.shadow.mapSize.width = 2048;
+      directionalLight1.shadow.mapSize.height = 2048;
       directionalLight1.shadow.camera.near = 0.5;
       directionalLight1.shadow.camera.far = 500;
     }
-    function resetCamera() {
-      camera.zoom = 7;
-      camera.fov = 100;
-      camera.updateProjectionMatrix();
-      camera.position.x = 4;
-      camera.position.y = 4;
-      camera.position.z = 4;
-      if (controls) setCameraIso();
-    }
-    function setCameraX(sign) {
-      controls.reset(new Vector3(sign, 0, 0));
-    }
-    function setCameraY(sign) {
-      controls.reset(new Vector3(0, sign, 0));
-    }
-    function setCameraZ(sign) {
-      controls.reset(new Vector3(0, 0, sign));
-    }
-    function setCameraIso() {
-      controls.reset(new Vector3(1, 1, 1));
-    }
-    function startAnimation() {
-      console.log("starting animation");
-      renderer.setAnimationLoop(_loop);
-    }
-    function pauseSimulation() {
-      globals.simulationRunning = false;
-      console.log("pausing simulation");
-    }
-    function startSimulation() {
-      console.log("starting simulation");
-      globals.simulationRunning = true;
-    }
-    function _render() {
-      if (globals.vrEnabled) {
-        globals.vive.render();
-        return;
-      }
-      renderer.render(scene, camera);
-      if (globals.capturer) {
-        if (globals.capturer === "png") {
-          const canvas = globals.threeView.renderer.domElement;
-          canvas.toBlob((blob) => {
-            saveAs(blob, `${globals.screenRecordFilename}.png`);
-          }, "image/png");
-          globals.capturer = null;
-          globals.shouldScaleCanvas = false;
-          globals.shouldAnimateFoldPercent = false;
-          globals.threeView.onWindowResize();
-          return;
-        }
-        globals.capturer.capture(renderer.domElement);
-      }
-    }
-    function _loop() {
-      if (globals.needsSync) {
-        globals.model.sync();
-      }
-      if (globals.simNeedsSync) {
-        globals.model.syncSolver();
-      }
-      if (globals.simulationRunning) globals.model.step();
-      if (globals.vrEnabled) {
-        _render();
-        return;
-      }
-      controls.update();
-      _render();
-    }
-    function sceneAddModel(object) {
-      modelWrapper.add(object);
-    }
-    function onWindowResize() {
-      if (globals.vrEnabled) {
-        globals.warn("Can't resize window when in VR mode.");
-        return;
-      }
-      camera.aspect = window.innerWidth / window.innerHeight;
-      camera.updateProjectionMatrix();
-      let scale = 1;
-      if (globals.shouldScaleCanvas) scale = globals.capturerScale;
-      renderer.setSize(scale * window.innerWidth * 0.5, scale * window.innerHeight * 0.5);
-      controls.handleResize();
-    }
-    function enableControls(state) {
-      controls.enabled = state;
-      controls.enableRotate = state;
-    }
-    function resetModel() {
-      modelWrapper.rotation.set(0, 0, 0);
-    }
-    function setBackgroundColor(color = globals.backgroundColor) {
-      scene.background.setStyle(`#${color}`);
-    }
+    init();
     return {
       sceneAddModel,
       onWindowResize,
@@ -26358,6 +26361,27 @@
     this.externalForce = null;
   };
 
+  const isBrowser = function () {
+    return typeof window !== "undefined";
+  };
+  const isNode = function () {
+    return typeof window === "undefined" && typeof process !== "undefined";
+  };
+
+  const htmlString = "<!DOCTYPE html><title>a</title>";
+  const out = {};
+  if (isNode()) {
+    const { DOMParser, XMLSerializer } = require("xmldom");
+    out.DOMParser = DOMParser;
+    out.XMLSerializer = XMLSerializer;
+    out.document = new DOMParser().parseFromString(htmlString, "text/html");
+  } else if (isBrowser()) {
+    out.DOMParser = window.DOMParser;
+    out.XMLSerializer = window.XMLSerializer;
+    out.document = window.document;
+  }
+  const { DOMParser: DOMParser$1, XMLSerializer, document: document$1 } = out;
+
   function init3DUI(globals) {
     const raycaster = new Raycaster();
     const mouse = new Vector2();
@@ -26379,10 +26403,10 @@
         highlighter1.getObject3D().visible = true;
       }
     }
-    document.addEventListener("mousedown", () => {
+    document$1.addEventListener("mousedown", () => {
       mouseDown = true;
     }, false);
-    document.addEventListener("mouseup", () => {
+    document$1.addEventListener("mouseup", () => {
       isDragging = false;
       if (draggingNode) {
         draggingNode.setFixed(draggingNodeFixed);
@@ -26394,14 +26418,13 @@
       }
       mouseDown = false;
     }, false);
-    document.addEventListener("mousemove", mouseMove, false);
+    document$1.addEventListener("mousemove", mouseMove, false);
     function mouseMove(e) {
       if (mouseDown) {
         isDragging = true;
       }
       if (!globals.userInteractionEnabled) return;
-      const bounds = document.querySelector("#simulator-container")
-        .getBoundingClientRect();
+      const bounds = globals.append.getBoundingClientRect();
       mouse.x = ((e.clientX - bounds.x) / bounds.width) * 2 - 1;
       mouse.y = -((e.clientY - bounds.y) / bounds.height) * 2 + 1;
       raycaster.setFromCamera(mouse, globals.threeView.camera);
@@ -26536,18 +26559,21 @@
 
   function initGPUMath() {
     const glBoilerplate = GLBoilerPlate();
-    const canvas = document.getElementById("gpuMathCanvas");
+    const canvas = document$1.createElement("canvas");
+    canvas.setAttribute("style", "display:none;");
+    canvas.setAttribute("class", "gpuMathCanvas");
+    document$1.body.appendChild(canvas);
     const gl = canvas.getContext("webgl", { antialias: false }) || canvas.getContext("experimental-webgl", { antialias: false });
     const floatTextures = gl.getExtension("OES_texture_float");
+    function notSupported() {
+      console.warn("floating point textures are not supported on your system");
+    }
     if (!floatTextures) {
       notSupported();
     }
     gl.disable(gl.DEPTH_TEST);
     const maxTexturesInFragmentShader = gl.getParameter(gl.MAX_TEXTURE_IMAGE_UNITS);
     console.log(`${maxTexturesInFragmentShader} textures max`);
-    function notSupported() {
-      console.warn("floating point textures are not supported on your system");
-    }
     function GPUMath() {
       this.reset();
     }
@@ -26625,7 +26651,7 @@
     GPUMath.prototype.setSize = function (width, height) {
       gl.viewport(0, 0, width, height);
       canvas.style.width = `${width}px`;
-      canvas.style.weight = `${height}px`;
+      canvas.style.height = `${height}px`;
     };
     GPUMath.prototype.setProgram = function (programName) {
       let program = this.programs[programName];
@@ -27591,7 +27617,7 @@
     }
     function setGeoUpdates() {
       geometry.attributes.position.needsUpdate = true;
-      if (globals.colorMode == "axialStrain") geometry.attributes.color.needsUpdate = true;
+      if (globals.colorMode === "axialStrain") geometry.attributes.color.needsUpdate = true;
       if (globals.userInteractionEnabled || globals.vrEnabled) geometry.computeBoundingBox();
     }
     function startSolver() {
@@ -27776,7 +27802,7 @@
     };
   }
 
-  var length={a:7,c:6,h:1,l:2,m:2,q:4,s:4,t:2,v:1,z:0},segment=/([astvzqmhlc])([^astvzqmhlc]*)/ig;function parse(a){var b=[];return a.replace(segment,function(a,c,d){var e=c.toLowerCase();for(d=parseValues(d),"m"===e&&2<d.length&&(b.push([c].concat(d.splice(0,2))),e="l",c="m"===c?"l":"L");0<=d.length;){if(d.length===length[e])return d.unshift(c),b.push(d);if(d.length<length[e])throw new Error("malformed path data");b.push([c].concat(d.splice(0,length[e])));}}),b}var number=/-?[0-9]*\.?[0-9]+(?:e[-+]?\d+)?/ig;function parseValues(a){var b=a.match(number);return b?b.map(Number):[]}function Bezier(a,b,c,d,e,f,g,h){return new Bezier$1(a,b,c,d,e,f,g,h)}function Bezier$1(a,b,c,d,e,f,g,h){this.a={x:a,y:b},this.b={x:c,y:d},this.c={x:e,y:f},this.d={x:g,y:h},null!==g&&g!==void 0&&null!==h&&h!==void 0?(this.getArcLength=getCubicArcLength,this.getPoint=cubicPoint,this.getDerivative=cubicDerivative):(this.getArcLength=getQuadraticArcLength,this.getPoint=quadraticPoint,this.getDerivative=quadraticDerivative),this.init();}Bezier$1.prototype={constructor:Bezier$1,init:function(){this.length=this.getArcLength([this.a.x,this.b.x,this.c.x,this.d.x],[this.a.y,this.b.y,this.c.y,this.d.y]);},getTotalLength:function(){return this.length},getPointAtLength:function(a){var b=t2length(a,this.length,this.getArcLength,[this.a.x,this.b.x,this.c.x,this.d.x],[this.a.y,this.b.y,this.c.y,this.d.y]);return this.getPoint([this.a.x,this.b.x,this.c.x,this.d.x],[this.a.y,this.b.y,this.c.y,this.d.y],b)},getTangentAtLength:function(a){var c,b=Math.sqrt,d=t2length(a,this.length,this.getArcLength,[this.a.x,this.b.x,this.c.x,this.d.x],[this.a.y,this.b.y,this.c.y,this.d.y]),e=this.getDerivative([this.a.x,this.b.x,this.c.x,this.d.x],[this.a.y,this.b.y,this.c.y,this.d.y],d),f=b(e.x*e.x+e.y*e.y);return c=0<f?{x:e.x/f,y:e.y/f}:{x:0,y:0},c},getPropertiesAtLength:function(a){var b,c=t2length(a,this.length,this.getArcLength,[this.a.x,this.b.x,this.c.x,this.d.x],[this.a.y,this.b.y,this.c.y,this.d.y]),d=this.getDerivative([this.a.x,this.b.x,this.c.x,this.d.x],[this.a.y,this.b.y,this.c.y,this.d.y],c),e=Math.sqrt(d.x*d.x+d.y*d.y);b=0<e?{x:d.x/e,y:d.y/e}:{x:0,y:0};var f=this.getPoint([this.a.x,this.b.x,this.c.x,this.d.x],[this.a.y,this.b.y,this.c.y,this.d.y],c);return {x:f.x,y:f.y,tangentX:b.x,tangentY:b.y}}};function quadraticDerivative(a,b,c){return {x:2*(1-c)*(a[1]-a[0])+2*c*(a[2]-a[1]),y:2*(1-c)*(b[1]-b[0])+2*c*(b[2]-b[1])}}function cubicDerivative(a,b,c){var d=quadraticPoint([3*(a[1]-a[0]),3*(a[2]-a[1]),3*(a[3]-a[2])],[3*(b[1]-b[0]),3*(b[2]-b[1]),3*(b[3]-b[2])],c);return d}function t2length(a,b,c,d,e){for(var f=Math.abs,g=1,h=a/b,i=(a-c(d,e,h))/b,j=0;.001<g;){var k=c(d,e,h+i),l=c(d,e,h-i),m=f(a-k)/b,n=f(a-l)/b;if(m<g?(g=m,h+=i):n<g?(g=n,h-=i):i/=2,j++,500<j)break}return h}function quadraticPoint(a,b,c){var d=(1-c)*(1-c)*a[0]+2*(1-c)*c*a[1]+c*c*a[2],e=(1-c)*(1-c)*b[0]+2*(1-c)*c*b[1]+c*c*b[2];return {x:d,y:e}}function cubicPoint(a,b,c){var d=(1-c)*(1-c)*(1-c)*a[0]+3*(1-c)*(1-c)*c*a[1]+3*(1-c)*c*c*a[2]+c*c*c*a[3],e=(1-c)*(1-c)*(1-c)*b[0]+3*(1-c)*(1-c)*c*b[1]+3*(1-c)*c*c*b[2]+c*c*c*b[3];return {x:d,y:e}}function getQuadraticArcLength(a,c,d){var e=Math.pow,f=Math.sqrt;d===void 0&&(d=1);var g=a[0]-2*a[1]+a[2],h=c[0]-2*c[1]+c[2],i=2*a[1]-2*a[0],j=2*c[1]-2*c[0],l=4*(g*g+h*h);if(0===l)return d*f(e(a[2]-a[0],2)+e(c[2]-c[0],2));var m=4*(g*i+h*j)/(2*l),b=d+m,n=(i*i+j*j)/l-m*m,k=0<b*b+n?f(b*b+n):0,o=0<m*m+n?f(m*m+n):0,p=0===m+f(m*m+n)?0:n*Math.log(Math.abs((b+k)/(m+o)));return f(l)/2*(b*k-m*o+p)}var tValues=[[],[],[-.5773502691896257,.5773502691896257],[0,-.7745966692414834,.7745966692414834],[-.33998104358485626,.33998104358485626,-.8611363115940526,.8611363115940526],[0,-.5384693101056831,.5384693101056831,-.906179845938664,.906179845938664],[.6612093864662645,-.6612093864662645,-.2386191860831969,.2386191860831969,-.932469514203152,.932469514203152],[0,.4058451513773972,-.4058451513773972,-.7415311855993945,.7415311855993945,-.9491079123427585,.9491079123427585],[-.1834346424956498,.1834346424956498,-.525532409916329,.525532409916329,-.7966664774136267,.7966664774136267,-.9602898564975363,.9602898564975363],[0,-.8360311073266358,.8360311073266358,-.9681602395076261,.9681602395076261,-.3242534234038089,.3242534234038089,-.6133714327005904,.6133714327005904],[-.14887433898163122,.14887433898163122,-.4333953941292472,.4333953941292472,-.6794095682990244,.6794095682990244,-.8650633666889845,.8650633666889845,-.9739065285171717,.9739065285171717],[0,-.26954315595234496,.26954315595234496,-.5190961292068118,.5190961292068118,-.7301520055740494,.7301520055740494,-.8870625997680953,.8870625997680953,-.978228658146057,.978228658146057],[-.1252334085114689,.1252334085114689,-.3678314989981802,.3678314989981802,-.5873179542866175,.5873179542866175,-.7699026741943047,.7699026741943047,-.9041172563704749,.9041172563704749,-.9815606342467192,.9815606342467192],[0,-.2304583159551348,.2304583159551348,-.44849275103644687,.44849275103644687,-.6423493394403402,.6423493394403402,-.8015780907333099,.8015780907333099,-.9175983992229779,.9175983992229779,-.9841830547185881,.9841830547185881],[-.10805494870734367,.10805494870734367,-.31911236892788974,.31911236892788974,-.5152486363581541,.5152486363581541,-.6872929048116855,.6872929048116855,-.827201315069765,.827201315069765,-.9284348836635735,.9284348836635735,-.9862838086968123,.9862838086968123],[0,-.20119409399743451,.20119409399743451,-.3941513470775634,.3941513470775634,-.5709721726085388,.5709721726085388,-.7244177313601701,.7244177313601701,-.8482065834104272,.8482065834104272,-.937273392400706,.937273392400706,-.9879925180204854,.9879925180204854],[-.09501250983763744,.09501250983763744,-.2816035507792589,.2816035507792589,-.45801677765722737,.45801677765722737,-.6178762444026438,.6178762444026438,-.755404408355003,.755404408355003,-.8656312023878318,.8656312023878318,-.9445750230732326,.9445750230732326,-.9894009349916499,.9894009349916499],[0,-.17848418149584785,.17848418149584785,-.3512317634538763,.3512317634538763,-.5126905370864769,.5126905370864769,-.6576711592166907,.6576711592166907,-.7815140038968014,.7815140038968014,-.8802391537269859,.8802391537269859,-.9506755217687678,.9506755217687678,-.9905754753144174,.9905754753144174],[-.0847750130417353,.0847750130417353,-.2518862256915055,.2518862256915055,-.41175116146284263,.41175116146284263,-.5597708310739475,.5597708310739475,-.6916870430603532,.6916870430603532,-.8037049589725231,.8037049589725231,-.8926024664975557,.8926024664975557,-.9558239495713977,.9558239495713977,-.9915651684209309,.9915651684209309],[0,-.16035864564022537,.16035864564022537,-.31656409996362983,.31656409996362983,-.46457074137596094,.46457074137596094,-.600545304661681,.600545304661681,-.7209661773352294,.7209661773352294,-.8227146565371428,.8227146565371428,-.9031559036148179,.9031559036148179,-.96020815213483,.96020815213483,-.9924068438435844,.9924068438435844],[-.07652652113349734,.07652652113349734,-.22778585114164507,.22778585114164507,-.37370608871541955,.37370608871541955,-.5108670019508271,.5108670019508271,-.636053680726515,.636053680726515,-.7463319064601508,.7463319064601508,-.8391169718222188,.8391169718222188,-.912234428251326,.912234428251326,-.9639719272779138,.9639719272779138,-.9931285991850949,.9931285991850949],[0,-.1455618541608951,.1455618541608951,-.2880213168024011,.2880213168024011,-.4243421202074388,.4243421202074388,-.5516188358872198,.5516188358872198,-.6671388041974123,.6671388041974123,-.7684399634756779,.7684399634756779,-.8533633645833173,.8533633645833173,-.9200993341504008,.9200993341504008,-.9672268385663063,.9672268385663063,-.9937521706203895,.9937521706203895],[-.06973927331972223,.06973927331972223,-.20786042668822127,.20786042668822127,-.34193582089208424,.34193582089208424,-.469355837986757,.469355837986757,-.5876404035069116,.5876404035069116,-.6944872631866827,.6944872631866827,-.7878168059792081,.7878168059792081,-.8658125777203002,.8658125777203002,-.926956772187174,.926956772187174,-.9700604978354287,.9700604978354287,-.9942945854823992,.9942945854823992],[0,-.1332568242984661,.1332568242984661,-.26413568097034495,.26413568097034495,-.3903010380302908,.3903010380302908,-.5095014778460075,.5095014778460075,-.6196098757636461,.6196098757636461,-.7186613631319502,.7186613631319502,-.8048884016188399,.8048884016188399,-.8767523582704416,.8767523582704416,-.9329710868260161,.9329710868260161,-.9725424712181152,.9725424712181152,-.9947693349975522,.9947693349975522],[-.06405689286260563,.06405689286260563,-.1911188674736163,.1911188674736163,-.3150426796961634,.3150426796961634,-.4337935076260451,.4337935076260451,-.5454214713888396,.5454214713888396,-.6480936519369755,.6480936519369755,-.7401241915785544,.7401241915785544,-.820001985973903,.820001985973903,-.8864155270044011,.8864155270044011,-.9382745520027328,.9382745520027328,-.9747285559713095,.9747285559713095,-.9951872199970213,.9951872199970213]],cValues=[[],[],[1,1],[.8888888888888888,.5555555555555556,.5555555555555556],[.6521451548625461,.6521451548625461,.34785484513745385,.34785484513745385],[.5688888888888889,.47862867049936647,.47862867049936647,.23692688505618908,.23692688505618908],[.3607615730481386,.3607615730481386,.46791393457269104,.46791393457269104,.17132449237917036,.17132449237917036],[.4179591836734694,.3818300505051189,.3818300505051189,.27970539148927664,.27970539148927664,.1294849661688697,.1294849661688697],[.362683783378362,.362683783378362,.31370664587788727,.31370664587788727,.22238103445337448,.22238103445337448,.10122853629037626,.10122853629037626],[.3302393550012598,.1806481606948574,.1806481606948574,.08127438836157441,.08127438836157441,.31234707704000286,.31234707704000286,.26061069640293544,.26061069640293544],[.29552422471475287,.29552422471475287,.26926671930999635,.26926671930999635,.21908636251598204,.21908636251598204,.1494513491505806,.1494513491505806,.06667134430868814,.06667134430868814],[.2729250867779006,.26280454451024665,.26280454451024665,.23319376459199048,.23319376459199048,.18629021092773426,.18629021092773426,.1255803694649046,.1255803694649046,.05566856711617366,.05566856711617366],[.24914704581340277,.24914704581340277,.2334925365383548,.2334925365383548,.20316742672306592,.20316742672306592,.16007832854334622,.16007832854334622,.10693932599531843,.10693932599531843,.04717533638651183,.04717533638651183],[.2325515532308739,.22628318026289723,.22628318026289723,.2078160475368885,.2078160475368885,.17814598076194574,.17814598076194574,.13887351021978725,.13887351021978725,.09212149983772845,.09212149983772845,.04048400476531588,.04048400476531588],[.2152638534631578,.2152638534631578,.2051984637212956,.2051984637212956,.18553839747793782,.18553839747793782,.15720316715819355,.15720316715819355,.12151857068790319,.12151857068790319,.08015808715976021,.08015808715976021,.03511946033175186,.03511946033175186],[.2025782419255613,.19843148532711158,.19843148532711158,.1861610000155622,.1861610000155622,.16626920581699392,.16626920581699392,.13957067792615432,.13957067792615432,.10715922046717194,.10715922046717194,.07036604748810812,.07036604748810812,.03075324199611727,.03075324199611727],[.1894506104550685,.1894506104550685,.18260341504492358,.18260341504492358,.16915651939500254,.16915651939500254,.14959598881657674,.14959598881657674,.12462897125553388,.12462897125553388,.09515851168249279,.09515851168249279,.062253523938647894,.062253523938647894,.027152459411754096,.027152459411754096],[.17944647035620653,.17656270536699264,.17656270536699264,.16800410215645004,.16800410215645004,.15404576107681028,.15404576107681028,.13513636846852548,.13513636846852548,.11188384719340397,.11188384719340397,.08503614831717918,.08503614831717918,.0554595293739872,.0554595293739872,.02414830286854793,.02414830286854793],[.1691423829631436,.1691423829631436,.16427648374583273,.16427648374583273,.15468467512626524,.15468467512626524,.14064291467065065,.14064291467065065,.12255520671147846,.12255520671147846,.10094204410628717,.10094204410628717,.07642573025488905,.07642573025488905,.0497145488949698,.0497145488949698,.02161601352648331,.02161601352648331],[.1610544498487837,.15896884339395434,.15896884339395434,.15276604206585967,.15276604206585967,.1426067021736066,.1426067021736066,.12875396253933621,.12875396253933621,.11156664554733399,.11156664554733399,.09149002162245,.09149002162245,.06904454273764123,.06904454273764123,.0448142267656996,.0448142267656996,.019461788229726478,.019461788229726478],[.15275338713072584,.15275338713072584,.14917298647260374,.14917298647260374,.14209610931838204,.14209610931838204,.13168863844917664,.13168863844917664,.11819453196151841,.11819453196151841,.10193011981724044,.10193011981724044,.08327674157670475,.08327674157670475,.06267204833410907,.06267204833410907,.04060142980038694,.04060142980038694,.017614007139152118,.017614007139152118],[.14608113364969041,.14452440398997005,.14452440398997005,.13988739479107315,.13988739479107315,.13226893863333747,.13226893863333747,.12183141605372853,.12183141605372853,.10879729916714838,.10879729916714838,.09344442345603386,.09344442345603386,.0761001136283793,.0761001136283793,.057134425426857205,.057134425426857205,.036953789770852494,.036953789770852494,.016017228257774335,.016017228257774335],[.13925187285563198,.13925187285563198,.13654149834601517,.13654149834601517,.13117350478706238,.13117350478706238,.12325237681051242,.12325237681051242,.11293229608053922,.11293229608053922,.10041414444288096,.10041414444288096,.08594160621706773,.08594160621706773,.06979646842452049,.06979646842452049,.052293335152683286,.052293335152683286,.03377490158481415,.03377490158481415,.0146279952982722,.0146279952982722],[.13365457218610619,.1324620394046966,.1324620394046966,.12890572218808216,.12890572218808216,.12304908430672953,.12304908430672953,.11499664022241136,.11499664022241136,.10489209146454141,.10489209146454141,.09291576606003515,.09291576606003515,.07928141177671895,.07928141177671895,.06423242140852585,.06423242140852585,.04803767173108467,.04803767173108467,.030988005856979445,.030988005856979445,.013411859487141771,.013411859487141771],[.12793819534675216,.12793819534675216,.1258374563468283,.1258374563468283,.12167047292780339,.12167047292780339,.1155056680537256,.1155056680537256,.10744427011596563,.10744427011596563,.09761865210411388,.09761865210411388,.08619016153195327,.08619016153195327,.0733464814110803,.0733464814110803,.05929858491543678,.05929858491543678,.04427743881741981,.04427743881741981,.028531388628933663,.028531388628933663,.0123412297999872,.0123412297999872]],binomialCoefficients=[[1],[1,1],[1,2,1],[1,3,3,1]];function binomials(a,b){return binomialCoefficients[a][b]}function getDerivative(a,b,c){var e,f,g,d=Math.pow,h=c.length-1;if(0==h)return 0;if(0===a){for(f=0,g=0;g<=h;g++)f+=binomials(h,g)*d(1-b,h-g)*d(b,g)*c[g];return f}for(e=Array(h),g=0;g<h;g++)e[g]=h*(c[g+1]-c[g]);return getDerivative(a-1,b,e)}function B(a,b,c){var d=getDerivative(1,c,a),e=getDerivative(1,c,b);return Math.sqrt(d*d+e*e)}function getCubicArcLength(a,b,c){var d,e,f,g;c===void 0&&(c=1);for(d=c/2,e=0,f=0;f<20;f++)g=d*tValues[20][f]+d,e+=cValues[20][f]*B(a,b,g);return d*e}function Arc(a,b,c,d,e,f,g,h,i){return new Arc$1(a,b,c,d,e,f,g,h,i)}function Arc$1(a,b,c,d,e,f,g,h,i){this.x0=a,this.y0=b,this.rx=c,this.ry=d,this.xAxisRotate=e,this.LargeArcFlag=f,this.SweepFlag=g,this.x1=h,this.y1=i;var j=approximateArcLengthOfCurve(300,function(j){return pointOnEllipticalArc({x:a,y:b},c,d,e,f,g,{x:h,y:i},j)});this.length=j.arcLength;}Arc$1.prototype={constructor:Arc$1,init:function(){},getTotalLength:function(){return this.length},getPointAtLength:function(a){0>a?a=0:a>this.length&&(a=this.length);var b=pointOnEllipticalArc({x:this.x0,y:this.y0},this.rx,this.ry,this.xAxisRotate,this.LargeArcFlag,this.SweepFlag,{x:this.x1,y:this.y1},a/this.length);return {x:b.x,y:b.y}},getTangentAtLength:function(a){0>a?a=0:a>this.length&&(a=this.length);var b=pointOnEllipticalArc({x:this.x0,y:this.y0},this.rx,this.ry,this.xAxisRotate,this.LargeArcFlag,this.SweepFlag,{x:this.x1,y:this.y1},a/this.length);return {x:b.x,y:b.y}},getPropertiesAtLength:function(a){var b=this.getTangentAtLength(a),c=this.getPointAtLength(a);return {x:c.x,y:c.y,tangentX:b.x,tangentY:b.y}}};function pointOnEllipticalArc(a,b,c,d,e,f,g,h){var i=Math.PI,j=Math.sin,k=Math.cos,l=Math.pow,m=Math.abs,n=Math.sqrt;b=m(b),c=m(c),d=mod(d,360);var o=toRadians(d);if(a.x===g.x&&a.y===g.y)return a;if(0===b||0===c)return this.pointOnLine(a,g,h);var p=(a.x-g.x)/2,q=(a.y-g.y)/2,r={x:k(o)*p+j(o)*q,y:-j(o)*p+k(o)*q},s=l(r.x,2)/l(b,2)+l(r.y,2)/l(c,2);1<s&&(b=n(s)*b,c=n(s)*c);var t=l(b,2)*l(c,2)-l(b,2)*l(r.y,2)-l(c,2)*l(r.x,2),u=l(b,2)*l(r.y,2)+l(c,2)*l(r.x,2),v=t/u;v=0>v?0:v;var w=(e===f?-1:1)*n(v),x={x:w*(b*r.y/c),y:w*(-(c*r.x)/b)},y={x:k(o)*x.x-j(o)*x.y+(a.x+g.x)/2,y:j(o)*x.x+k(o)*x.y+(a.y+g.y)/2},z={x:(r.x-x.x)/b,y:(r.y-x.y)/c},A=angleBetween({x:1,y:0},z),B={x:(-r.x-x.x)/b,y:(-r.y-x.y)/c},C=angleBetween(z,B);!f&&0<C?C-=2*i:f&&0>C&&(C+=2*i),C%=2*i;var D=A+C*h,E=b*k(D),F=c*j(D),G={x:k(o)*E-j(o)*F+y.x,y:j(o)*E+k(o)*F+y.y};return G.ellipticalArcStartAngle=A,G.ellipticalArcEndAngle=A+C,G.ellipticalArcAngle=D,G.ellipticalArcCenter=y,G.resultantRx=b,G.resultantRy=c,G}function approximateArcLengthOfCurve(a,b){a=a?a:500;for(var c,d,e=0,f=[],g=[],h=b(0),j=0;j<a;j++)d=clamp(j*(1/a),0,1),c=b(d),e+=distance(h,c),g.push([h,c]),f.push({t:d,arcLength:e}),h=c;return c=b(1),g.push([h,c]),e+=distance(h,c),f.push({t:1,arcLength:e}),{arcLength:e,arcLengthMap:f,approximationLines:g}}function mod(a,b){return (a%b+b)%b}function toRadians(a){return a*(Math.PI/180)}function distance(a,b){var c=Math.pow;return Math.sqrt(c(b.x-a.x,2)+c(b.y-a.y,2))}function clamp(a,b,c){return Math.min(Math.max(a,b),c)}function angleBetween(a,b){var c=Math.pow,d=a.x*b.x+a.y*b.y,e=Math.sqrt((c(a.x,2)+c(a.y,2))*(c(b.x,2)+c(b.y,2))),f=0>a.x*b.y-a.y*b.x?-1:1,g=f*Math.acos(d/e);return g}function LinearPosition(a,b,c,d){return new LinearPosition$1(a,b,c,d)}function LinearPosition$1(a,b,c,d){this.x0=a,this.x1=b,this.y0=c,this.y1=d;}LinearPosition$1.prototype.getTotalLength=function(){var a=Math.pow;return Math.sqrt(a(this.x0-this.x1,2)+a(this.y0-this.y1,2))},LinearPosition$1.prototype.getPointAtLength=function(a){var b=Math.pow,c=a/Math.sqrt(b(this.x0-this.x1,2)+b(this.y0-this.y1,2)),d=(this.x1-this.x0)*c,e=(this.y1-this.y0)*c;return {x:this.x0+d,y:this.y0+e}},LinearPosition$1.prototype.getTangentAtLength=function(){var a=Math.sqrt((this.x1-this.x0)*(this.x1-this.x0)+(this.y1-this.y0)*(this.y1-this.y0));return {x:(this.x1-this.x0)/a,y:(this.y1-this.y0)/a}},LinearPosition$1.prototype.getPropertiesAtLength=function(a){var b=this.getPointAtLength(a),c=this.getTangentAtLength();return {x:b.x,y:b.y,tangentX:c.x,tangentY:c.y}};function PathProperties(a){var c=Math.pow,d=Math.abs,e=Math.sqrt;function b(a){if(!a)return null;for(var j,k,l=parse(a),m=[0,0],n=[0,0],o=0;o<l.length;o++)"M"===l[o][0]?(m=[l[o][1],l[o][2]],k=[m[0],m[1]],h.push(null)):"m"===l[o][0]?(m=[l[o][1]+m[0],l[o][2]+m[1]],k=[m[0],m[1]],h.push(null)):"L"===l[o][0]?(f+=e(c(m[0]-l[o][1],2)+c(m[1]-l[o][2],2)),h.push(new LinearPosition(m[0],l[o][1],m[1],l[o][2])),m=[l[o][1],l[o][2]]):"l"===l[o][0]?(f+=e(c(l[o][1],2)+c(l[o][2],2)),h.push(new LinearPosition(m[0],l[o][1]+m[0],m[1],l[o][2]+m[1])),m=[l[o][1]+m[0],l[o][2]+m[1]]):"H"===l[o][0]?(f+=d(m[0]-l[o][1]),h.push(new LinearPosition(m[0],l[o][1],m[1],m[1])),m[0]=l[o][1]):"h"===l[o][0]?(f+=d(l[o][1]),h.push(new LinearPosition(m[0],m[0]+l[o][1],m[1],m[1])),m[0]=l[o][1]+m[0]):"V"===l[o][0]?(f+=d(m[1]-l[o][1]),h.push(new LinearPosition(m[0],m[0],m[1],l[o][1])),m[1]=l[o][1]):"v"===l[o][0]?(f+=d(l[o][1]),h.push(new LinearPosition(m[0],m[0],m[1],m[1]+l[o][1])),m[1]=l[o][1]+m[1]):"z"===l[o][0]||"Z"===l[o][0]?(f+=e(c(k[0]-m[0],2)+c(k[1]-m[1],2)),h.push(new LinearPosition(m[0],k[0],m[1],k[1])),m=[k[0],k[1]]):"C"===l[o][0]?(j=new Bezier(m[0],m[1],l[o][1],l[o][2],l[o][3],l[o][4],l[o][5],l[o][6]),f+=j.getTotalLength(),m=[l[o][5],l[o][6]],h.push(j)):"c"===l[o][0]?(j=new Bezier(m[0],m[1],m[0]+l[o][1],m[1]+l[o][2],m[0]+l[o][3],m[1]+l[o][4],m[0]+l[o][5],m[1]+l[o][6]),0<j.getTotalLength()?(f+=j.getTotalLength(),h.push(j),m=[l[o][5]+m[0],l[o][6]+m[1]]):h.push(new LinearPosition(m[0],m[0],m[1],m[1]))):"S"===l[o][0]?(j=0<o&&-1<["C","c","S","s"].indexOf(l[o-1][0])?new Bezier(m[0],m[1],2*m[0]-l[o-1][l[o-1].length-4],2*m[1]-l[o-1][l[o-1].length-3],l[o][1],l[o][2],l[o][3],l[o][4]):new Bezier(m[0],m[1],m[0],m[1],l[o][1],l[o][2],l[o][3],l[o][4]),f+=j.getTotalLength(),m=[l[o][3],l[o][4]],h.push(j)):"s"===l[o][0]?(j=0<o&&-1<["C","c","S","s"].indexOf(l[o-1][0])?new Bezier(m[0],m[1],m[0]+j.d.x-j.c.x,m[1]+j.d.y-j.c.y,m[0]+l[o][1],m[1]+l[o][2],m[0]+l[o][3],m[1]+l[o][4]):new Bezier(m[0],m[1],m[0],m[1],m[0]+l[o][1],m[1]+l[o][2],m[0]+l[o][3],m[1]+l[o][4]),f+=j.getTotalLength(),m=[l[o][3]+m[0],l[o][4]+m[1]],h.push(j)):"Q"===l[o][0]?(j=m[0]==l[o][1]&&m[1]==l[o][2]?new LinearPosition(l[o][1],l[o][3],l[o][2],l[o][4]):new Bezier(m[0],m[1],l[o][1],l[o][2],l[o][3],l[o][4]),f+=j.getTotalLength(),h.push(j),m=[l[o][3],l[o][4]],n=[l[o][1],l[o][2]]):"q"===l[o][0]?(j=0==l[o][1]&&0==l[o][2]?new LinearPosition(m[0]+l[o][1],m[0]+l[o][3],m[1]+l[o][2],m[1]+l[o][4]):new Bezier(m[0],m[1],m[0]+l[o][1],m[1]+l[o][2],m[0]+l[o][3],m[1]+l[o][4]),f+=j.getTotalLength(),n=[m[0]+l[o][1],m[1]+l[o][2]],m=[l[o][3]+m[0],l[o][4]+m[1]],h.push(j)):"T"===l[o][0]?(j=0<o&&-1<["Q","q","T","t"].indexOf(l[o-1][0])?new Bezier(m[0],m[1],2*m[0]-n[0],2*m[1]-n[1],l[o][1],l[o][2]):new LinearPosition(m[0],l[o][1],m[1],l[o][2]),h.push(j),f+=j.getTotalLength(),n=[2*m[0]-n[0],2*m[1]-n[1]],m=[l[o][1],l[o][2]]):"t"===l[o][0]?(j=0<o&&-1<["Q","q","T","t"].indexOf(l[o-1][0])?new Bezier(m[0],m[1],2*m[0]-n[0],2*m[1]-n[1],m[0]+l[o][1],m[1]+l[o][2]):new LinearPosition(m[0],m[0]+l[o][1],m[1],m[1]+l[o][2]),f+=j.getTotalLength(),n=[2*m[0]-n[0],2*m[1]-n[1]],m=[l[o][1]+m[0],l[o][2]+m[0]],h.push(j)):"A"===l[o][0]?(j=new Arc(m[0],m[1],l[o][1],l[o][2],l[o][3],l[o][4],l[o][5],l[o][6],l[o][7]),f+=j.getTotalLength(),m=[l[o][6],l[o][7]],h.push(j)):"a"===l[o][0]&&(j=new Arc(m[0],m[1],l[o][1],l[o][2],l[o][3],l[o][4],l[o][5],m[0]+l[o][6],m[1]+l[o][7]),f+=j.getTotalLength(),m=[m[0]+l[o][6],m[1]+l[o][7]],h.push(j)),g.push(f);return b}var f=0,g=[],h=[];b.getTotalLength=function(){return f},b.getPointAtLength=function(a){var b=i(a);return h[b.i].getPointAtLength(b.fraction)},b.getTangentAtLength=function(a){var b=i(a);return h[b.i].getTangentAtLength(b.fraction)},b.getPropertiesAtLength=function(a){var b=i(a);return h[b.i].getPropertiesAtLength(b.fraction)},b.getParts=function(){for(var a=[],b=0;b<h.length;b++)if(null!=h[b]){var c={};c.start=h[b].getPointAtLength(0),c.end=h[b].getPointAtLength(g[b]-g[b-1]),c.length=g[b]-g[b-1],function(a){c.getPointAtLength=function(b){return a.getPointAtLength(b)},c.getTangentAtLength=function(b){return a.getTangentAtLength(b)},c.getPropertiesAtLength=function(b){return a.getPropertiesAtLength(b)};}(h[b]),a.push(c);}return a};var i=function(a){0>a?a=0:a>f&&(a=f);for(var b=g.length-1;g[b]>=a&&0<g[b];)b--;return b++,{fraction:a-g[b-1],i:b}};return b(a)}const RES_CIRCLE=64,RES_PATH=128,emptyValue={value:0},getAttributes=function(a,b){const c=b.map(b=>{for(let c=0;c<a.attributes.length;c+=1)if(a.attributes[c].nodeName===b)return c});return c.map(b=>b===void 0?emptyValue:a.attributes[b]).map(a=>a.value===void 0?a.baseVal.value:a.value)},svg_line_to_segments=function(a){return [getAttributes(a,["x1","y1","x2","y2"])]},svg_rect_to_segments=function(a){const b=getAttributes(a,["x","y","width","height"]),c=parseFloat(b[0]),d=parseFloat(b[1]),e=parseFloat(b[2]),f=parseFloat(b[3]);return [[c,d,c+e,d],[c+e,d,c+e,d+f],[c+e,d+f,c,d+f],[c,d+f,c,d]]},svg_circle_to_segments=function(a){var b=Math.PI;const c=getAttributes(a,["cx","cy","r"]),d=parseFloat(c[0]),e=parseFloat(c[1]),f=parseFloat(c[2]);return Array.from(Array(RES_CIRCLE)).map((a,c)=>[d+f*Math.cos(2*(c/RES_CIRCLE*b)),e+f*Math.sin(2*(c/RES_CIRCLE*b))]).map((a,b,c)=>[c[b][0],c[b][1],c[(b+1)%c.length][0],c[(b+1)%c.length][1]])},svg_ellipse_to_segments=function(a){var b=Math.PI;const c=getAttributes(a,["cx","cy","rx","ry"]),d=parseFloat(c[0]),e=parseFloat(c[1]),f=parseFloat(c[2]),g=parseFloat(c[3]);return Array.from(Array(RES_CIRCLE)).map((a,c)=>[d+f*Math.cos(2*(c/RES_CIRCLE*b)),e+g*Math.sin(2*(c/RES_CIRCLE*b))]).map((a,b,c)=>[c[b][0],c[b][1],c[(b+1)%c.length][0],c[(b+1)%c.length][1]])},pointStringToArray=function(a){return a.split(" ").filter(a=>""!==a).map(a=>a.split(",").map(a=>parseFloat(a)))},svg_polygon_to_segments=function(a){let b="";for(let c=0;c<a.attributes.length;c+=1)if("points"===a.attributes[c].nodeName){b=a.attributes[c].value;break}return pointStringToArray(b).map((b,c,d)=>[d[c][0],d[c][1],d[(c+1)%d.length][0],d[(c+1)%d.length][1]])},svg_polyline_to_segments=function(a){const b=svg_polygon_to_segments(a);return b.pop(),b},svg_path_to_segments=function(a){const b=a.getAttribute("d"),c=PathProperties(b),d=c.getTotalLength(),e="Z"===b[b.length-1]||"z"===b[b.length-1],f=e?d/RES_PATH:d/(RES_PATH-1),g=Array.from(Array(RES_PATH)).map((a,b)=>c.getPointAtLength(b*f)).map(a=>[a.x,a.y]),h=g.map((b,c,d)=>[d[c][0],d[c][1],d[(c+1)%d.length][0],d[(c+1)%d.length][1]]);return e||h.pop(),h},parsers={line:svg_line_to_segments,rect:svg_rect_to_segments,circle:svg_circle_to_segments,ellipse:svg_ellipse_to_segments,polygon:svg_polygon_to_segments,polyline:svg_polyline_to_segments,path:svg_path_to_segments};function vkXML(a,b){const c=a.replace(/>\s{0,}</g,"><").replace(/</g,"~::~<").replace(/\s*xmlns\:/g,"~::~xmlns:").split("~::~"),d=c.length;let e=!1,f=0,g="";const h=null!=b&&"string"==typeof b?b:"\t",i=["\n"];for(let c=0;100>c;c+=1)i.push(i[c]+h);for(let h=0;h<d;h+=1)-1<c[h].search(/<!/)?(g+=i[f]+c[h],e=!0,(-1<c[h].search(/-->/)||-1<c[h].search(/\]>/)||-1<c[h].search(/!DOCTYPE/))&&(e=!1)):-1<c[h].search(/-->/)||-1<c[h].search(/\]>/)?(g+=c[h],e=!1):/^<\w/.exec(c[h-1])&&/^<\/\w/.exec(c[h])&&/^<[\w:\-\.\,]+/.exec(c[h-1])==/^<\/[\w:\-\.\,]+/.exec(c[h])[0].replace("/","")?(g+=c[h],e||(f-=1)):-1<c[h].search(/<\w/)&&-1===c[h].search(/<\//)&&-1===c[h].search(/\/>/)?g=e?g+=c[h]:g+=i[f++]+c[h]:-1<c[h].search(/<\w/)&&-1<c[h].search(/<\//)?g=e?g+=c[h]:g+=i[f]+c[h]:-1<c[h].search(/<\//)?g=e?g+=c[h]:g+=i[--f]+c[h]:-1<c[h].search(/\/>/)?g=e?g+=c[h]:g+=i[f]+c[h]:g+=-1<c[h].search(/<\?/)?i[f]+c[h]:-1<c[h].search(/xmlns\:/)||-1<c[h].search(/xmlns\=/)?i[f]+c[h]:c[h];return "\n"===g[0]?g.slice(1):g}const isBrowser=function(){return "undefined"!=typeof window},isNode=function(){return "undefined"==typeof window&&"undefined"!=typeof process},htmlString="<!DOCTYPE html><title>a</title>",out={};if(isNode()){const{DOMParser:a,XMLSerializer:b}=require("xmldom");out.DOMParser=a,out.XMLSerializer=b,out.document=new a().parseFromString(htmlString,"text/html");}else isBrowser()&&(out.DOMParser=window.DOMParser,out.XMLSerializer=window.XMLSerializer,out.document=window.document);const {DOMParser: DOMParser$1,XMLSerializer: XMLSerializer$1,document: document$1}=out,parseable=Object.keys(parsers),svgNS="http://www.w3.org/2000/svg",svgAttributes=["version","xmlns","contentScriptType","contentStyleType","baseProfile","class","externalResourcesRequired","x","y","width","height","viewBox","preserveAspectRatio","zoomAndPan","style"],shape_attr={line:["x1","y1","x2","y2"],rect:["x","y","width","height"],circle:["cx","cy","r"],ellipse:["cx","cy","rx","ry"],polygon:["points"],polyline:["points"],path:["d"]},inputIntoXML=function(a){return "string"==typeof a||a instanceof String?new DOMParser$1().parseFromString(a,"text/xml").documentElement:a},flatten_tree=function(a){return "g"===a.tagName||"svg"===a.tagName?null==a.childNodes?[]:Array.from(a.childNodes).map(a=>flatten_tree(a)).reduce((c,a)=>c.concat(a),[]):[a]},attribute_list=function(b){return Array.from(b.attributes).filter(c=>-1===shape_attr[b.tagName].indexOf(c.name))},svg=function(a){const b=inputIntoXML(a),c=document$1.createElementNS(svgNS,"svg");svgAttributes.map(c=>({attribute:c,value:b.getAttribute(c)})).filter(a=>null!=a.value&&""!==a.value).forEach(a=>c.setAttribute(a.attribute,a.value)),null===c.getAttribute("xmlns")&&c.setAttribute("xmlns",svgNS);const d=flatten_tree(b),e=d.filter(a=>"style"===a.tagName||"defs"===a.tagName);0<e.length&&e.map(a=>a.cloneNode(!0)).forEach(a=>c.appendChild(a));const f=d.filter(a=>-1!==parseable.indexOf(a.tagName)).map(a=>parsers[a.tagName](a).map(b=>[...b,attribute_list(a)])).reduce((c,a)=>c.concat(a),[]);f.forEach(a=>{const b=document$1.createElementNS(svgNS,"line");b.setAttributeNS(null,"x1",a[0]),b.setAttributeNS(null,"y1",a[1]),b.setAttributeNS(null,"x2",a[2]),b.setAttributeNS(null,"y2",a[3]),null!=a[4]&&a[4].forEach(a=>b.setAttribute(a.nodeName,a.nodeValue)),c.appendChild(b);});const g=new XMLSerializer$1().serializeToString(c),h=vkXML(g);return h};
+  var length={a:7,c:6,h:1,l:2,m:2,q:4,s:4,t:2,v:1,z:0},segment=/([astvzqmhlc])([^astvzqmhlc]*)/ig;function parse(a){var b=[];return a.replace(segment,function(a,c,d){var e=c.toLowerCase();for(d=parseValues(d),"m"===e&&2<d.length&&(b.push([c].concat(d.splice(0,2))),e="l",c="m"===c?"l":"L");0<=d.length;){if(d.length===length[e])return d.unshift(c),b.push(d);if(d.length<length[e])throw new Error("malformed path data");b.push([c].concat(d.splice(0,length[e])));}}),b}var number=/-?[0-9]*\.?[0-9]+(?:e[-+]?\d+)?/ig;function parseValues(a){var b=a.match(number);return b?b.map(Number):[]}function Bezier(a,b,c,d,e,f,g,h){return new Bezier$1(a,b,c,d,e,f,g,h)}function Bezier$1(a,b,c,d,e,f,g,h){this.a={x:a,y:b},this.b={x:c,y:d},this.c={x:e,y:f},this.d={x:g,y:h},null!==g&&g!==void 0&&null!==h&&h!==void 0?(this.getArcLength=getCubicArcLength,this.getPoint=cubicPoint,this.getDerivative=cubicDerivative):(this.getArcLength=getQuadraticArcLength,this.getPoint=quadraticPoint,this.getDerivative=quadraticDerivative),this.init();}Bezier$1.prototype={constructor:Bezier$1,init:function(){this.length=this.getArcLength([this.a.x,this.b.x,this.c.x,this.d.x],[this.a.y,this.b.y,this.c.y,this.d.y]);},getTotalLength:function(){return this.length},getPointAtLength:function(a){var b=t2length(a,this.length,this.getArcLength,[this.a.x,this.b.x,this.c.x,this.d.x],[this.a.y,this.b.y,this.c.y,this.d.y]);return this.getPoint([this.a.x,this.b.x,this.c.x,this.d.x],[this.a.y,this.b.y,this.c.y,this.d.y],b)},getTangentAtLength:function(a){var c,b=Math.sqrt,d=t2length(a,this.length,this.getArcLength,[this.a.x,this.b.x,this.c.x,this.d.x],[this.a.y,this.b.y,this.c.y,this.d.y]),e=this.getDerivative([this.a.x,this.b.x,this.c.x,this.d.x],[this.a.y,this.b.y,this.c.y,this.d.y],d),f=b(e.x*e.x+e.y*e.y);return c=0<f?{x:e.x/f,y:e.y/f}:{x:0,y:0},c},getPropertiesAtLength:function(a){var b,c=t2length(a,this.length,this.getArcLength,[this.a.x,this.b.x,this.c.x,this.d.x],[this.a.y,this.b.y,this.c.y,this.d.y]),d=this.getDerivative([this.a.x,this.b.x,this.c.x,this.d.x],[this.a.y,this.b.y,this.c.y,this.d.y],c),e=Math.sqrt(d.x*d.x+d.y*d.y);b=0<e?{x:d.x/e,y:d.y/e}:{x:0,y:0};var f=this.getPoint([this.a.x,this.b.x,this.c.x,this.d.x],[this.a.y,this.b.y,this.c.y,this.d.y],c);return {x:f.x,y:f.y,tangentX:b.x,tangentY:b.y}}};function quadraticDerivative(a,b,c){return {x:2*(1-c)*(a[1]-a[0])+2*c*(a[2]-a[1]),y:2*(1-c)*(b[1]-b[0])+2*c*(b[2]-b[1])}}function cubicDerivative(a,b,c){var d=quadraticPoint([3*(a[1]-a[0]),3*(a[2]-a[1]),3*(a[3]-a[2])],[3*(b[1]-b[0]),3*(b[2]-b[1]),3*(b[3]-b[2])],c);return d}function t2length(a,b,c,d,e){for(var f=Math.abs,g=1,h=a/b,i=(a-c(d,e,h))/b,j=0;.001<g;){var k=c(d,e,h+i),l=c(d,e,h-i),m=f(a-k)/b,n=f(a-l)/b;if(m<g?(g=m,h+=i):n<g?(g=n,h-=i):i/=2,j++,500<j)break}return h}function quadraticPoint(a,b,c){var d=(1-c)*(1-c)*a[0]+2*(1-c)*c*a[1]+c*c*a[2],e=(1-c)*(1-c)*b[0]+2*(1-c)*c*b[1]+c*c*b[2];return {x:d,y:e}}function cubicPoint(a,b,c){var d=(1-c)*(1-c)*(1-c)*a[0]+3*(1-c)*(1-c)*c*a[1]+3*(1-c)*c*c*a[2]+c*c*c*a[3],e=(1-c)*(1-c)*(1-c)*b[0]+3*(1-c)*(1-c)*c*b[1]+3*(1-c)*c*c*b[2]+c*c*c*b[3];return {x:d,y:e}}function getQuadraticArcLength(a,c,d){var e=Math.pow,f=Math.sqrt;d===void 0&&(d=1);var g=a[0]-2*a[1]+a[2],h=c[0]-2*c[1]+c[2],i=2*a[1]-2*a[0],j=2*c[1]-2*c[0],l=4*(g*g+h*h);if(0===l)return d*f(e(a[2]-a[0],2)+e(c[2]-c[0],2));var m=4*(g*i+h*j)/(2*l),b=d+m,n=(i*i+j*j)/l-m*m,k=0<b*b+n?f(b*b+n):0,o=0<m*m+n?f(m*m+n):0,p=0===m+f(m*m+n)?0:n*Math.log(Math.abs((b+k)/(m+o)));return f(l)/2*(b*k-m*o+p)}var tValues=[[],[],[-.5773502691896257,.5773502691896257],[0,-.7745966692414834,.7745966692414834],[-.33998104358485626,.33998104358485626,-.8611363115940526,.8611363115940526],[0,-.5384693101056831,.5384693101056831,-.906179845938664,.906179845938664],[.6612093864662645,-.6612093864662645,-.2386191860831969,.2386191860831969,-.932469514203152,.932469514203152],[0,.4058451513773972,-.4058451513773972,-.7415311855993945,.7415311855993945,-.9491079123427585,.9491079123427585],[-.1834346424956498,.1834346424956498,-.525532409916329,.525532409916329,-.7966664774136267,.7966664774136267,-.9602898564975363,.9602898564975363],[0,-.8360311073266358,.8360311073266358,-.9681602395076261,.9681602395076261,-.3242534234038089,.3242534234038089,-.6133714327005904,.6133714327005904],[-.14887433898163122,.14887433898163122,-.4333953941292472,.4333953941292472,-.6794095682990244,.6794095682990244,-.8650633666889845,.8650633666889845,-.9739065285171717,.9739065285171717],[0,-.26954315595234496,.26954315595234496,-.5190961292068118,.5190961292068118,-.7301520055740494,.7301520055740494,-.8870625997680953,.8870625997680953,-.978228658146057,.978228658146057],[-.1252334085114689,.1252334085114689,-.3678314989981802,.3678314989981802,-.5873179542866175,.5873179542866175,-.7699026741943047,.7699026741943047,-.9041172563704749,.9041172563704749,-.9815606342467192,.9815606342467192],[0,-.2304583159551348,.2304583159551348,-.44849275103644687,.44849275103644687,-.6423493394403402,.6423493394403402,-.8015780907333099,.8015780907333099,-.9175983992229779,.9175983992229779,-.9841830547185881,.9841830547185881],[-.10805494870734367,.10805494870734367,-.31911236892788974,.31911236892788974,-.5152486363581541,.5152486363581541,-.6872929048116855,.6872929048116855,-.827201315069765,.827201315069765,-.9284348836635735,.9284348836635735,-.9862838086968123,.9862838086968123],[0,-.20119409399743451,.20119409399743451,-.3941513470775634,.3941513470775634,-.5709721726085388,.5709721726085388,-.7244177313601701,.7244177313601701,-.8482065834104272,.8482065834104272,-.937273392400706,.937273392400706,-.9879925180204854,.9879925180204854],[-.09501250983763744,.09501250983763744,-.2816035507792589,.2816035507792589,-.45801677765722737,.45801677765722737,-.6178762444026438,.6178762444026438,-.755404408355003,.755404408355003,-.8656312023878318,.8656312023878318,-.9445750230732326,.9445750230732326,-.9894009349916499,.9894009349916499],[0,-.17848418149584785,.17848418149584785,-.3512317634538763,.3512317634538763,-.5126905370864769,.5126905370864769,-.6576711592166907,.6576711592166907,-.7815140038968014,.7815140038968014,-.8802391537269859,.8802391537269859,-.9506755217687678,.9506755217687678,-.9905754753144174,.9905754753144174],[-.0847750130417353,.0847750130417353,-.2518862256915055,.2518862256915055,-.41175116146284263,.41175116146284263,-.5597708310739475,.5597708310739475,-.6916870430603532,.6916870430603532,-.8037049589725231,.8037049589725231,-.8926024664975557,.8926024664975557,-.9558239495713977,.9558239495713977,-.9915651684209309,.9915651684209309],[0,-.16035864564022537,.16035864564022537,-.31656409996362983,.31656409996362983,-.46457074137596094,.46457074137596094,-.600545304661681,.600545304661681,-.7209661773352294,.7209661773352294,-.8227146565371428,.8227146565371428,-.9031559036148179,.9031559036148179,-.96020815213483,.96020815213483,-.9924068438435844,.9924068438435844],[-.07652652113349734,.07652652113349734,-.22778585114164507,.22778585114164507,-.37370608871541955,.37370608871541955,-.5108670019508271,.5108670019508271,-.636053680726515,.636053680726515,-.7463319064601508,.7463319064601508,-.8391169718222188,.8391169718222188,-.912234428251326,.912234428251326,-.9639719272779138,.9639719272779138,-.9931285991850949,.9931285991850949],[0,-.1455618541608951,.1455618541608951,-.2880213168024011,.2880213168024011,-.4243421202074388,.4243421202074388,-.5516188358872198,.5516188358872198,-.6671388041974123,.6671388041974123,-.7684399634756779,.7684399634756779,-.8533633645833173,.8533633645833173,-.9200993341504008,.9200993341504008,-.9672268385663063,.9672268385663063,-.9937521706203895,.9937521706203895],[-.06973927331972223,.06973927331972223,-.20786042668822127,.20786042668822127,-.34193582089208424,.34193582089208424,-.469355837986757,.469355837986757,-.5876404035069116,.5876404035069116,-.6944872631866827,.6944872631866827,-.7878168059792081,.7878168059792081,-.8658125777203002,.8658125777203002,-.926956772187174,.926956772187174,-.9700604978354287,.9700604978354287,-.9942945854823992,.9942945854823992],[0,-.1332568242984661,.1332568242984661,-.26413568097034495,.26413568097034495,-.3903010380302908,.3903010380302908,-.5095014778460075,.5095014778460075,-.6196098757636461,.6196098757636461,-.7186613631319502,.7186613631319502,-.8048884016188399,.8048884016188399,-.8767523582704416,.8767523582704416,-.9329710868260161,.9329710868260161,-.9725424712181152,.9725424712181152,-.9947693349975522,.9947693349975522],[-.06405689286260563,.06405689286260563,-.1911188674736163,.1911188674736163,-.3150426796961634,.3150426796961634,-.4337935076260451,.4337935076260451,-.5454214713888396,.5454214713888396,-.6480936519369755,.6480936519369755,-.7401241915785544,.7401241915785544,-.820001985973903,.820001985973903,-.8864155270044011,.8864155270044011,-.9382745520027328,.9382745520027328,-.9747285559713095,.9747285559713095,-.9951872199970213,.9951872199970213]],cValues=[[],[],[1,1],[.8888888888888888,.5555555555555556,.5555555555555556],[.6521451548625461,.6521451548625461,.34785484513745385,.34785484513745385],[.5688888888888889,.47862867049936647,.47862867049936647,.23692688505618908,.23692688505618908],[.3607615730481386,.3607615730481386,.46791393457269104,.46791393457269104,.17132449237917036,.17132449237917036],[.4179591836734694,.3818300505051189,.3818300505051189,.27970539148927664,.27970539148927664,.1294849661688697,.1294849661688697],[.362683783378362,.362683783378362,.31370664587788727,.31370664587788727,.22238103445337448,.22238103445337448,.10122853629037626,.10122853629037626],[.3302393550012598,.1806481606948574,.1806481606948574,.08127438836157441,.08127438836157441,.31234707704000286,.31234707704000286,.26061069640293544,.26061069640293544],[.29552422471475287,.29552422471475287,.26926671930999635,.26926671930999635,.21908636251598204,.21908636251598204,.1494513491505806,.1494513491505806,.06667134430868814,.06667134430868814],[.2729250867779006,.26280454451024665,.26280454451024665,.23319376459199048,.23319376459199048,.18629021092773426,.18629021092773426,.1255803694649046,.1255803694649046,.05566856711617366,.05566856711617366],[.24914704581340277,.24914704581340277,.2334925365383548,.2334925365383548,.20316742672306592,.20316742672306592,.16007832854334622,.16007832854334622,.10693932599531843,.10693932599531843,.04717533638651183,.04717533638651183],[.2325515532308739,.22628318026289723,.22628318026289723,.2078160475368885,.2078160475368885,.17814598076194574,.17814598076194574,.13887351021978725,.13887351021978725,.09212149983772845,.09212149983772845,.04048400476531588,.04048400476531588],[.2152638534631578,.2152638534631578,.2051984637212956,.2051984637212956,.18553839747793782,.18553839747793782,.15720316715819355,.15720316715819355,.12151857068790319,.12151857068790319,.08015808715976021,.08015808715976021,.03511946033175186,.03511946033175186],[.2025782419255613,.19843148532711158,.19843148532711158,.1861610000155622,.1861610000155622,.16626920581699392,.16626920581699392,.13957067792615432,.13957067792615432,.10715922046717194,.10715922046717194,.07036604748810812,.07036604748810812,.03075324199611727,.03075324199611727],[.1894506104550685,.1894506104550685,.18260341504492358,.18260341504492358,.16915651939500254,.16915651939500254,.14959598881657674,.14959598881657674,.12462897125553388,.12462897125553388,.09515851168249279,.09515851168249279,.062253523938647894,.062253523938647894,.027152459411754096,.027152459411754096],[.17944647035620653,.17656270536699264,.17656270536699264,.16800410215645004,.16800410215645004,.15404576107681028,.15404576107681028,.13513636846852548,.13513636846852548,.11188384719340397,.11188384719340397,.08503614831717918,.08503614831717918,.0554595293739872,.0554595293739872,.02414830286854793,.02414830286854793],[.1691423829631436,.1691423829631436,.16427648374583273,.16427648374583273,.15468467512626524,.15468467512626524,.14064291467065065,.14064291467065065,.12255520671147846,.12255520671147846,.10094204410628717,.10094204410628717,.07642573025488905,.07642573025488905,.0497145488949698,.0497145488949698,.02161601352648331,.02161601352648331],[.1610544498487837,.15896884339395434,.15896884339395434,.15276604206585967,.15276604206585967,.1426067021736066,.1426067021736066,.12875396253933621,.12875396253933621,.11156664554733399,.11156664554733399,.09149002162245,.09149002162245,.06904454273764123,.06904454273764123,.0448142267656996,.0448142267656996,.019461788229726478,.019461788229726478],[.15275338713072584,.15275338713072584,.14917298647260374,.14917298647260374,.14209610931838204,.14209610931838204,.13168863844917664,.13168863844917664,.11819453196151841,.11819453196151841,.10193011981724044,.10193011981724044,.08327674157670475,.08327674157670475,.06267204833410907,.06267204833410907,.04060142980038694,.04060142980038694,.017614007139152118,.017614007139152118],[.14608113364969041,.14452440398997005,.14452440398997005,.13988739479107315,.13988739479107315,.13226893863333747,.13226893863333747,.12183141605372853,.12183141605372853,.10879729916714838,.10879729916714838,.09344442345603386,.09344442345603386,.0761001136283793,.0761001136283793,.057134425426857205,.057134425426857205,.036953789770852494,.036953789770852494,.016017228257774335,.016017228257774335],[.13925187285563198,.13925187285563198,.13654149834601517,.13654149834601517,.13117350478706238,.13117350478706238,.12325237681051242,.12325237681051242,.11293229608053922,.11293229608053922,.10041414444288096,.10041414444288096,.08594160621706773,.08594160621706773,.06979646842452049,.06979646842452049,.052293335152683286,.052293335152683286,.03377490158481415,.03377490158481415,.0146279952982722,.0146279952982722],[.13365457218610619,.1324620394046966,.1324620394046966,.12890572218808216,.12890572218808216,.12304908430672953,.12304908430672953,.11499664022241136,.11499664022241136,.10489209146454141,.10489209146454141,.09291576606003515,.09291576606003515,.07928141177671895,.07928141177671895,.06423242140852585,.06423242140852585,.04803767173108467,.04803767173108467,.030988005856979445,.030988005856979445,.013411859487141771,.013411859487141771],[.12793819534675216,.12793819534675216,.1258374563468283,.1258374563468283,.12167047292780339,.12167047292780339,.1155056680537256,.1155056680537256,.10744427011596563,.10744427011596563,.09761865210411388,.09761865210411388,.08619016153195327,.08619016153195327,.0733464814110803,.0733464814110803,.05929858491543678,.05929858491543678,.04427743881741981,.04427743881741981,.028531388628933663,.028531388628933663,.0123412297999872,.0123412297999872]],binomialCoefficients=[[1],[1,1],[1,2,1],[1,3,3,1]];function binomials(a,b){return binomialCoefficients[a][b]}function getDerivative(a,b,c){var e,f,g,d=Math.pow,h=c.length-1;if(0==h)return 0;if(0===a){for(f=0,g=0;g<=h;g++)f+=binomials(h,g)*d(1-b,h-g)*d(b,g)*c[g];return f}for(e=Array(h),g=0;g<h;g++)e[g]=h*(c[g+1]-c[g]);return getDerivative(a-1,b,e)}function B(a,b,c){var d=getDerivative(1,c,a),e=getDerivative(1,c,b);return Math.sqrt(d*d+e*e)}function getCubicArcLength(a,b,c){var d,e,f,g;c===void 0&&(c=1);for(d=c/2,e=0,f=0;f<20;f++)g=d*tValues[20][f]+d,e+=cValues[20][f]*B(a,b,g);return d*e}function Arc(a,b,c,d,e,f,g,h,i){return new Arc$1(a,b,c,d,e,f,g,h,i)}function Arc$1(a,b,c,d,e,f,g,h,i){this.x0=a,this.y0=b,this.rx=c,this.ry=d,this.xAxisRotate=e,this.LargeArcFlag=f,this.SweepFlag=g,this.x1=h,this.y1=i;var j=approximateArcLengthOfCurve(300,function(j){return pointOnEllipticalArc({x:a,y:b},c,d,e,f,g,{x:h,y:i},j)});this.length=j.arcLength;}Arc$1.prototype={constructor:Arc$1,init:function(){},getTotalLength:function(){return this.length},getPointAtLength:function(a){0>a?a=0:a>this.length&&(a=this.length);var b=pointOnEllipticalArc({x:this.x0,y:this.y0},this.rx,this.ry,this.xAxisRotate,this.LargeArcFlag,this.SweepFlag,{x:this.x1,y:this.y1},a/this.length);return {x:b.x,y:b.y}},getTangentAtLength:function(a){0>a?a=0:a>this.length&&(a=this.length);var b=pointOnEllipticalArc({x:this.x0,y:this.y0},this.rx,this.ry,this.xAxisRotate,this.LargeArcFlag,this.SweepFlag,{x:this.x1,y:this.y1},a/this.length);return {x:b.x,y:b.y}},getPropertiesAtLength:function(a){var b=this.getTangentAtLength(a),c=this.getPointAtLength(a);return {x:c.x,y:c.y,tangentX:b.x,tangentY:b.y}}};function pointOnEllipticalArc(a,b,c,d,e,f,g,h){var i=Math.PI,j=Math.sin,k=Math.cos,l=Math.pow,m=Math.abs,n=Math.sqrt;b=m(b),c=m(c),d=mod(d,360);var o=toRadians(d);if(a.x===g.x&&a.y===g.y)return a;if(0===b||0===c)return this.pointOnLine(a,g,h);var p=(a.x-g.x)/2,q=(a.y-g.y)/2,r={x:k(o)*p+j(o)*q,y:-j(o)*p+k(o)*q},s=l(r.x,2)/l(b,2)+l(r.y,2)/l(c,2);1<s&&(b=n(s)*b,c=n(s)*c);var t=l(b,2)*l(c,2)-l(b,2)*l(r.y,2)-l(c,2)*l(r.x,2),u=l(b,2)*l(r.y,2)+l(c,2)*l(r.x,2),v=t/u;v=0>v?0:v;var w=(e===f?-1:1)*n(v),x={x:w*(b*r.y/c),y:w*(-(c*r.x)/b)},y={x:k(o)*x.x-j(o)*x.y+(a.x+g.x)/2,y:j(o)*x.x+k(o)*x.y+(a.y+g.y)/2},z={x:(r.x-x.x)/b,y:(r.y-x.y)/c},A=angleBetween({x:1,y:0},z),B={x:(-r.x-x.x)/b,y:(-r.y-x.y)/c},C=angleBetween(z,B);!f&&0<C?C-=2*i:f&&0>C&&(C+=2*i),C%=2*i;var D=A+C*h,E=b*k(D),F=c*j(D),G={x:k(o)*E-j(o)*F+y.x,y:j(o)*E+k(o)*F+y.y};return G.ellipticalArcStartAngle=A,G.ellipticalArcEndAngle=A+C,G.ellipticalArcAngle=D,G.ellipticalArcCenter=y,G.resultantRx=b,G.resultantRy=c,G}function approximateArcLengthOfCurve(a,b){a=a?a:500;for(var c,d,e=0,f=[],g=[],h=b(0),j=0;j<a;j++)d=clamp(j*(1/a),0,1),c=b(d),e+=distance(h,c),g.push([h,c]),f.push({t:d,arcLength:e}),h=c;return c=b(1),g.push([h,c]),e+=distance(h,c),f.push({t:1,arcLength:e}),{arcLength:e,arcLengthMap:f,approximationLines:g}}function mod(a,b){return (a%b+b)%b}function toRadians(a){return a*(Math.PI/180)}function distance(a,b){var c=Math.pow;return Math.sqrt(c(b.x-a.x,2)+c(b.y-a.y,2))}function clamp(a,b,c){return Math.min(Math.max(a,b),c)}function angleBetween(a,b){var c=Math.pow,d=a.x*b.x+a.y*b.y,e=Math.sqrt((c(a.x,2)+c(a.y,2))*(c(b.x,2)+c(b.y,2))),f=0>a.x*b.y-a.y*b.x?-1:1,g=f*Math.acos(d/e);return g}function LinearPosition(a,b,c,d){return new LinearPosition$1(a,b,c,d)}function LinearPosition$1(a,b,c,d){this.x0=a,this.x1=b,this.y0=c,this.y1=d;}LinearPosition$1.prototype.getTotalLength=function(){var a=Math.pow;return Math.sqrt(a(this.x0-this.x1,2)+a(this.y0-this.y1,2))},LinearPosition$1.prototype.getPointAtLength=function(a){var b=Math.pow,c=a/Math.sqrt(b(this.x0-this.x1,2)+b(this.y0-this.y1,2)),d=(this.x1-this.x0)*c,e=(this.y1-this.y0)*c;return {x:this.x0+d,y:this.y0+e}},LinearPosition$1.prototype.getTangentAtLength=function(){var a=Math.sqrt((this.x1-this.x0)*(this.x1-this.x0)+(this.y1-this.y0)*(this.y1-this.y0));return {x:(this.x1-this.x0)/a,y:(this.y1-this.y0)/a}},LinearPosition$1.prototype.getPropertiesAtLength=function(a){var b=this.getPointAtLength(a),c=this.getTangentAtLength();return {x:b.x,y:b.y,tangentX:c.x,tangentY:c.y}};function PathProperties(a){var c=Math.pow,d=Math.abs,e=Math.sqrt;function b(a){if(!a)return null;for(var j,k,l=parse(a),m=[0,0],n=[0,0],o=0;o<l.length;o++)"M"===l[o][0]?(m=[l[o][1],l[o][2]],k=[m[0],m[1]],h.push(null)):"m"===l[o][0]?(m=[l[o][1]+m[0],l[o][2]+m[1]],k=[m[0],m[1]],h.push(null)):"L"===l[o][0]?(f+=e(c(m[0]-l[o][1],2)+c(m[1]-l[o][2],2)),h.push(new LinearPosition(m[0],l[o][1],m[1],l[o][2])),m=[l[o][1],l[o][2]]):"l"===l[o][0]?(f+=e(c(l[o][1],2)+c(l[o][2],2)),h.push(new LinearPosition(m[0],l[o][1]+m[0],m[1],l[o][2]+m[1])),m=[l[o][1]+m[0],l[o][2]+m[1]]):"H"===l[o][0]?(f+=d(m[0]-l[o][1]),h.push(new LinearPosition(m[0],l[o][1],m[1],m[1])),m[0]=l[o][1]):"h"===l[o][0]?(f+=d(l[o][1]),h.push(new LinearPosition(m[0],m[0]+l[o][1],m[1],m[1])),m[0]=l[o][1]+m[0]):"V"===l[o][0]?(f+=d(m[1]-l[o][1]),h.push(new LinearPosition(m[0],m[0],m[1],l[o][1])),m[1]=l[o][1]):"v"===l[o][0]?(f+=d(l[o][1]),h.push(new LinearPosition(m[0],m[0],m[1],m[1]+l[o][1])),m[1]=l[o][1]+m[1]):"z"===l[o][0]||"Z"===l[o][0]?(f+=e(c(k[0]-m[0],2)+c(k[1]-m[1],2)),h.push(new LinearPosition(m[0],k[0],m[1],k[1])),m=[k[0],k[1]]):"C"===l[o][0]?(j=new Bezier(m[0],m[1],l[o][1],l[o][2],l[o][3],l[o][4],l[o][5],l[o][6]),f+=j.getTotalLength(),m=[l[o][5],l[o][6]],h.push(j)):"c"===l[o][0]?(j=new Bezier(m[0],m[1],m[0]+l[o][1],m[1]+l[o][2],m[0]+l[o][3],m[1]+l[o][4],m[0]+l[o][5],m[1]+l[o][6]),0<j.getTotalLength()?(f+=j.getTotalLength(),h.push(j),m=[l[o][5]+m[0],l[o][6]+m[1]]):h.push(new LinearPosition(m[0],m[0],m[1],m[1]))):"S"===l[o][0]?(j=0<o&&-1<["C","c","S","s"].indexOf(l[o-1][0])?new Bezier(m[0],m[1],2*m[0]-l[o-1][l[o-1].length-4],2*m[1]-l[o-1][l[o-1].length-3],l[o][1],l[o][2],l[o][3],l[o][4]):new Bezier(m[0],m[1],m[0],m[1],l[o][1],l[o][2],l[o][3],l[o][4]),f+=j.getTotalLength(),m=[l[o][3],l[o][4]],h.push(j)):"s"===l[o][0]?(j=0<o&&-1<["C","c","S","s"].indexOf(l[o-1][0])?new Bezier(m[0],m[1],m[0]+j.d.x-j.c.x,m[1]+j.d.y-j.c.y,m[0]+l[o][1],m[1]+l[o][2],m[0]+l[o][3],m[1]+l[o][4]):new Bezier(m[0],m[1],m[0],m[1],m[0]+l[o][1],m[1]+l[o][2],m[0]+l[o][3],m[1]+l[o][4]),f+=j.getTotalLength(),m=[l[o][3]+m[0],l[o][4]+m[1]],h.push(j)):"Q"===l[o][0]?(j=m[0]==l[o][1]&&m[1]==l[o][2]?new LinearPosition(l[o][1],l[o][3],l[o][2],l[o][4]):new Bezier(m[0],m[1],l[o][1],l[o][2],l[o][3],l[o][4]),f+=j.getTotalLength(),h.push(j),m=[l[o][3],l[o][4]],n=[l[o][1],l[o][2]]):"q"===l[o][0]?(j=0==l[o][1]&&0==l[o][2]?new LinearPosition(m[0]+l[o][1],m[0]+l[o][3],m[1]+l[o][2],m[1]+l[o][4]):new Bezier(m[0],m[1],m[0]+l[o][1],m[1]+l[o][2],m[0]+l[o][3],m[1]+l[o][4]),f+=j.getTotalLength(),n=[m[0]+l[o][1],m[1]+l[o][2]],m=[l[o][3]+m[0],l[o][4]+m[1]],h.push(j)):"T"===l[o][0]?(j=0<o&&-1<["Q","q","T","t"].indexOf(l[o-1][0])?new Bezier(m[0],m[1],2*m[0]-n[0],2*m[1]-n[1],l[o][1],l[o][2]):new LinearPosition(m[0],l[o][1],m[1],l[o][2]),h.push(j),f+=j.getTotalLength(),n=[2*m[0]-n[0],2*m[1]-n[1]],m=[l[o][1],l[o][2]]):"t"===l[o][0]?(j=0<o&&-1<["Q","q","T","t"].indexOf(l[o-1][0])?new Bezier(m[0],m[1],2*m[0]-n[0],2*m[1]-n[1],m[0]+l[o][1],m[1]+l[o][2]):new LinearPosition(m[0],m[0]+l[o][1],m[1],m[1]+l[o][2]),f+=j.getTotalLength(),n=[2*m[0]-n[0],2*m[1]-n[1]],m=[l[o][1]+m[0],l[o][2]+m[0]],h.push(j)):"A"===l[o][0]?(j=new Arc(m[0],m[1],l[o][1],l[o][2],l[o][3],l[o][4],l[o][5],l[o][6],l[o][7]),f+=j.getTotalLength(),m=[l[o][6],l[o][7]],h.push(j)):"a"===l[o][0]&&(j=new Arc(m[0],m[1],l[o][1],l[o][2],l[o][3],l[o][4],l[o][5],m[0]+l[o][6],m[1]+l[o][7]),f+=j.getTotalLength(),m=[m[0]+l[o][6],m[1]+l[o][7]],h.push(j)),g.push(f);return b}var f=0,g=[],h=[];b.getTotalLength=function(){return f},b.getPointAtLength=function(a){var b=i(a);return h[b.i].getPointAtLength(b.fraction)},b.getTangentAtLength=function(a){var b=i(a);return h[b.i].getTangentAtLength(b.fraction)},b.getPropertiesAtLength=function(a){var b=i(a);return h[b.i].getPropertiesAtLength(b.fraction)},b.getParts=function(){for(var a=[],b=0;b<h.length;b++)if(null!=h[b]){var c={};c.start=h[b].getPointAtLength(0),c.end=h[b].getPointAtLength(g[b]-g[b-1]),c.length=g[b]-g[b-1],function(a){c.getPointAtLength=function(b){return a.getPointAtLength(b)},c.getTangentAtLength=function(b){return a.getTangentAtLength(b)},c.getPropertiesAtLength=function(b){return a.getPropertiesAtLength(b)};}(h[b]),a.push(c);}return a};var i=function(a){0>a?a=0:a>f&&(a=f);for(var b=g.length-1;g[b]>=a&&0<g[b];)b--;return b++,{fraction:a-g[b-1],i:b}};return b(a)}const RES_CIRCLE=64,RES_PATH=128,emptyValue={value:0},getAttributes=function(a,b){const c=b.map(b=>{for(let c=0;c<a.attributes.length;c+=1)if(a.attributes[c].nodeName===b)return c});return c.map(b=>b===void 0?emptyValue:a.attributes[b]).map(a=>a.value===void 0?a.baseVal.value:a.value)},svg_line_to_segments=function(a){return [getAttributes(a,["x1","y1","x2","y2"])]},svg_rect_to_segments=function(a){const b=getAttributes(a,["x","y","width","height"]),c=parseFloat(b[0]),d=parseFloat(b[1]),e=parseFloat(b[2]),f=parseFloat(b[3]);return [[c,d,c+e,d],[c+e,d,c+e,d+f],[c+e,d+f,c,d+f],[c,d+f,c,d]]},svg_circle_to_segments=function(a){var b=Math.PI;const c=getAttributes(a,["cx","cy","r"]),d=parseFloat(c[0]),e=parseFloat(c[1]),f=parseFloat(c[2]);return Array.from(Array(RES_CIRCLE)).map((a,c)=>[d+f*Math.cos(2*(c/RES_CIRCLE*b)),e+f*Math.sin(2*(c/RES_CIRCLE*b))]).map((a,b,c)=>[c[b][0],c[b][1],c[(b+1)%c.length][0],c[(b+1)%c.length][1]])},svg_ellipse_to_segments=function(a){var b=Math.PI;const c=getAttributes(a,["cx","cy","rx","ry"]),d=parseFloat(c[0]),e=parseFloat(c[1]),f=parseFloat(c[2]),g=parseFloat(c[3]);return Array.from(Array(RES_CIRCLE)).map((a,c)=>[d+f*Math.cos(2*(c/RES_CIRCLE*b)),e+g*Math.sin(2*(c/RES_CIRCLE*b))]).map((a,b,c)=>[c[b][0],c[b][1],c[(b+1)%c.length][0],c[(b+1)%c.length][1]])},pointStringToArray=function(a){return a.split(" ").filter(a=>""!==a).map(a=>a.split(",").map(a=>parseFloat(a)))},svg_polygon_to_segments=function(a){let b="";for(let c=0;c<a.attributes.length;c+=1)if("points"===a.attributes[c].nodeName){b=a.attributes[c].value;break}return pointStringToArray(b).map((b,c,d)=>[d[c][0],d[c][1],d[(c+1)%d.length][0],d[(c+1)%d.length][1]])},svg_polyline_to_segments=function(a){const b=svg_polygon_to_segments(a);return b.pop(),b},svg_path_to_segments=function(a){const b=a.getAttribute("d"),c=PathProperties(b),d=c.getTotalLength(),e="Z"===b[b.length-1]||"z"===b[b.length-1],f=e?d/RES_PATH:d/(RES_PATH-1),g=Array.from(Array(RES_PATH)).map((a,b)=>c.getPointAtLength(b*f)).map(a=>[a.x,a.y]),h=g.map((b,c,d)=>[d[c][0],d[c][1],d[(c+1)%d.length][0],d[(c+1)%d.length][1]]);return e||h.pop(),h},parsers={line:svg_line_to_segments,rect:svg_rect_to_segments,circle:svg_circle_to_segments,ellipse:svg_ellipse_to_segments,polygon:svg_polygon_to_segments,polyline:svg_polyline_to_segments,path:svg_path_to_segments};function vkXML(a,b){const c=a.replace(/>\s{0,}</g,"><").replace(/</g,"~::~<").replace(/\s*xmlns\:/g,"~::~xmlns:").split("~::~"),d=c.length;let e=!1,f=0,g="";const h=null!=b&&"string"==typeof b?b:"\t",i=["\n"];for(let c=0;100>c;c+=1)i.push(i[c]+h);for(let h=0;h<d;h+=1)-1<c[h].search(/<!/)?(g+=i[f]+c[h],e=!0,(-1<c[h].search(/-->/)||-1<c[h].search(/\]>/)||-1<c[h].search(/!DOCTYPE/))&&(e=!1)):-1<c[h].search(/-->/)||-1<c[h].search(/\]>/)?(g+=c[h],e=!1):/^<\w/.exec(c[h-1])&&/^<\/\w/.exec(c[h])&&/^<[\w:\-\.\,]+/.exec(c[h-1])==/^<\/[\w:\-\.\,]+/.exec(c[h])[0].replace("/","")?(g+=c[h],e||(f-=1)):-1<c[h].search(/<\w/)&&-1===c[h].search(/<\//)&&-1===c[h].search(/\/>/)?g=e?g+=c[h]:g+=i[f++]+c[h]:-1<c[h].search(/<\w/)&&-1<c[h].search(/<\//)?g=e?g+=c[h]:g+=i[f]+c[h]:-1<c[h].search(/<\//)?g=e?g+=c[h]:g+=i[--f]+c[h]:-1<c[h].search(/\/>/)?g=e?g+=c[h]:g+=i[f]+c[h]:g+=-1<c[h].search(/<\?/)?i[f]+c[h]:-1<c[h].search(/xmlns\:/)||-1<c[h].search(/xmlns\=/)?i[f]+c[h]:c[h];return "\n"===g[0]?g.slice(1):g}const isBrowser$1=function(){return "undefined"!=typeof window},isNode$1=function(){return "undefined"==typeof window&&"undefined"!=typeof process},htmlString$1="<!DOCTYPE html><title>a</title>",out$1={};if(isNode$1()){const{DOMParser:a,XMLSerializer:b}=require("xmldom");out$1.DOMParser=a,out$1.XMLSerializer=b,out$1.document=new a().parseFromString(htmlString$1,"text/html");}else isBrowser$1()&&(out$1.DOMParser=window.DOMParser,out$1.XMLSerializer=window.XMLSerializer,out$1.document=window.document);const {DOMParser: DOMParser$2,XMLSerializer: XMLSerializer$1,document: document$2}=out$1,parseable=Object.keys(parsers),svgNS="http://www.w3.org/2000/svg",svgAttributes=["version","xmlns","contentScriptType","contentStyleType","baseProfile","class","externalResourcesRequired","x","y","width","height","viewBox","preserveAspectRatio","zoomAndPan","style"],shape_attr={line:["x1","y1","x2","y2"],rect:["x","y","width","height"],circle:["cx","cy","r"],ellipse:["cx","cy","rx","ry"],polygon:["points"],polyline:["points"],path:["d"]},inputIntoXML=function(a){return "string"==typeof a||a instanceof String?new DOMParser$2().parseFromString(a,"text/xml").documentElement:a},flatten_tree=function(a){return "g"===a.tagName||"svg"===a.tagName?null==a.childNodes?[]:Array.from(a.childNodes).map(a=>flatten_tree(a)).reduce((c,a)=>c.concat(a),[]):[a]},attribute_list=function(b){return Array.from(b.attributes).filter(c=>-1===shape_attr[b.tagName].indexOf(c.name))},svg=function(a){const b=inputIntoXML(a),c=document$2.createElementNS(svgNS,"svg");svgAttributes.map(c=>({attribute:c,value:b.getAttribute(c)})).filter(a=>null!=a.value&&""!==a.value).forEach(a=>c.setAttribute(a.attribute,a.value)),null===c.getAttribute("xmlns")&&c.setAttribute("xmlns",svgNS);const d=flatten_tree(b),e=d.filter(a=>"style"===a.tagName||"defs"===a.tagName);0<e.length&&e.map(a=>a.cloneNode(!0)).forEach(a=>c.appendChild(a));const f=d.filter(a=>-1!==parseable.indexOf(a.tagName)).map(a=>parsers[a.tagName](a).map(b=>[...b,attribute_list(a)])).reduce((c,a)=>c.concat(a),[]);f.forEach(a=>{const b=document$2.createElementNS(svgNS,"line");b.setAttributeNS(null,"x1",a[0]),b.setAttributeNS(null,"y1",a[1]),b.setAttributeNS(null,"x2",a[2]),b.setAttributeNS(null,"y2",a[3]),null!=a[4]&&a[4].forEach(a=>b.setAttribute(a.nodeName,a.nodeValue)),c.appendChild(b);});const g=new XMLSerializer$1().serializeToString(c),h=vkXML(g);return h};
 
   function earcut(data, holeIndices, dim) {
       dim = dim || 2;
@@ -30442,9 +30468,11 @@
     return convert.convertFromTo(data, '.fold', toExt);
   };
   var oripa = {};
-  var DOMParser$2, ref, x, y;
-  if (window == null || typeof window.DOMParser === "undefined" || window.DOMParser === null) {
-    DOMParser$2 = require('xmldom').DOMParser;
+  var DOMParser$3, ref, x, y;
+  if (typeof window === "undefined") {
+    DOMParser$3 = require('xmldom').DOMParser;
+  } else {
+    DOMParser$3 = window.DOMParser;
   }
   oripa.type2fold = {
     0: 'F',
@@ -30537,7 +30565,7 @@
         }
       }
     };
-    xml = new DOMParser$2().parseFromString(oripaStr, 'text/xml');
+    xml = new DOMParser$3().parseFromString(oripaStr, 'text/xml');
     ref1 = children(xml.documentElement);
     for (j = 0, len = ref1.length; j < len; j++) {
       top = ref1[j];
@@ -30685,12 +30713,12 @@
     let cutsRaw = [];
     let triangulationsRaw = [];
     let hingesRaw = [];
+    let badColors = [];
     let mountains = [];
     let valleys = [];
     let borders = [];
     let hinges = [];
     let triangulations = [];
-    let badColors = [];
     function clearAll() {
       clearFold();
       verticesRaw = [];
@@ -30708,7 +30736,7 @@
       badColors = [];
     }
     clearAll();
-    function getOpacity_DOM(obj) {
+    function getOpacity(obj) {
       let opacity = obj.getAttribute("opacity");
       if (opacity === undefined) {
         if (obj.style && obj.style.opacity) {
@@ -30724,10 +30752,10 @@
         }
       }
       opacity = parseFloat(opacity);
-      if (isNaN(opacity)) return 1;
+      if (isNaN(opacity)) { return 1; }
       return opacity;
     }
-    function getStroke_DOM(obj) {
+    function getStroke(obj) {
       let stroke = obj.getAttribute("stroke");
       if (stroke === undefined) {
         if (obj.style && obj.style.stroke) {
@@ -30779,8 +30807,7 @@
           [vertex.x, vertex.z],
           [m.a, m.b, m.c, m.d, m.e, m.f]
         );
-        vertex.x = out[0];
-        vertex.z = out[1];
+        [vertex.x, vertex.z] = out;
       }
     }
     function loadSegmentedSVG(svg$$1) {
@@ -30802,23 +30829,23 @@
         applyTransformation(verticesRaw[verticesRaw.length - 1], element.transform);
       };
       const svg_mountains = lines
-        .filter(l => typeForStroke(getStroke_DOM(l)) === "mountain");
+        .filter(l => typeForStroke(getStroke(l)) === "mountain");
       const svg_valleys = lines
-        .filter(l => typeForStroke(getStroke_DOM(l)) === "valley");
+        .filter(l => typeForStroke(getStroke(l)) === "valley");
       const svg_borders = lines
-        .filter(l => typeForStroke(getStroke_DOM(l)) === "border");
+        .filter(l => typeForStroke(getStroke(l)) === "border");
       const svg_cuts = lines
-        .filter(l => typeForStroke(getStroke_DOM(l)) === "cut");
+        .filter(l => typeForStroke(getStroke(l)) === "cut");
       const svg_triangulations = lines
-        .filter(l => typeForStroke(getStroke_DOM(l)) === "triangulation");
+        .filter(l => typeForStroke(getStroke(l)) === "triangulation");
       const svg_hinges = lines
-        .filter(l => typeForStroke(getStroke_DOM(l)) === "hinge");
+        .filter(l => typeForStroke(getStroke(l)) === "hinge");
       svg_mountains.forEach((m) => {
-        const opacity = getOpacity_DOM(m);
+        const opacity = getOpacity(m);
         add_to_array(m, mountainsRaw, -opacity * Math.PI);
       });
       svg_valleys.forEach((m) => {
-        const opacity = getOpacity_DOM(m);
+        const opacity = getOpacity(m);
         add_to_array(m, valleysRaw, opacity * Math.PI);
       });
       svg_borders.forEach(m => add_to_array(m, bordersRaw));
@@ -30835,12 +30862,14 @@
           "see <b>File > File Import Tips</b> for more information.";
         globals.warn(string);
       }
-      const success = parseSVG(verticesRaw, bordersRaw, mountainsRaw, valleysRaw, cutsRaw, triangulationsRaw, hingesRaw);
+      const success = parseSVG(verticesRaw, bordersRaw, mountainsRaw,
+        valleysRaw, cutsRaw, triangulationsRaw, hingesRaw);
       if (!success) return;
       const max = new Vector3(-Infinity, -Infinity, -Infinity);
       const min = new Vector3(Infinity, Infinity, Infinity);
       for (let i = 0; i < rawFold.vertices_coords.length; i += 1) {
-        const vertex = new Vector3(rawFold.vertices_coords[i][0], rawFold.vertices_coords[i][1], rawFold.vertices_coords[i][2]);
+        const vertex = new Vector3(rawFold.vertices_coords[i][0],
+          rawFold.vertices_coords[i][1], rawFold.vertices_coords[i][2]);
         max.max(vertex);
         min.min(vertex);
       }
@@ -30859,10 +30888,10 @@
       max.add(border.multiplyScalar(2));
       const viewBoxTxt = [min.x, min.z, max.x, max.z].join(" ");
       const ns = "http://www.w3.org/2000/svg";
-      const newSVG = document.createElementNS(ns, "svg");
+      const newSVG = document$1.createElementNS(ns, "svg");
       newSVG.setAttribute("viewBox", viewBoxTxt);
       for (let i = 0; i < rawFold.edges_vertices.length; i += 1) {
-        const line = document.createElementNS(ns, "line");
+        const line = document$1.createElementNS(ns, "line");
         const edge = rawFold.edges_vertices[i];
         let vertex = rawFold.vertices_coords[edge[0]];
         line.setAttribute("stroke", colorForAssignment(rawFold.edges_assignment[i]));
@@ -30878,8 +30907,41 @@
     }
     function loadSVG(svg$$1) {
       const segmentizedString = svg(svg$$1);
-      const segmentized = new DOMParser().parseFromString(segmentizedString, "text/xml").childNodes[0];
+      const segmentized = new DOMParser$1().parseFromString(segmentizedString, "text/xml").childNodes[0];
       loadSegmentedSVG(segmentized);
+    }
+    function processFold(fold, returnCreaseParams) {
+      rawFold = JSON.parse(JSON.stringify(fold));
+      for (let i = 0; i < rawFold.vertices_coords.length; i += 1) {
+        const vertex = rawFold.vertices_coords[i];
+        if (vertex.length === 2) {
+          rawFold.vertices_coords[i] = [vertex[0], 0, vertex[1]];
+        }
+      }
+      const cuts = [];
+      if (cuts.length > 0) {
+        fold = splitCuts(fold);
+        fold = index.convert.edges_vertices_to_vertices_vertices_unsorted(fold);
+        fold = removeRedundantVertices(fold, 0.01);
+      }
+      delete fold.vertices_vertices;
+      delete fold.vertices_edges;
+      foldData = triangulatePolys(fold, true);
+      for (let i = 0; i < foldData.vertices_coords.length; i += 1) {
+        const vertex = foldData.vertices_coords[i];
+        if (vertex.length === 2) {
+          foldData.vertices_coords[i] = [vertex[0], 0, vertex[1]];
+        }
+      }
+      mountains = index.filter.mountainEdges(foldData);
+      valleys = index.filter.valleyEdges(foldData);
+      borders = index.filter.boundaryEdges(foldData);
+      hinges = index.filter.unassignedEdges(foldData);
+      triangulations = index.filter.flatEdges(foldData);
+      const allCreaseParams = getFacesAndVerticesForEdges(foldData);
+      if (returnCreaseParams) return allCreaseParams;
+      globals.model.buildModel(foldData, allCreaseParams);
+      return foldData;
     }
     function parseSVG(_verticesRaw, _bordersRaw, _mountainsRaw, _valleysRaw, _cutsRaw, _triangulationsRaw, _hingesRaw) {
       _verticesRaw.forEach((vertex) => {
@@ -30936,38 +30998,53 @@
       foldData = reverseFaceOrder(foldData);
       return processFold(foldData);
     }
-    function processFold(fold, returnCreaseParams) {
-      rawFold = JSON.parse(JSON.stringify(fold));
-      for (let i = 0; i < rawFold.vertices_coords.length; i += 1) {
-        const vertex = rawFold.vertices_coords[i];
-        if (vertex.length === 2) {
-          rawFold.vertices_coords[i] = [vertex[0], 0, vertex[1]];
-        }
+    function makeVector(v) {
+      if (v.length === 2) return makeVector2(v);
+      return makeVector3(v);
+    }
+    function makeVector2(v) {
+      return new Vector2(v[0], v[1]);
+    }
+    function makeVector3(v) {
+      return new Vector3(v[0], v[1], v[2]);
+    }
+    function getDistFromEnd(t, length, tol) {
+      const dist = t * length;
+      if (dist < -tol) return null;
+      if (dist > length + tol) return null;
+      return dist;
+    }
+    function line_intersect(v1, v2, v3, v4) {
+      const x1 = v1.x;
+      const y1 = v1.y;
+      const x2 = v2.x;
+      const y2 = v2.y;
+      const x3 = v3.x;
+      const y3 = v3.y;
+      const x4 = v4.x;
+      const y4 = v4.y;
+      const denom = (y4 - y3) * (x2 - x1) - (x4 - x3) * (y2 - y1);
+      if (denom === 0) {
+        return null;
       }
-      const cuts = [];
-      if (cuts.length > 0) {
-        fold = splitCuts(fold);
-        fold = index.convert.edges_vertices_to_vertices_vertices_unsorted(fold);
-        fold = removeRedundantVertices(fold, 0.01);
-      }
-      delete fold.vertices_vertices;
-      delete fold.vertices_edges;
-      foldData = triangulatePolys(fold, true);
-      for (let i = 0; i < foldData.vertices_coords.length; i += 1) {
-        const vertex = foldData.vertices_coords[i];
-        if (vertex.length === 2) {
-          foldData.vertices_coords[i] = [vertex[0], 0, vertex[1]];
-        }
-      }
-      mountains = index.filter.mountainEdges(foldData);
-      valleys = index.filter.valleyEdges(foldData);
-      borders = index.filter.boundaryEdges(foldData);
-      hinges = index.filter.unassignedEdges(foldData);
-      triangulations = index.filter.flatEdges(foldData);
-      const allCreaseParams = getFacesAndVerticesForEdges(foldData);
-      if (returnCreaseParams) return allCreaseParams;
-      globals.model.buildModel(foldData, allCreaseParams);
+      const ua = ((x4 - x3) * (y1 - y3) - (y4 - y3) * (x1 - x3)) / denom;
+      const ub = ((x2 - x1) * (y1 - y3) - (y2 - y1) * (x1 - x3)) / denom;
+      return {
+        intersection: new Vector2(x1 + ua * (x2 - x1), y1 + ua * (y2 - y1)),
+        t1: ua,
+        t2: ub
+      };
+    }
+    function getFoldData(raw) {
+      if (raw) return rawFold;
       return foldData;
+    }
+    function setFoldData(fold, returnCreaseParams) {
+      clearAll();
+      return processFold(fold, returnCreaseParams);
+    }
+    function getTriangulatedFaces() {
+      return foldData.faces_vertices;
     }
     function reverseFaceOrder(fold) {
       for (let i = 0; i < fold.faces_vertices.length; i += 1) {
@@ -31056,10 +31133,10 @@
               if (fold.edges_assignment[nextEdgeIndex] === "B") {
                 const edge = fold.edges_vertices[edgeIndex];
                 let otherVertex = edge[0];
-                if (otherVertex === i) otherVertex = edge[1];
+                if (otherVertex === i) { otherVertex = edge[1]; }
                 const nextEdge = fold.edges_vertices[nextEdgeIndex];
                 let nextVertex = nextEdge[0];
-                if (nextVertex === i) nextVertex = nextEdge[1];
+                if (nextVertex === i) { nextVertex = nextEdge[1]; }
                 if (connectedByFace(fold, fold.vertices_faces[i], otherVertex, nextVertex)) ; else {
                   groups.push([]);
                   groupIndex += 1;
@@ -31103,9 +31180,11 @@
                 const index1 = face.indexOf(thisConnectingVertIndex);
                 const index2 = face.indexOf(previousConnectingVertIndex);
                 const index3 = face.indexOf(i);
-                if (index1 >= 0 && index2 >= 0 && index3 >= 0 &&
-                  (Math.abs(index1 - index3) === 1 || Math.abs(index1 - index3) === face.length - 1) &&
-                  (Math.abs(index2 - index3) === 1 || Math.abs(index2 - index3) === face.length - 1)) {
+                if (index1 >= 0 && index2 >= 0 && index3 >= 0
+                  && (Math.abs(index1 - index3) === 1
+                    || Math.abs(index1 - index3) === face.length - 1)
+                  && (Math.abs(index2 - index3) === 1
+                    || Math.abs(index2 - index3) === face.length - 1)) {
                   found = true;
                   face[index3] = vertIndex;
                   break;
@@ -31132,23 +31211,23 @@
       return false;
     }
     function removeBorderFaces(fold) {
-      for (var i = fold.faces_vertices.length - 1; i >= 0; i -= 1) {
-        var face = fold.faces_vertices[i];
-        var allBorder = true;
-        for (var j = 0; j < face.length; j += 1) {
-          var vertexIndex = face[j];
-          var nextIndex = j+1;
+      for (let i = fold.faces_vertices.length - 1; i >= 0; i -= 1) {
+        const face = fold.faces_vertices[i];
+        let allBorder = true;
+        for (let j = 0; j < face.length; j += 1) {
+          const vertexIndex = face[j];
+          let nextIndex = j + 1;
           if (nextIndex >= face.length) nextIndex = 0;
-          var nextVertexIndex = face[nextIndex];
-          var connectingEdgeFound = false;
-          for (var k = 0; k < fold.vertices_edges[vertexIndex].length; k += 1) {
-            var edgeIndex = fold.vertices_edges[vertexIndex][k];
-            var edge = fold.edges_vertices[edgeIndex];
-            if ((edge[0] == vertexIndex && edge[1] == nextVertexIndex) ||
-              (edge[1] == vertexIndex && edge[0] == nextVertexIndex)) {
+          const nextVertexIndex = face[nextIndex];
+          let connectingEdgeFound = false;
+          for (let k = 0; k < fold.vertices_edges[vertexIndex].length; k += 1) {
+            const edgeIndex = fold.vertices_edges[vertexIndex][k];
+            const edge = fold.edges_vertices[edgeIndex];
+            if ((edge[0] === vertexIndex && edge[1] === nextVertexIndex)
+              || (edge[1] === vertexIndex && edge[0] === nextVertexIndex)) {
               connectingEdgeFound = true;
-              var assignment = fold.edges_assignment[edgeIndex];
-              if (assignment != "B") {
+              const assignment = fold.edges_assignment[edgeIndex];
+              if (assignment !== "B") {
                 allBorder = false;
                 break;
               }
@@ -31206,36 +31285,36 @@
       return allCreaseParams;
     }
     function removeRedundantVertices(fold, epsilon) {
-      let old2new = [];
+      const old2new = [];
       let numRedundant = 0;
       let newIndex = 0;
       for (let i = 0; i < fold.vertices_vertices.length; i += 1) {
-        let vertex_vertices = fold.vertices_vertices[i];
-        if (vertex_vertices.length != 2) {
+        const vertex_vertices = fold.vertices_vertices[i];
+        if (vertex_vertices.length !== 2) {
           old2new.push(newIndex++);
           continue;
         }
-        let vertex_coord = fold.vertices_coords[i];
-        let neighbor0 = fold.vertices_coords[vertex_vertices[0]];
-        let neighbor1 = fold.vertices_coords[vertex_vertices[1]];
-        let threeD = vertex_coord.length == 3;
-        let vec0 = [neighbor0[0]-vertex_coord[0], neighbor0[1]-vertex_coord[1]];
-        let vec1 = [neighbor1[0]-vertex_coord[0], neighbor1[1]-vertex_coord[1]];
-        let magSqVec0 = vec0[0]*vec0[0]+vec0[1]*vec0[1];
-        let magSqVec1 = vec1[0]*vec1[0]+vec1[1]*vec1[1];
-        let dot = vec0[0]*vec1[0]+vec0[1]*vec1[1];
+        const vertex_coord = fold.vertices_coords[i];
+        const neighbor0 = fold.vertices_coords[vertex_vertices[0]];
+        const neighbor1 = fold.vertices_coords[vertex_vertices[1]];
+        const threeD = vertex_coord.length === 3;
+        const vec0 = [neighbor0[0] - vertex_coord[0], neighbor0[1] - vertex_coord[1]];
+        const vec1 = [neighbor1[0] - vertex_coord[0], neighbor1[1] - vertex_coord[1]];
+        let magSqVec0 = vec0[0] * vec0[0] + vec0[1] * vec0[1];
+        let magSqVec1 = vec1[0] * vec1[0] + vec1[1] * vec1[1];
+        let dot = vec0[0] * vec1[0] + vec0[1] * vec1[1];
         if (threeD) {
-          vec0.push(neighbor0[2]-vertex_coord[2]);
-          vec1.push(neighbor1[2]-vertex_coord[2]);
-          magSqVec0 += vec0[2]*vec0[2];
-          magSqVec1 += vec1[2]*vec1[2];
-          dot += vec0[2]*vec1[2];
+          vec0.push(neighbor0[2] - vertex_coord[2]);
+          vec1.push(neighbor1[2] - vertex_coord[2]);
+          magSqVec0 += vec0[2] * vec0[2];
+          magSqVec1 += vec1[2] * vec1[2];
+          dot += vec0[2] * vec1[2];
         }
-        dot /= Math.sqrt(magSqVec0*magSqVec1);
-        if (Math.abs(dot + 1.0)<epsilon) {
-          var merged = mergeEdge(fold, vertex_vertices[0], i, vertex_vertices[1]);
+        dot /= Math.sqrt(magSqVec0 * magSqVec1);
+        if (Math.abs(dot + 1.0) < epsilon) {
+          let merged = mergeEdge(fold, vertex_vertices[0], i, vertex_vertices[1]);
           if (merged) {
-            numRedundant++;
+            numRedundant += 1;
             old2new.push(null);
           } else {
             old2new.push(newIndex++);
@@ -31243,13 +31322,13 @@
           }
         } else old2new.push(newIndex++);
       }
-      if (numRedundant == 0) return fold;
-      console.warn(numRedundant + " redundant vertices found");
-      fold = index.filter.remapField(fold, 'vertices', old2new);
+      if (numRedundant === 0) { return fold; }
+      console.warn(`${numRedundant} redundant vertices found`);
+      fold = index.filter.remapField(fold, "vertices", old2new);
       if (fold.faces_vertices) {
         for (let i = 0; i < fold.faces_vertices.length; i += 1) {
-          let face = fold.faces_vertices[i];
-          for (let j=face.length-1;j>=0;j--) {
+          const face = fold.faces_vertices[i];
+          for (let j = face.length - 1; j >= 0; j -= 1) {
             if (face[j] === null) face.splice(j, 1);
           }
         }
@@ -31285,7 +31364,7 @@
         console.warn("incompatible angles: " + JSON.stringify(angles));
       }
       for (let i = 0; i < edgeIndices.length; i += 1) {
-        let index$$1 = edgeIndices[i];
+        const index$$1 = edgeIndices[i];
         fold.edges_vertices.splice(index$$1, 1);
         fold.edges_assignment.splice(index$$1, 1);
         fold.edges_foldAngle.splice(index$$1, 1);
@@ -31308,17 +31387,17 @@
         fold = index.convert.edges_vertices_to_vertices_vertices_unsorted(fold);
       }
       let numStrays = 0;
-      let old2new = [];
+      const old2new = [];
       let newIndex = 0;
       for (let i = 0; i < fold.vertices_vertices.length; i += 1) {
-        if (fold.vertices_vertices[i] === undefined || fold.vertices_vertices[i].length==0) {
+        if (fold.vertices_vertices[i] === undefined || fold.vertices_vertices[i].length === 0) {
           numStrays++;
           old2new.push(null);
         } else old2new.push(newIndex++);
       }
-      if (numStrays == 0) return fold;
-      console.warn(numStrays+ " stray vertices found");
-      return index.filter.remapField(fold, 'vertices', old2new);
+      if (numStrays === 0) return fold;
+      console.warn(`${numStrays} stray vertices found`);
+      return index.filter.remapField(fold, "vertices", old2new);
     }
     function triangulatePolys(fold, is2d) {
       const vertices = fold.vertices_coords;
@@ -31327,8 +31406,8 @@
       const foldAngles = fold.edges_foldAngle;
       const assignments = fold.edges_assignment;
       const triangulatedFaces = [];
-      for (let i = 0; i < faces.length; i+= 1) {
-        let face = faces[i];
+      for (let i = 0; i < faces.length; i += 1) {
+        const face = faces[i];
         if (face.length === 3) {
           triangulatedFaces.push(face);
           continue;
@@ -31355,24 +31434,24 @@
           }
           continue;
         }
-        let faceEdges = [];
+        const faceEdges = [];
         for (let j = 0; j < edges.length; j += 1) {
           const edge = edges[j];
           if (face.indexOf(edge[0]) >= 0 && face.indexOf(edge[1]) >= 0) {
             faceEdges.push(j);
           }
         }
-        let faceVert = [];
+        const faceVert = [];
         for (let j = 0; j < face.length; j += 1) {
           const vertex = vertices[face[j]];
           faceVert.push(vertex[0]);
           faceVert.push(vertex[1]);
           if (!is2d) faceVert.push(vertex[2]);
         }
-        let triangles = earcut(faceVert, null, is2d ? 2 : 3);
+        const triangles = earcut(faceVert, null, is2d ? 2 : 3);
         for (let j = 0; j < triangles.length; j += 3) {
-          let tri = [face[triangles[j + 2]], face[triangles[j + 1]], face[triangles[j]]];
-          let foundEdges = [false, false, false];
+          const tri = [face[triangles[j + 2]], face[triangles[j + 1]], face[triangles[j]]];
+          const foundEdges = [false, false, false];
           for (let k = 0; k < faceEdges.length; k += 1) {
             const edge = edges[faceEdges[k]];
             const aIndex = edge.indexOf(tri[0]);
@@ -31395,7 +31474,7 @@
               }
             }
           }
-          for (let k = 0; k < 3;k += 1) {
+          for (let k = 0; k < 3; k += 1) {
             if (foundEdges[k]) continue;
             if (k === 0) {
               faceEdges.push(edges.length);
@@ -31427,47 +31506,47 @@
       }
       const serializer = new XMLSerializer();
       console.log("pattern.js saveSVG needs testing, check out these 2 lines");
-      const getSVG = document.querySelector("#svgViewer>svg");
+      const getSVG = document$1.querySelector("#svgViewer>svg");
       const source = serializer.serializeToString(getSVG);
       const svgBlob = new Blob([source], { type: "image/svg+xml;charset=utf-8" });
       const svgUrl = URL.createObjectURL(svgBlob);
-      const downloadLink = document.createElement("a");
+      const downloadLink = document$1.createElement("a");
       downloadLink.href = svgUrl;
       downloadLink.download = `${globals.filename}.svg`;
-      document.body.appendChild(downloadLink);
+      document$1.body.appendChild(downloadLink);
       downloadLink.click();
-      document.body.removeChild(downloadLink);
+      document$1.body.removeChild(downloadLink);
     }
     function findIntersections(fold, tol) {
-      let vertices = fold.vertices_coords;
-      let edges = fold.edges_vertices;
-      let foldAngles = fold.edges_foldAngle;
-      let assignments = fold.edges_assignment;
+      const vertices = fold.vertices_coords;
+      const edges = fold.edges_vertices;
+      const foldAngles = fold.edges_foldAngle;
+      const assignments = fold.edges_assignment;
       for (let i = edges.length - 1; i >= 0; i -= 1) {
         for (let j = i - 1; j >= 0; j -= 1) {
-          let v1 = makeVector2(vertices[edges[i][0]]);
-          let v2 = makeVector2(vertices[edges[i][1]]);
-          let v3 = makeVector2(vertices[edges[j][0]]);
-          let v4 = makeVector2(vertices[edges[j][1]]);
-          let data = line_intersect(v1, v2, v3, v4);
+          const v1 = makeVector2(vertices[edges[i][0]]);
+          const v2 = makeVector2(vertices[edges[i][1]]);
+          const v3 = makeVector2(vertices[edges[j][0]]);
+          const v4 = makeVector2(vertices[edges[j][1]]);
+          const data = line_intersect(v1, v2, v3, v4);
           if (data) {
-            let length1 = (v2.clone().sub(v1)).length();
-            let length2 = (v4.clone().sub(v3)).length();
-            let d1 = getDistFromEnd(data.t1, length1, tol);
-            let d2 = getDistFromEnd(data.t2, length2, tol);
+            const length1 = (v2.clone().sub(v1)).length();
+            const length2 = (v4.clone().sub(v3)).length();
+            const d1 = getDistFromEnd(data.t1, length1, tol);
+            const d2 = getDistFromEnd(data.t2, length2, tol);
             if (d1 === null || d2 === null) continue;
-            let seg1Int = d1>tol && d1<length1-tol;
-            let seg2Int = d2>tol && d2<length2-tol;
+            const seg1Int = d1 > tol && d1 < length1 - tol;
+            const seg2Int = d2 > tol && d2 < length2 - tol;
             if (!seg1Int && !seg2Int) continue;
             let vertIndex;
             if (seg1Int && seg2Int) {
               vertIndex = vertices.length;
-              vertices.push([data.intersection.x,  data.intersection.y]);
+              vertices.push([data.intersection.x, data.intersection.y]);
             } else if (seg1Int) {
-              if (d2<=tol) vertIndex = edges[j][0];
+              if (d2 <= tol) vertIndex = edges[j][0];
               else vertIndex = edges[j][1];
             } else {
-              if (d1<=tol) vertIndex = edges[i][0];
+              if (d1 <= tol) vertIndex = edges[i][0];
               else vertIndex = edges[i][1];
             }
             if (seg1Int) {
@@ -31476,7 +31555,7 @@
               edges.splice(i, 1, [vertIndex, edges[i][0]], [vertIndex, edges[i][1]]);
               foldAngles.splice(i, 1, foldAngle, foldAngle);
               assignments.splice(i, 1, assignment, assignment);
-              i++;
+              i += 1;
             }
             if (seg2Int) {
               let foldAngle = foldAngles[j];
@@ -31484,61 +31563,13 @@
               edges.splice(j, 1, [vertIndex, edges[j][0]], [vertIndex, edges[j][1]]);
               foldAngles.splice(j, 1, foldAngle, foldAngle);
               assignments.splice(j, 1, assignment, assignment);
-              j++;
-              i++;
+              j += 1;
+              i += 1;
             }
           }
         }
       }
       return fold;
-    }
-    function makeVector(v) {
-      if (v.length === 2) return makeVector2(v);
-      return makeVector3(v);
-    }
-    function makeVector2(v) {
-      return new Vector2(v[0], v[1]);
-    }
-    function makeVector3(v) {
-      return new Vector3(v[0], v[1], v[2]);
-    }
-    function getDistFromEnd(t, length, tol) {
-      const dist = t * length;
-      if (dist < -tol) return null;
-      if (dist > length + tol) return null;
-      return dist;
-    }
-    function line_intersect(v1, v2, v3, v4) {
-      const x1 = v1.x;
-      const y1 = v1.y;
-      const x2 = v2.x;
-      const y2 = v2.y;
-      const x3 = v3.x;
-      const y3 = v3.y;
-      const x4 = v4.x;
-      const y4 = v4.y;
-      const denom = (y4 - y3) * (x2 - x1) - (x4 - x3) * (y2 - y1);
-      if (denom === 0) {
-        return null;
-      }
-      const ua = ((x4 - x3) * (y1 - y3) - (y4 - y3) * (x1 - x3)) / denom;
-      const ub = ((x2 - x1) * (y1 - y3) - (y2 - y1) * (x1 - x3)) / denom;
-      return {
-        intersection: new Vector2(x1 + ua * (x2 - x1), y1 + ua * (y2 - y1)),
-        t1: ua,
-        t2: ub
-      };
-    }
-    function getFoldData(raw) {
-      if (raw) return rawFold;
-      return foldData;
-    }
-    function setFoldData(fold, returnCreaseParams) {
-      clearAll();
-      return processFold(fold, returnCreaseParams);
-    }
-    function getTriangulatedFaces() {
-      return foldData.faces_vertices;
     }
     return {
       loadSVG,
@@ -31563,6 +31594,7 @@
       JSON.parse(JSON.stringify(globalDefaults)),
       validateUserOptions(options)
     );
+    app.append = document$1.body;
     const init = function () {
       app.threeView = initThreeView(app);
       app.UI3D = init3DUI(app);

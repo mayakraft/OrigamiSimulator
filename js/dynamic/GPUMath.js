@@ -3,13 +3,22 @@
  */
 
 import GLBoilerPlate from "./GLBoilerplate";
+import { document } from "../environment/window";
 
 function initGPUMath() {
   const glBoilerplate = GLBoilerPlate();
 
-  const canvas = document.getElementById("gpuMathCanvas");
+  const canvas = document.createElement("canvas");
+  canvas.setAttribute("style", "display:none;");
+  canvas.setAttribute("class", "gpuMathCanvas");
+  document.body.appendChild(canvas);
   const gl = canvas.getContext("webgl", { antialias: false }) || canvas.getContext("experimental-webgl", { antialias: false });
   const floatTextures = gl.getExtension("OES_texture_float");
+
+  function notSupported() {
+    console.warn("floating point textures are not supported on your system");
+  }
+
   if (!floatTextures) {
     notSupported();
   }
@@ -17,10 +26,6 @@ function initGPUMath() {
 
   const maxTexturesInFragmentShader = gl.getParameter(gl.MAX_TEXTURE_IMAGE_UNITS);
   console.log(`${maxTexturesInFragmentShader} textures max`);
-
-  function notSupported() {
-    console.warn("floating point textures are not supported on your system");
-  }
 
 
   function GPUMath() {
@@ -111,10 +116,8 @@ function initGPUMath() {
 
   GPUMath.prototype.setSize = function (width, height) {
     gl.viewport(0, 0, width, height);
-    // canvas.clientWidth = width;
-    // canvas.clientHeight = height;
     canvas.style.width = `${width}px`;
-    canvas.style.weight = `${height}px`;
+    canvas.style.height = `${height}px`;
   };
 
   GPUMath.prototype.setProgram = function (programName) {

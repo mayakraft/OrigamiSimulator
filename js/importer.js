@@ -2,6 +2,7 @@
  * Created by amandaghassaei on 5/6/17.
  */
 
+import * as THREE from "../import/three.module";
 
 function initImporter(globals) {
   const reader = new FileReader();
