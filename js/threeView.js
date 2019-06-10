@@ -2,7 +2,8 @@
  * Created by ghassaei on 9/16/16.
  */
 
-// const THREE = require("three");
+import * as THREE from "../import/three.module";
+import { TrackballControls } from "../import/trackballcontrols";
 
 function initThreeView(globals) {
   // todo, make sure whatever is calling this is waiting for DOM to load
@@ -73,7 +74,7 @@ function initThreeView(globals) {
 
     resetCamera();
 
-    controls = new THREE.TrackballControls(camera, renderer.domElement);
+    controls = new TrackballControls(camera, renderer.domElement);
     controls.rotateSpeed = 4.0;
     controls.zoomSpeed = 15;
     controls.noPan = true;
@@ -144,7 +145,7 @@ function initThreeView(globals) {
 
   function startAnimation() {
     console.log("starting animation");
-    renderer.animate(_loop);
+    renderer.setAnimationLoop(_loop);
   }
 
   function pauseSimulation() {
@@ -296,3 +297,5 @@ function initThreeView(globals) {
     setBackgroundColor
   };
 }
+
+export default initThreeView;

@@ -2,6 +2,8 @@
  * Created by ghassaei on 2/24/16.
  */
 
+import GLBoilerPlate from "./GLBoilerplate";
+
 function initGPUMath() {
   const glBoilerplate = GLBoilerPlate();
 
@@ -109,8 +111,10 @@ function initGPUMath() {
 
   GPUMath.prototype.setSize = function (width, height) {
     gl.viewport(0, 0, width, height);
-    canvas.clientWidth = width;
-    canvas.clientHeight = height;
+    // canvas.clientWidth = width;
+    // canvas.clientHeight = height;
+    canvas.style.width = `${width}px`;
+    canvas.style.weight = `${height}px`;
   };
 
   GPUMath.prototype.setProgram = function (programName) {
@@ -167,3 +171,5 @@ function initGPUMath() {
 
   return new GPUMath();
 }
+
+export default initGPUMath;

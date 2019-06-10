@@ -2,12 +2,12 @@
  * Created by amandaghassaei on 2/25/17.
  */
 
-// const earcut = require("earcut");
-// const Segmentize = require("svg-segmentize");
+import * as THREE from "../import/three.module";
+import * as Segmentize from "../import/svg-segmentize";
+import earcut from "../import/earcut";
+import FOLD from "../import/fold";
 
 function initPattern(globals) {
-
-  const FOLD = require("fold");
 
   let foldData = {};
   let rawFold = {};
@@ -276,7 +276,8 @@ function initPattern(globals) {
   }
 
   function loadSVG(svg) {
-    const segmentized = Segmentize.svg(svg);
+    const segmentizedString = Segmentize.svg(svg);
+    const segmentized = new DOMParser().parseFromString(segmentizedString, "text/xml").childNodes[0];
     loadSegmentedSVG(segmentized);
   }
 
@@ -322,28 +323,26 @@ function initPattern(globals) {
     }
 
     foldData = FOLD.filter.collapseNearbyVertices(foldData, globals.vertTol);
-    foldData = FOLD.filter.removeLoopEdges(foldData); // remove edges that points to same vertex
-    foldData = FOLD.filter.removeDuplicateEdges_vertices(foldData); // remove duplicate edges
+    // foldData = FOLD.filter.removeLoopEdges(foldData); // remove edges that points to same vertex
+    FOLD.filter.removeLoopEdges(foldData); // remove edges that points to same vertex
+    // foldData = FOLD.filter.removeDuplicateEdges_vertices(foldData); // remove duplicate edges
     // foldData = FOLD.filter.subdivideCrossingEdges_vertices(foldData, globals.vertTol);//find intersections and add vertices/edges
-
+    FOLD.filter.subdivideCrossingEdges_vertices(foldData, globals.vertTol);//find intersections and add vertices/edges
     foldData = findIntersections(foldData, globals.vertTol);
      // cleanup after intersection operation
     foldData = FOLD.filter.collapseNearbyVertices(foldData, globals.vertTol);
-    foldData = FOLD.filter.removeLoopEdges(foldData); // remove edges that points to same vertex
-    foldData = FOLD.filter.removeDuplicateEdges_vertices(foldData); // remove duplicate edges
-
+    // foldData = FOLD.filter.removeLoopEdges(foldData); // remove edges that points to same vertex
+    FOLD.filter.removeLoopEdges(foldData); // remove edges that points to same vertex
+    // foldData = FOLD.filter.removeDuplicateEdges_vertices(foldData); // remove duplicate edges
+    FOLD.filter.removeDuplicateEdges_vertices(foldData); // remove duplicate edges
     foldData = FOLD.convert.edges_vertices_to_vertices_vertices_unsorted(foldData);
     foldData = removeStrayVertices(foldData); // delete stray anchors
     foldData = removeRedundantVertices(foldData, 0.01); // remove vertices that split edge
-
-    foldData.vertices_vertices = FOLD.convert.sort_vertices_vertices(foldData);
+    FOLD.convert.sort_vertices_vertices(foldData);
     foldData = FOLD.convert.vertices_vertices_to_faces_vertices(foldData);
-
     foldData = edgesVerticesToVerticesEdges(foldData);
     foldData = removeBorderFaces(foldData); // expose holes surrounded by all border edges
-
     foldData = reverseFaceOrder(foldData); // set faces to counter clockwise
-
     return processFold(foldData);
   }
 
@@ -357,8 +356,8 @@ function initPattern(globals) {
         rawFold.vertices_coords[i] = [vertex[0], 0, vertex[1]];
       }
     }
-
-    const cuts = FOLD.filter.cutEdges(fold);
+    // const cuts = FOLD.filter.cutEdges(fold);
+    const cuts = [];
     if (cuts.length > 0) {
       fold = splitCuts(fold);
       fold = FOLD.convert.edges_vertices_to_vertices_vertices_unsorted(fold);
@@ -1026,3 +1025,5 @@ function initPattern(globals) {
     setFoldData
   };
 }
+
+export default initPattern;
