@@ -16,7 +16,7 @@ function init3DUI(globals) {
   let mouseDown = false;
   let highlightedObj;
 
-  const highlighter1 = new Node(new THREE.Vector3());
+  const highlighter1 = new Node(globals, new THREE.Vector3());
   highlighter1.setTransparent();
   globals.threeView.scene.add(highlighter1.getObject3D());
 
@@ -32,8 +32,34 @@ function init3DUI(globals) {
     }
   }
 
-  document.addEventListener("mousedown", () => {
+  document.addEventListener("mousedown", (e) => {
     mouseDown = true;
+
+    if (globals.touchMode === "grab") {
+      // let bounds = e.target.getBoundingClientRect();
+      // i know what we're targeting. target it directly
+      const bounds = globals.append.getBoundingClientRect();
+      // e.preventDefault();
+      // mouse.x = (e.clientX/window.innerWidth)*2-1;
+      // mouse.y = - (e.clientY/window.innerHeight)*2+1;
+      mouse.x = ((e.clientX - bounds.x) / bounds.width) * 2 - 1;
+      mouse.y = -((e.clientY - bounds.y) / bounds.height) * 2 + 1;
+      raycaster.setFromCamera(mouse, globals.threeView.camera);
+
+      const obj = checkForIntersections(e, globals.model.getMesh());
+      setHighlightedObj(obj);
+
+      if (highlightedObj) {
+        draggingNode = highlightedObj;
+        draggingNodeFixed = draggingNode.isFixed();
+        draggingNode.setFixed(true);
+        globals.fixedHasChanged = true;
+        globals.threeView.enableCameraRotate(false);
+      } else {
+        // clicked somewhere outside the origami, temp switch to rotate mode
+        globals.threeView.enableCameraRotate(true);
+      }
+    }
   }, false);
 
   document.addEventListener("mouseup", () => {
@@ -42,9 +68,12 @@ function init3DUI(globals) {
       draggingNode.setFixed(draggingNodeFixed);
       draggingNode = null;
       globals.fixedHasChanged = true;
-      globals.threeView.enableControls(true);
       setHighlightedObj(null);
       globals.shouldCenterGeo = true;
+    }
+    if (globals.touchMode === "grab") {
+      // grab mode temporarily becomes rotate when clicking outside object
+      globals.threeView.enableCameraRotate(false);
     }
     mouseDown = false;
   }, false);
@@ -53,35 +82,27 @@ function init3DUI(globals) {
     if (mouseDown) {
       isDragging = true;
     }
-    if (!globals.userInteractionEnabled) return;
+    // if (!globals.userInteractionEnabled) return;
+    if (globals.touchMode === "rotate") { return; }
 
-    // let bounds = e.target.getBoundingClientRect();
-    // i know what we're targeting. target it directly
-    const bounds = globals.append.getBoundingClientRect();
-    // e.preventDefault();
-    // mouse.x = (e.clientX/window.innerWidth)*2-1;
-    // mouse.y = - (e.clientY/window.innerHeight)*2+1;
-    mouse.x = ((e.clientX - bounds.x) / bounds.width) * 2 - 1;
-    mouse.y = -((e.clientY - bounds.y) / bounds.height) * 2 + 1;
-    raycaster.setFromCamera(mouse, globals.threeView.camera);
-
-    let _highlightedObj = null;
-    if (!isDragging) {
-      _highlightedObj = checkForIntersections(e, globals.model.getMesh());
-      setHighlightedObj(_highlightedObj);
-    } else if (isDragging && highlightedObj) {
-      if (!draggingNode) {
-        draggingNode = highlightedObj;
-        draggingNodeFixed = draggingNode.isFixed();
-        draggingNode.setFixed(true);
-        globals.fixedHasChanged = true;
-        globals.threeView.enableControls(false);
+    if (isDragging) {
+      if (highlightedObj) {
+        const bounds = globals.append.getBoundingClientRect();
+        mouse.x = ((e.clientX - bounds.x) / bounds.width) * 2 - 1;
+        mouse.y = -((e.clientY - bounds.y) / bounds.height) * 2 + 1;
+        raycaster.setFromCamera(mouse, globals.threeView.camera);
+        const intersection = getIntersectionWithObjectPlane(highlightedObj.getPosition().clone());
+        highlightedObj.moveManually(intersection);
+        globals.nodePositionHasChanged = true;
       }
-      const intersection = getIntersectionWithObjectPlane(highlightedObj.getPosition().clone());
-      highlightedObj.moveManually(intersection);
-      globals.nodePositionHasChanged = true;
+    } else {
+      const bounds = globals.append.getBoundingClientRect();
+      mouse.x = ((e.clientX - bounds.x) / bounds.width) * 2 - 1;
+      mouse.y = -((e.clientY - bounds.y) / bounds.height) * 2 + 1;
+      raycaster.setFromCamera(mouse, globals.threeView.camera);
+      const obj = checkForIntersections(e, globals.model.getMesh());
+      setHighlightedObj(obj);
     }
-
     if (highlightedObj) {
       const position = highlightedObj.getPosition();
       highlighter1.getObject3D().position.set(position.x, position.y, position.z);

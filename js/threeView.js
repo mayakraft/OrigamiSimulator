@@ -136,7 +136,7 @@ function initThreeView(globals) {
     controls.handleResize();
   }
 
-  function enableControls(state) {
+  function enableCameraRotate(state) {
     controls.enabled = state;
     controls.enableRotate = state;
   }
@@ -246,7 +246,7 @@ function initThreeView(globals) {
     startSimulation,
     pauseSimulation,
 
-    enableControls, // user interaction
+    enableCameraRotate, // user interaction
     scene,
     camera, // needed for user interaction
     renderer, // needed for VR

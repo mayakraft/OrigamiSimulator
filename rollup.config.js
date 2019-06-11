@@ -11,10 +11,10 @@ module.exports = {
     banner: "/* Origami Simulator (c) Amanda Ghassaei, MIT License */"
   },
   plugins: [
-    cleanup({
-      comments: "none",
-      maxEmptyLines: 0,
-    }),
+    // cleanup({
+    //   comments: "none",
+    //   maxEmptyLines: 0,
+    // }),
     string({
       include: ["**/*.frag", "**/*.vert"], // import shaders like .js files
     }),

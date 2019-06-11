@@ -86,7 +86,7 @@ const globalDefaults = {
 
   numSteps: 100,
 
-  backgroundColor: "EEE",
+  backgroundColor: "ffffff",
 
   capturer: null,
   capturerQuality: 63,
@@ -101,7 +101,10 @@ const globalDefaults = {
 
   // new options for node module
   // the <canvas> will be appended to this element
-  append: null // to be set to document.body
+  append: null, // to be set to document.body
+  // this is duplicating userInteractionEnabled, but i'd like to transition
+  // to this since it's more clear what it means
+  touchMode: "rotate" // what to do on mouse drag, options: ["rotate", "grab"]
 };
 
 export default globalDefaults;
