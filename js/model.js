@@ -10,7 +10,6 @@ import Beam from "./beam";
 import Crease from "./crease";
 
 function initModel(globals) {
-
   let material;
   let material2;
   let geometry;
@@ -48,7 +47,6 @@ function initModel(globals) {
   setMeshMaterial();
 
   function clearGeometries() {
-
     if (geometry) {
       frontside.geometry = null;
       backside.geometry = null;
@@ -99,7 +97,7 @@ function initModel(globals) {
   let inited = false;
 
   function setMeshMaterial() {
-    let polygonOffset = 0.5;
+    const polygonOffset = 0.5;
     if (false) { // (globals.colorMode == "normal") {
       material = new THREE.MeshNormalMaterial({
         flatShading:true,
@@ -307,7 +305,7 @@ function initModel(globals) {
     }
 
     for (let i = 0; i < _vertices.length; i += 1) {
-      nodes.push(new Node(_vertices[i].clone(), nodes.length));
+      nodes.push(new Node(globals, _vertices[i].clone(), nodes.length));
     }
     // _nodes[_faces[0][0]].setFixed(true);
     // _nodes[_faces[0][1]].setFixed(true);

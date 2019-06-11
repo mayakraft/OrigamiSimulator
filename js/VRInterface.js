@@ -22,8 +22,11 @@ function initViveInterface(globals){
   var controllers = [];
   var states = [false, false];
 
-  //vis
-  var highlighters = [new Node(new THREE.Vector3()), new Node(new THREE.Vector3())];
+  // vis
+  var highlighters = [
+    new Node(globals, new THREE.Vector3()),
+    new Node(globals, new THREE.Vector3())
+  ];
   highlighters.forEach(function(highlighter){
     highlighter.setTransparentVR();
     scene.add(highlighter.getObject3D());

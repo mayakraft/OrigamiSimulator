@@ -10,7 +10,6 @@ import DynamicSolver from "./dynamic/dynamicSolver";
 import Model from "./model";
 import Pattern from "./pattern";
 import { document } from "./environment/window";
-
 // import Controls from "./controls"; // this file is all kinds of front-end hardcoded
 // import Importer from "./importer"; // also needs refactoring
 // import Vive from "./VRInterface";  // haven't touched yet
@@ -39,21 +38,19 @@ const OrigamiSimulator = function (options) {
   );
   app.append = document.body;
 
-  /**
-   * initializer for the app
-   */
-  const init = function () {
-    app.threeView = ThreeView(app);
-    // app.controls = Controls(app);
-    app.UI3D = UI3D(app);
-    // app.importer = Importer(app);
-    app.model = Model(app);
-    app.gpuMath = GPUMath();
-    app.dynamicSolver = DynamicSolver(app);
-    app.pattern = Pattern(app);
-    // app.vive = Vive(app);
-    // app.videoAnimator = VideoAnimator(app);
-  };
+
+  /** initialize the app */
+  app.threeView = ThreeView(app);
+  // app.controls = Controls(app);
+  app.UI3D = UI3D(app);
+  // app.importer = Importer(app);
+  app.model = Model(app);
+  app.gpuMath = GPUMath();
+  app.dynamicSolver = DynamicSolver(app);
+  app.pattern = Pattern(app);
+  // app.vive = Vive(app);
+  // app.videoAnimator = VideoAnimator(app);
+
 
   // object methods
   const loadSVG = function (svgAsDomNode) {
@@ -67,14 +64,39 @@ const OrigamiSimulator = function (options) {
   };
   const warn = msg => console.warn(msg);
   const noCreasePatternAvailable = () => app.extension === "fold";
+  const setTouchModeRotate = function () {
+    app.touchMode = "rotate";
+    app.threeView.enableCameraRotate(true);
+    app.UI3D.hideHighlighters();
+  };
+  const setTouchModeGrab = function () {
+    app.touchMode = "grab";
+    app.threeView.enableCameraRotate(false);
+    app.threeView.resetModel();
+  };
 
   Object.defineProperty(app, "loadSVG", { value: loadSVG });
   Object.defineProperty(app, "loadSVGString", { value: loadSVGString });
   Object.defineProperty(app, "warn", { value: warn });
   Object.defineProperty(app, "noCreasePatternAvailable", { value: noCreasePatternAvailable });
-
-  // boot app
-  init();
+  Object.defineProperty(app, "grab", {
+    set: value => (value ? setTouchModeGrab() : setTouchModeRotate()),
+    get: () => app.touchMode === "grab"
+  });
+  Object.defineProperty(app, "foldPercent", {
+    set: (value) => {
+      app.creasePercent = value;
+      app.shouldChangeCreasePercent = true;
+    },
+    get: () => app.creasePercent
+  });
+  Object.defineProperty(app, "strain", {
+    set: (value) => {
+      app.colorMode = (value ? "axialStrain" : "color");
+      app.model.setMeshMaterial();
+    },
+    get: () => app.colorMode === "axialStrain"
+  });
 
   return app;
 };

@@ -10,9 +10,10 @@ const transparentVRMaterial = new THREE.MeshBasicMaterial({ color: 0xffffff, opa
 
 const nodeGeo = new THREE.SphereGeometry(0.02, 20);
 
-function Node(position, index) {
+function Node(globals, position, index) {
   this.type = "node";
   this.index = index;
+  this.globals = globals;
   this._originalPosition = position.clone();
 
   this.beams = [];
@@ -178,13 +179,13 @@ Node.prototype.setOriginalPosition = function (x, y, z) {
 };
 
 Node.prototype.getPosition = function () {
-  const positions = globals.model.getPositionsArray();
+  const positions = this.globals.model.getPositionsArray();
   const i = this.getIndex();
   return new THREE.Vector3(positions[3 * i], positions[3 * i + 1], positions[3 * i + 2]);
 };
 
 Node.prototype.moveManually = function (position) {
-  const positions = globals.model.getPositionsArray();
+  const positions = this.globals.model.getPositionsArray();
   const i = this.getIndex();
   positions[3 * i] = position.x;
   positions[3 * i + 1] = position.y;
