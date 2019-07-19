@@ -25,7 +25,6 @@ div, canvas {
 
 </head>
 <body>
-  <script type="text/javascript" src="../origami-simulator.js"></script>
 
   <div class="simulator-controls">
     <button id="button-material-color">material</button>
@@ -36,11 +35,20 @@ div, canvas {
     <span>Fold: <span id="fold-percent-label">50</span>%</span>
   </div>
 
-  <!-- SVG file for testing -->
+  <!-- SVG crease pattern -->
   <svg id="two-fold" display="none" version="1.1" xmlns="http://www.w3.org/2000/svg" width="1" height="1" viewBox="0 0 1 1"><rect width="1" height="1" fill="white" stroke="black"></rect><line x1="0" y1="0" x2="0.5" y2="0.5" stroke="red"></line><line x1="0.5" y1="0.5" x2="1" y2="1" stroke="red"></line><line y1="1" x2="0.5" y2="0.5" stroke="red"></line><line x1="1" x2="0.5" y2="0.5" stroke="blue"></line></svg>
+
+<script src="js/three.min.js"></script>
+<script src="js/trackballcontrols.js"></script>
+<script src="js/fold.js"></script>
+<script src="js/earcut.min.js"></script>
+<script src="js/svg-segmentize.min.js"></script>
+
+<script type="text/javascript" src="../origami-simulator.js"></script>
 
 <script>
 const app = OrigamiSimulator({ backgroundColor: "eee" });
+
 // const container = document.querySelector("#simulator-container");
 // const app = OrigamiSimulator({ append: container });
 

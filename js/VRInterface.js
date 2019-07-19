@@ -2,7 +2,8 @@
  * Created by amandaghassaei on 5/10/17.
  */
 
-import * as THREE from "../import/three.module";
+const THREE = window.THREE || require("three");
+// import * as THREE from "../import/three.module";
 
 function initViveInterface(globals){
 

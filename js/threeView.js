@@ -2,8 +2,10 @@
  * Created by ghassaei on 9/16/16.
  */
 
-import * as THREE from "../import/three.module";
-import { TrackballControls } from "../import/trackballcontrols";
+const THREE = window.THREE || require("three");
+const TrackballControls = window.TrackballControls || require("three-trackballcontrols");
+// import * as THREE from "../import/three.module";
+// import { TrackballControls } from "../import/trackballcontrols";
 
 function initThreeView(globals) {
   // todo, make sure whatever is calling this is waiting for DOM to load

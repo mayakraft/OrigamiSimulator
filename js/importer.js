@@ -2,7 +2,8 @@
  * Created by amandaghassaei on 5/6/17.
  */
 
-import * as THREE from "../import/three.module";
+// import * as THREE from "../import/three.module";
+const THREE = window.THREE || require("three");
 
 function initImporter(globals) {
   const reader = new FileReader();

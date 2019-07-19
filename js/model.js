@@ -4,10 +4,12 @@
 
 // model updates object3d geometry and materials
 
-import * as THREE from "../import/three.module";
+// import * as THREE from "../import/three.module";
 import Node from "./node";
 import Beam from "./beam";
 import Crease from "./crease";
+
+const THREE = window.THREE || require("three");
 
 function initModel(globals) {
   let material;

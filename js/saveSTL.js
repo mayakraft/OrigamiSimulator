@@ -2,8 +2,10 @@
  * Created by amandaghassaei on 5/2/17.
  */
 
-import * as THREE from "../import/three.module";
 import geometryToSTLBin from "../import/geometryToSTLBin";
+
+const THREE = window.THREE || require("three");
+// import * as THREE from "../import/three.module";
 
 
 function makeSaveGEO(doublesided){

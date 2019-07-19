@@ -2,9 +2,11 @@
  * Created by amandaghassaei on 5/5/17.
  */
 
-import * as THREE from "../import/three.module";
+// import * as THREE from "../import/three.module";
 import Node from "./node";
-import { document } from "./environment/window";
+import window from "./environment/window";
+
+const THREE = window.THREE || require("three");
 
 function init3DUI(globals) {
   const raycaster = new THREE.Raycaster();
@@ -32,7 +34,7 @@ function init3DUI(globals) {
     }
   }
 
-  document.addEventListener("mousedown", (e) => {
+  window.document.addEventListener("mousedown", (e) => {
     mouseDown = true;
 
     if (globals.touchMode === "grab") {
@@ -62,7 +64,7 @@ function init3DUI(globals) {
     }
   }, false);
 
-  document.addEventListener("mouseup", () => {
+  window.document.addEventListener("mouseup", () => {
     isDragging = false;
     if (draggingNode) {
       draggingNode.setFixed(draggingNodeFixed);
@@ -77,7 +79,7 @@ function init3DUI(globals) {
     }
     mouseDown = false;
   }, false);
-  document.addEventListener("mousemove", mouseMove, false);
+  window.document.addEventListener("mousemove", mouseMove, false);
   function mouseMove(e) {
     if (mouseDown) {
       isDragging = true;
