@@ -2,18 +2,18 @@
  * Created by amandaghassaei on 2/25/17.
  */
 
-import * as THREE from "../import/three.module";
-import * as Segmentize from "../import/svg-segmentize";
-import earcut from "../import/earcut";
-import FOLD from "../import/fold";
-import {
-  DOMParser,
-  XMLSerializer,
-  document,
-} from "./environment/window";
+// import * as THREE from "../import/three.module";
+// import * as Segmentize from "../import/svg-segmentize";
+// import earcut from "../import/earcut";
+// import FOLD from "../import/fold";
+import window from "./environment/window";
+
+const THREE = window.THREE || require("three");
+const Segmentize = window.Segmentize || require("svg-segmentize");
+const earcut = window.earcut || require("earcut");
+const FOLD = window.FOLD || require("fold");
 
 function initPattern(globals) {
-
   let foldData = {};
   let rawFold = {};
 
@@ -261,10 +261,10 @@ function initPattern(globals) {
     const viewBoxTxt = [min.x, min.z, max.x, max.z].join(" ");
 
     const ns = "http://www.w3.org/2000/svg";
-    const newSVG = document.createElementNS(ns, "svg");
+    const newSVG = window.document.createElementNS(ns, "svg");
     newSVG.setAttribute("viewBox", viewBoxTxt);
     for (let i = 0; i < rawFold.edges_vertices.length; i += 1) {
-      const line = document.createElementNS(ns, "line");
+      const line = window.document.createElementNS(ns, "line");
       const edge = rawFold.edges_vertices[i];
       let vertex = rawFold.vertices_coords[edge[0]];
       line.setAttribute("stroke", colorForAssignment(rawFold.edges_assignment[i]));
@@ -278,12 +278,12 @@ function initPattern(globals) {
       newSVG.appendChild(line);
     }
     // $("#svgViewer").html(newSVG);
-    // document.querySelector("#svgViewer").innerHTML = newSVG;
+    // window.document.querySelector("#svgViewer").innerHTML = newSVG;
   }
 
   function loadSVG(svg) {
-    const segmentizedString = Segmentize.svg(svg);
-    const segmentized = new DOMParser().parseFromString(segmentizedString, "text/xml").childNodes[0];
+    const segmentized = Segmentize(svg, { svg: true, string: false });
+    // const segmentized = new DOMParser().parseFromString(segmentizedString, "text/xml").childNodes[0];
     loadSegmentedSVG(segmentized);
   }
 
@@ -951,21 +951,21 @@ function initPattern(globals) {
       globals.warn("No crease pattern available for files imported from FOLD format.");
       return;
     }
-    const serializer = new XMLSerializer();
+    const serializer = new window.XMLSerializer();
     console.log("pattern.js saveSVG needs testing, check out these 2 lines");
-    const getSVG = document.querySelector("#svgViewer>svg");
+    const getSVG = window.document.querySelector("#svgViewer>svg");
     const source = serializer.serializeToString(getSVG);
     // const source = serializer.serializeToString(getSVG[0]);
     
     // const source = serializer.serializeToString($("#svgViewer>svg").get(0));
     const svgBlob = new Blob([source], { type: "image/svg+xml;charset=utf-8" });
     const svgUrl = URL.createObjectURL(svgBlob);
-    const downloadLink = document.createElement("a");
+    const downloadLink = window.document.createElement("a");
     downloadLink.href = svgUrl;
     downloadLink.download = `${globals.filename}.svg`;
-    document.body.appendChild(downloadLink);
+    window.document.body.appendChild(downloadLink);
     downloadLink.click();
-    document.body.removeChild(downloadLink);
+    window.document.body.removeChild(downloadLink);
   }
 
   function findIntersections(fold, tol) {

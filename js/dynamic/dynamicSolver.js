@@ -2,7 +2,7 @@
  * Created by ghassaei on 10/7/16.
  */
 
-import * as THREE from "../../import/three.module";
+// import * as THREE from "../../import/three.module";
 
 import vertexShader from "../shaders/vertexShader.vert";
 import positionCalcShader from "../shaders/positionCalcShader.frag";
@@ -18,7 +18,17 @@ import centerTexture from "../shaders/centerTexture.frag";
 import copyTexture from "../shaders/copyTexture.frag";
 import updateCreaseGeo from "../shaders/updateCreaseGeo.frag";
 
+const THREE = window.THREE || require("three");
+
+// ///////////////////////
+// currently looking into making this work on iOS.
+// problem appears to be the need to support and switch to using HALF_FLOAT
+//
+// https://github.com/mrdoob/three.js/issues/9628
+// http://yomboprime.github.io/GPGPU-threejs-demos/webgl_gpgpu_water.html
+
 function initDynamicSolver(globals) {
+  const float_type = "FLOAT";
 
   let nodes;
   let edges;
@@ -264,14 +274,14 @@ function initDynamicSolver(globals) {
   }
 
   function initTexturesAndPrograms(gpuMath) {
-    gpuMath.initTextureFromData("u_position", textureDim, textureDim, "FLOAT", position, true);
-    gpuMath.initTextureFromData("u_lastPosition", textureDim, textureDim, "FLOAT", lastPosition, true);
-    gpuMath.initTextureFromData("u_lastLastPosition", textureDim, textureDim, "FLOAT", lastLastPosition, true);
-    gpuMath.initTextureFromData("u_velocity", textureDim, textureDim, "FLOAT", velocity, true);
-    gpuMath.initTextureFromData("u_lastVelocity", textureDim, textureDim, "FLOAT", lastVelocity, true);
-    gpuMath.initTextureFromData("u_theta", textureDimCreases, textureDimCreases, "FLOAT", theta, true);
-    gpuMath.initTextureFromData("u_lastTheta", textureDimCreases, textureDimCreases, "FLOAT", lastTheta, true);
-    gpuMath.initTextureFromData("u_normals", textureDimFaces, textureDimFaces, "FLOAT", normals, true);
+    gpuMath.initTextureFromData("u_position", textureDim, textureDim, float_type, position, true);
+    gpuMath.initTextureFromData("u_lastPosition", textureDim, textureDim, float_type, lastPosition, true);
+    gpuMath.initTextureFromData("u_lastLastPosition", textureDim, textureDim, float_type, lastLastPosition, true);
+    gpuMath.initTextureFromData("u_velocity", textureDim, textureDim, float_type, velocity, true);
+    gpuMath.initTextureFromData("u_lastVelocity", textureDim, textureDim, float_type, lastVelocity, true);
+    gpuMath.initTextureFromData("u_theta", textureDimCreases, textureDimCreases, float_type, theta, true);
+    gpuMath.initTextureFromData("u_lastTheta", textureDimCreases, textureDimCreases, float_type, lastTheta, true);
+    gpuMath.initTextureFromData("u_normals", textureDimFaces, textureDimFaces, float_type, normals, true);
 
     gpuMath.initFrameBufferForTexture("u_position", true);
     gpuMath.initFrameBufferForTexture("u_lastPosition", true);
@@ -282,16 +292,16 @@ function initDynamicSolver(globals) {
     gpuMath.initFrameBufferForTexture("u_lastTheta", true);
     gpuMath.initFrameBufferForTexture("u_normals", true);
 
-    gpuMath.initTextureFromData("u_meta", textureDim, textureDim, "FLOAT", meta, true);
-    gpuMath.initTextureFromData("u_meta2", textureDim, textureDim, "FLOAT", meta2, true);
-    gpuMath.initTextureFromData("u_nominalTrinagles", textureDimFaces, textureDimFaces, "FLOAT", nominalTriangles, true);
-    gpuMath.initTextureFromData("u_nodeCreaseMeta", textureDimNodeCreases, textureDimNodeCreases, "FLOAT", nodeCreaseMeta, true);
-    gpuMath.initTextureFromData("u_creaseMeta2", textureDimCreases, textureDimCreases, "FLOAT", creaseMeta2, true);
-    gpuMath.initTextureFromData("u_nodeFaceMeta", textureDimNodeFaces, textureDimNodeFaces, "FLOAT", nodeFaceMeta, true);
-    gpuMath.initTextureFromData("u_creaseGeo", textureDimCreases, textureDimCreases, "FLOAT", creaseGeo, true);
+    gpuMath.initTextureFromData("u_meta", textureDim, textureDim, float_type, meta, true);
+    gpuMath.initTextureFromData("u_meta2", textureDim, textureDim, float_type, meta2, true);
+    gpuMath.initTextureFromData("u_nominalTrinagles", textureDimFaces, textureDimFaces, float_type, nominalTriangles, true);
+    gpuMath.initTextureFromData("u_nodeCreaseMeta", textureDimNodeCreases, textureDimNodeCreases, float_type, nodeCreaseMeta, true);
+    gpuMath.initTextureFromData("u_creaseMeta2", textureDimCreases, textureDimCreases, float_type, creaseMeta2, true);
+    gpuMath.initTextureFromData("u_nodeFaceMeta", textureDimNodeFaces, textureDimNodeFaces, float_type, nodeFaceMeta, true);
+    gpuMath.initTextureFromData("u_creaseGeo", textureDimCreases, textureDimCreases, float_type, creaseGeo, true);
     gpuMath.initFrameBufferForTexture("u_creaseGeo", true);
-    gpuMath.initTextureFromData("u_faceVertexIndices", textureDimFaces, textureDimFaces, "FLOAT", faceVertexIndices, true);
-    gpuMath.initTextureFromData("u_nominalTriangles", textureDimFaces, textureDimFaces, "FLOAT", nominalTriangles, true);
+    gpuMath.initTextureFromData("u_faceVertexIndices", textureDimFaces, textureDimFaces, float_type, faceVertexIndices, true);
+    gpuMath.initTextureFromData("u_nominalTriangles", textureDimFaces, textureDimFaces, float_type, nominalTriangles, true);
 
     gpuMath.createProgram("positionCalc", vertexShader, positionCalcShader);
     gpuMath.setUniformForProgram("positionCalc", "u_velocity", 0, "1i");
@@ -437,7 +447,7 @@ function initDynamicSolver(globals) {
         index += 1;
       }
     }
-    globals.gpuMath.initTextureFromData("u_beamMeta", textureDimEdges, textureDimEdges, "FLOAT", beamMeta, true);
+    globals.gpuMath.initTextureFromData("u_beamMeta", textureDimEdges, textureDimEdges, float_type, beamMeta, true);
 
 
     if (programsInited) {
@@ -458,14 +468,14 @@ function initDynamicSolver(globals) {
       externalForces[4 * i + 1] = externalForce.y;
       externalForces[4 * i + 2] = externalForce.z;
     }
-    globals.gpuMath.initTextureFromData("u_externalForces", textureDim, textureDim, "FLOAT", externalForces, true);
+    globals.gpuMath.initTextureFromData("u_externalForces", textureDim, textureDim, float_type, externalForces, true);
   }
 
   function updateFixed() {
     for (let i = 0; i < nodes.length; i += 1) {
       mass[4 * i + 1] = (nodes[i].isFixed() ? 1 : 0);
     }
-    globals.gpuMath.initTextureFromData("u_mass", textureDim, textureDim, "FLOAT", mass, true);
+    globals.gpuMath.initTextureFromData("u_mass", textureDim, textureDim, float_type, mass, true);
   }
 
   function updateOriginalPosition() {
@@ -475,7 +485,7 @@ function initDynamicSolver(globals) {
       originalPosition[4 * i + 1] = origPosition.y;
       originalPosition[4 * i + 2] = origPosition.z;
     }
-    globals.gpuMath.initTextureFromData("u_originalPosition", textureDim, textureDim, "FLOAT", originalPosition, true);
+    globals.gpuMath.initTextureFromData("u_originalPosition", textureDim, textureDim, float_type, originalPosition, true);
   }
 
   function updateCreaseVectors() {
@@ -486,7 +496,7 @@ function initDynamicSolver(globals) {
       creaseVectors[rgbaIndex] = nodes[0].getIndex();
       creaseVectors[rgbaIndex + 1] = nodes[1].getIndex();
     }
-    globals.gpuMath.initTextureFromData("u_creaseVectors", textureDimCreases, textureDimCreases, "FLOAT", creaseVectors, true);
+    globals.gpuMath.initTextureFromData("u_creaseVectors", textureDimCreases, textureDimCreases, float_type, creaseVectors, true);
   }
 
   function updateCreasesMeta(initing) {
@@ -496,7 +506,7 @@ function initDynamicSolver(globals) {
       // creaseMeta[i*4+1] = crease.getD();
       if (initing) creaseMeta[i * 4 + 2] = crease.getTargetTheta();
     }
-    globals.gpuMath.initTextureFromData("u_creaseMeta", textureDimCreases, textureDimCreases, "FLOAT", creaseMeta, true);
+    globals.gpuMath.initTextureFromData("u_creaseMeta", textureDimCreases, textureDimCreases, float_type, creaseMeta, true);
   }
 
   function updateLastPosition() {
@@ -506,7 +516,7 @@ function initDynamicSolver(globals) {
       lastPosition[4 * i + 1] = _position.y;
       lastPosition[4 * i + 2] = _position.z;
     }
-    globals.gpuMath.initTextureFromData("u_lastPosition", textureDim, textureDim, "FLOAT", lastPosition, true);
+    globals.gpuMath.initTextureFromData("u_lastPosition", textureDim, textureDim, float_type, lastPosition, true);
     globals.gpuMath.initFrameBufferForTexture("u_lastPosition", true);
   }
 

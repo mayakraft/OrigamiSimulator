@@ -3,11 +3,15 @@
  * @author Mark Lundin 	/ http://mark-lundin.com
  * @author Simone Manini / http://daron1337.github.io
  * @author Luca Antiga 	/ http://lantiga.github.io
+
+ ** three-trackballcontrols module
+ ** @author Jon Lim / http://jonlim.ca
  */
 
-import { Vector2, Vector3, Quaternion, EventDispatcher, Camera } from "./three.module";
+var THREE = window.THREE || require('three');
 
-var TrackballControls = function ( object, domElement ) {
+var TrackballControls;
+TrackballControls = function ( object, domElement ) {
 
 	var _this = this;
 	var STATE = { NONE: - 1, ROTATE: 0, ZOOM: 1, PAN: 2, TOUCH_ROTATE: 3, TOUCH_ZOOM_PAN: 4 };
@@ -35,35 +39,40 @@ var TrackballControls = function ( object, domElement ) {
 	this.minDistance = 0;
 	this.maxDistance = Infinity;
 
+	/**
+	 * `KeyboardEvent.keyCode` values which should trigger the different 
+	 * interaction states. Each element can be a single code or an array
+	 * of codes. All elements are required.
+	 */
 	this.keys = [ 65 /*A*/, 83 /*S*/, 68 /*D*/ ];
 
 	// internals
 
-	this.target = new Vector3();
+	this.target = new THREE.Vector3();
 
 	var EPS = 0.000001;
 
-	var lastPosition = new Vector3();
+	var lastPosition = new THREE.Vector3();
 
 	var _state = STATE.NONE,
 	_prevState = STATE.NONE,
 
-	_eye = new Vector3(),
+	_eye = new THREE.Vector3(),
 
-	_movePrev = new Vector2(),
-	_moveCurr = new Vector2(),
+	_movePrev = new THREE.Vector2(),
+	_moveCurr = new THREE.Vector2(),
 
-	_lastAxis = new Vector3(),
+	_lastAxis = new THREE.Vector3(),
 	_lastAngle = 0,
 
-	_zoomStart = new Vector2(),
-	_zoomEnd = new Vector2(),
+	_zoomStart = new THREE.Vector2(),
+	_zoomEnd = new THREE.Vector2(),
 
 	_touchZoomDistanceStart = 0,
 	_touchZoomDistanceEnd = 0,
 
-	_panStart = new Vector2(),
-	_panEnd = new Vector2();
+	_panStart = new THREE.Vector2(),
+	_panEnd = new THREE.Vector2();
 
 	// for reset
 
@@ -115,7 +124,7 @@ var TrackballControls = function ( object, domElement ) {
 
 	var getMouseOnScreen = ( function () {
 
-		var vector = new Vector2();
+		var vector = new THREE.Vector2();
 
 		return function getMouseOnScreen( pageX, pageY ) {
 
@@ -132,7 +141,7 @@ var TrackballControls = function ( object, domElement ) {
 
 	var getMouseOnCircle = ( function () {
 
-		var vector = new Vector2();
+		var vector = new THREE.Vector2();
 
 		return function getMouseOnCircle( pageX, pageY ) {
 
@@ -149,12 +158,12 @@ var TrackballControls = function ( object, domElement ) {
 
 	this.rotateCamera = ( function() {
 
-		var axis = new Vector3(),
-			quaternion = new Quaternion(),
-			eyeDirection = new Vector3(),
-			objectUpDirection = new Vector3(),
-			objectSidewaysDirection = new Vector3(),
-			moveDirection = new Vector3(),
+		var axis = new THREE.Vector3(),
+			quaternion = new THREE.Quaternion(),
+			eyeDirection = new THREE.Vector3(),
+			objectUpDirection = new THREE.Vector3(),
+			objectSidewaysDirection = new THREE.Vector3(),
+			moveDirection = new THREE.Vector3(),
 			angle;
 
 		return function rotateCamera() {
@@ -239,9 +248,9 @@ var TrackballControls = function ( object, domElement ) {
 
 	this.panCamera = ( function() {
 
-		var mouseChange = new Vector2(),
-			objectUp = new Vector3(),
-			pan = new Vector3();
+		var mouseChange = new THREE.Vector2(),
+			objectUp = new THREE.Vector3(),
+			pan = new THREE.Vector3();
 
 		return function panCamera() {
 
@@ -352,6 +361,25 @@ var TrackballControls = function ( object, domElement ) {
 
 	};
 
+	// helpers
+
+	/**
+	 * Checks if the pressed key is any of the configured modifier keys for
+	 * a specified behavior.
+	 * 
+	 * @param {number | number[]} keys 
+	 * @param {number} key 
+	 * 
+	 * @returns {boolean} `true` if `keys` contains or equals `key`
+	 */
+	function containsKey(keys, key) {
+		if (Array.isArray(keys)) {
+			return keys.indexOf(key) !== -1;
+		} else {
+			return keys === key;
+		}
+	}
+
 	// listeners
 
 	function keydown( event ) {
@@ -366,15 +394,15 @@ var TrackballControls = function ( object, domElement ) {
 
 			return;
 
-		} else if ( event.keyCode === _this.keys[ STATE.ROTATE ] && ! _this.noRotate ) {
+		} else if ( containsKey( _this.keys[ STATE.ROTATE ], event.keyCode ) && ! _this.noRotate ) {
 
 			_state = STATE.ROTATE;
 
-		} else if ( event.keyCode === _this.keys[ STATE.ZOOM ] && ! _this.noZoom ) {
+		} else if ( containsKey( _this.keys[ STATE.ZOOM ], event.keyCode ) && ! _this.noZoom ) {
 
 			_state = STATE.ZOOM;
 
-		} else if ( event.keyCode === _this.keys[ STATE.PAN ] && ! _this.noPan ) {
+		} else if ( containsKey( _this.keys[ STATE.PAN ], event.keyCode ) && ! _this.noPan ) {
 
 			_state = STATE.PAN;
 
@@ -477,13 +505,13 @@ var TrackballControls = function ( object, domElement ) {
 
 		switch ( event.deltaMode ) {
 
-                        case 2:
-                                // Zoom in pages
-                                _zoomStart.y -= event.deltaY * 0.025;
-                                break;
+			case 2:
+				// Zoom in pages
+				_zoomStart.y -= event.deltaY * 0.025;
+				break;
 
 			case 1:
-                                // Zoom in lines
+				// Zoom in lines
 				_zoomStart.y -= event.deltaY * 0.01;
 				break;
 
@@ -581,6 +609,8 @@ var TrackballControls = function ( object, domElement ) {
 
 	function contextmenu( event ) {
 
+		if ( _this.enabled === false ) return;
+
 		event.preventDefault();
 
 	}
@@ -621,7 +651,6 @@ var TrackballControls = function ( object, domElement ) {
 
 };
 
-TrackballControls.prototype = Object.create( EventDispatcher.prototype );
-TrackballControls.prototype.constructor = TrackballControls;
+function preventEvent( event ) { event.preventDefault(); }
 
-export {TrackballControls}
+TrackballControls.prototype = Object.create( THREE.EventDispatcher.prototype );

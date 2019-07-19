@@ -9,7 +9,7 @@ import GPUMath from "./dynamic/GPUMath";
 import DynamicSolver from "./dynamic/dynamicSolver";
 import Model from "./model";
 import Pattern from "./pattern";
-import { document } from "./environment/window";
+import window from "./environment/window";
 // import Controls from "./controls"; // this file is all kinds of front-end hardcoded
 // import Importer from "./importer"; // also needs refactoring
 // import Vive from "./VRInterface";  // haven't touched yet
@@ -36,7 +36,7 @@ const OrigamiSimulator = function (options) {
     JSON.parse(JSON.stringify(defaults)),
     validateUserOptions(options)
   );
-  app.append = document.body;
+  if (app.append == null) { app.append = window.document.body; }
 
 
   /** initialize the app */

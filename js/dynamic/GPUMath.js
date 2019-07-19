@@ -3,15 +3,15 @@
  */
 
 import GLBoilerPlate from "./GLBoilerplate";
-import { document } from "../environment/window";
+import window from "../environment/window";
 
 function initGPUMath() {
   const glBoilerplate = GLBoilerPlate();
 
-  const canvas = document.createElement("canvas");
+  const canvas = window.document.createElement("canvas");
   canvas.setAttribute("style", "display:none;");
   canvas.setAttribute("class", "gpuMathCanvas");
-  document.body.appendChild(canvas);
+  window.document.body.appendChild(canvas);
   const gl = canvas.getContext("webgl", { antialias: false }) || canvas.getContext("experimental-webgl", { antialias: false });
   const floatTextures = gl.getExtension("OES_texture_float");
 

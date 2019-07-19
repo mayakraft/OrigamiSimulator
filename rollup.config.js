@@ -1,5 +1,5 @@
 import { string } from "rollup-plugin-string";
-import cleanup from "rollup-plugin-cleanup";
+// import cleanup from "rollup-plugin-cleanup";
 
 module.exports = {
   input: "js/main.js",

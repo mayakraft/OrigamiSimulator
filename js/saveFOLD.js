@@ -3,7 +3,8 @@
  */
 
 // try to get rid of this import
-import * as THREE from "../import/three.module";
+const THREE = window.THREE || require("three");
+// import * as THREE from "../import/three.module";
 
 function saveFOLD() {
 
