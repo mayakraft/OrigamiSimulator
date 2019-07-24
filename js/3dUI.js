@@ -40,7 +40,8 @@ function init3DUI(globals) {
     if (globals.touchMode === "grab") {
       // let bounds = e.target.getBoundingClientRect();
       // i know what we're targeting. target it directly
-      const bounds = globals.append.getBoundingClientRect();
+      const parent = globals.parent || window.document.getElementsByTagName("body")[0];
+      const bounds = parent.getBoundingClientRect();
       // e.preventDefault();
       // mouse.x = (e.clientX/window.innerWidth)*2-1;
       // mouse.y = - (e.clientY/window.innerHeight)*2+1;
@@ -89,7 +90,8 @@ function init3DUI(globals) {
 
     if (isDragging) {
       if (highlightedObj) {
-        const bounds = globals.append.getBoundingClientRect();
+        const parent = globals.parent || window.document.getElementsByTagName("body")[0];
+        const bounds = parent.getBoundingClientRect();
         mouse.x = ((e.clientX - bounds.x) / bounds.width) * 2 - 1;
         mouse.y = -((e.clientY - bounds.y) / bounds.height) * 2 + 1;
         raycaster.setFromCamera(mouse, globals.threeView.camera);
@@ -98,7 +100,8 @@ function init3DUI(globals) {
         globals.nodePositionHasChanged = true;
       }
     } else {
-      const bounds = globals.append.getBoundingClientRect();
+      const parent = globals.parent || window.document.getElementsByTagName("body")[0];
+      const bounds = parent.getBoundingClientRect();
       mouse.x = ((e.clientX - bounds.x) / bounds.width) * 2 - 1;
       mouse.y = -((e.clientY - bounds.y) / bounds.height) * 2 + 1;
       raycaster.setFromCamera(mouse, globals.threeView.camera);

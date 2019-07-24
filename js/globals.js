@@ -2,16 +2,17 @@
  * Created by ghassaei on 10/7/16.
  */
 
-/**
- * careful, no object pointers. this object gets copied (parse/stringify)
- * before it's deployed
- */
-
 const globalDefaults = {
+  // new options for node module
+  // the <canvas> will be appended to this element
+  parent: null, // to be set to document.body
+
   navMode: "simulation",
-  scale: 1,
+  // in place of userInteractionEnabled, more clear, opportunity to add modes
+  touchMode: "rotate", // what to do on mouse drag, options: ["rotate", "grab"]
 
   // view
+  backgroundColor: "ffffff",
   colorMode: "color",
   calcFaceStrain: false,
   color1: "ec008b",
@@ -38,13 +39,17 @@ const globalDefaults = {
   shouldCenterGeo: false,
   needsSync: false,
   simNeedsSync: false,
-
   menusVisible: true,
+  pausedForPatternView: false,
+  userInteractionEnabled: false,
+  vrEnabled: false,
 
   url: null,
+  numSteps: 100,
 
   // 3d vis
   simType: "dynamic",
+  scale: 1,
 
   // compliant sim settings
   creasePercent: 0.6,
@@ -64,6 +69,8 @@ const globalDefaults = {
   vertTol: 0.001, // vertex merge tolerance
   foldUseAngles: true, // import current angles from fold format as target angles
 
+  // export settings
+  //
   // save stl settings
   filename: null,
   extension: null,
@@ -79,15 +86,6 @@ const globalDefaults = {
   triangulateFOLDexport: false,
   exportFoldAngle: true,
 
-  pausedForPatternView: false,
-
-  userInteractionEnabled: false,
-  vrEnabled: false,
-
-  numSteps: 100,
-
-  backgroundColor: "ffffff",
-
   capturer: null,
   capturerQuality: 63,
   capturerFPS: 60,
@@ -98,13 +96,6 @@ const globalDefaults = {
   shouldScaleCanvas: false,
   isGif: false,
   shouldAnimateFoldPercent: false,
-
-  // new options for node module
-  // the <canvas> will be appended to this element
-  append: null, // to be set to document.body
-  // this is duplicating userInteractionEnabled, but i'd like to transition
-  // to this since it's more clear what it means
-  touchMode: "rotate" // what to do on mouse drag, options: ["rotate", "grab"]
 };
 
 export default globalDefaults;

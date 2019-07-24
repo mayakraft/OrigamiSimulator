@@ -8,6 +8,7 @@
 import Node from "./node";
 import Beam from "./beam";
 import Crease from "./crease";
+import window from "./environment/window";
 
 const THREE = window.THREE || require("three");
 

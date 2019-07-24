@@ -3,6 +3,8 @@
  */
 
 // import * as THREE from "../import/three.module";
+import window from "./environment/window";
+
 const THREE = window.THREE || require("three");
 
 function initImporter(globals) {

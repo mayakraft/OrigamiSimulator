@@ -2,6 +2,8 @@
  * Created by ghassaei on 9/16/16.
  */
 
+import window from "./environment/window";
+
 // import * as THREE from "../import/three.module";
 const THREE = window.THREE || require("three");
 
