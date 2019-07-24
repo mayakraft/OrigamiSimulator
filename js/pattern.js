@@ -3,15 +3,14 @@
  */
 
 // import * as THREE from "../import/three.module";
-// import * as Segmentize from "../import/svg-segmentize";
 // import earcut from "../import/earcut";
 // import FOLD from "../import/fold";
 import window from "./environment/window";
 
 const THREE = window.THREE || require("three");
-const Segmentize = window.Segmentize || require("svg-segmentize");
 const earcut = window.earcut || require("earcut");
 const FOLD = window.FOLD || require("fold");
+const SVGLoader = THREE.SVGLoader || require("three-svg-loader");
 
 function initPattern(globals) {
   let foldData = {};
@@ -68,7 +67,7 @@ function initPattern(globals) {
 
   clearAll();
 
-  // const SVGloader = new THREE.SVGLoader();
+  const SVGloader = new SVGLoader();
 
   function getOpacity(obj) {
     let opacity = obj.getAttribute("opacity");
@@ -156,136 +155,353 @@ function initPattern(globals) {
     }
   }
 
-  function loadSegmentedSVG(svg) {
-    // all lines are at the top level we don't need to recurse down the tree
-    const lines = Array.from(svg.childNodes)
-      .filter(node => node.tagName === "line");
-
-    // const _$svg = $(svg);
-
-    clearAll();
-
-    // format all appropriate svg elements
-    // const $paths = _$svg.find("path");
-    // const $lines = _$svg.find("line");
-    // const $rects = _$svg.find("rect");
-    // const $polygons = _$svg.find("polygon");
-    // const $polylines = _$svg.find("polyline");
-    // $paths.css({ fill: "none", "stroke-dasharray": "none" });
-    // $lines.css({ fill: "none", "stroke-dasharray": "none" });
-    // $rects.css({ fill: "none", "stroke-dasharray": "none" });
-    // $polygons.css({ fill: "none", "stroke-dasharray": "none" });
-    // $polylines.css({ fill: "none", "stroke-dasharray": "none" });
-
-    const add_to_array = function (element, segment_array, target_angle) {
-      verticesRaw.push(new THREE.Vector3(
-        element.x1.baseVal.value, 0, element.y1.baseVal.value
-      ));
-      verticesRaw.push(new THREE.Vector3(
-        element.x2.baseVal.value, 0, element.y2.baseVal.value
-      ));
-      const segment = (target_angle === undefined
-        ? [verticesRaw.length - 2, verticesRaw.length - 1]
-        : [verticesRaw.length - 2, verticesRaw.length - 1, target_angle]);
-      segment_array.push(segment);
-      applyTransformation(verticesRaw[verticesRaw.length - 2], element.transform);
-      applyTransformation(verticesRaw[verticesRaw.length - 1], element.transform);
-    };
-
-    const svg_mountains = lines
-      .filter(l => typeForStroke(getStroke(l)) === "mountain");
-    const svg_valleys = lines
-      .filter(l => typeForStroke(getStroke(l)) === "valley");
-    const svg_borders = lines
-      .filter(l => typeForStroke(getStroke(l)) === "border");
-    const svg_cuts = lines
-      .filter(l => typeForStroke(getStroke(l)) === "cut");
-    const svg_triangulations = lines
-      .filter(l => typeForStroke(getStroke(l)) === "triangulation");
-    const svg_hinges = lines
-      .filter(l => typeForStroke(getStroke(l)) === "hinge");
-
-    svg_mountains.forEach((m) => {
-      const opacity = getOpacity(m);
-      add_to_array(m, mountainsRaw, -opacity * Math.PI);
-    });
-    svg_valleys.forEach((m) => {
-      const opacity = getOpacity(m);
-      add_to_array(m, valleysRaw, opacity * Math.PI);
-    });
-    svg_borders.forEach(m => add_to_array(m, bordersRaw));
-    svg_cuts.forEach(m => add_to_array(m, cutsRaw));
-    svg_triangulations.forEach(m => add_to_array(m, triangulationsRaw));
-    svg_hinges.forEach(m => add_to_array(m, hingesRaw));
-
-    if (badColors.length > 0) {
-      // badColors = _.uniq(badColors);
-      badColors = [...(new Set(badColors))];
-      let string = "Some objects found with the following stroke colors:<br/><br/>";
-      badColors.forEach((color) => {
-        string += `<span style='background:${color}' class='colorSwatch'></span>${color}<br/>`;
-      });
-      string +=  "<br/>These objects were ignored.<br/>  Please check that your file is set up correctly, <br/>" +
-        "see <b>File > File Import Tips</b> for more information.";
-      globals.warn(string);
+  // filter for svg parsing
+  function borderFilter(el) {
+    const stroke = getStroke(el);
+    return typeForStroke(stroke) === "border";
+  }
+  function mountainFilter(el) {
+    const stroke = getStroke(el);
+    if (typeForStroke(stroke) === "mountain") {
+      const opacity = getOpacity(el);
+      el.targetAngle = -opacity * Math.PI;
+      return true;
     }
-
-    // todo revert back to old pattern if bad import
-    const success = parseSVG(verticesRaw, bordersRaw, mountainsRaw,
-      valleysRaw, cutsRaw, triangulationsRaw, hingesRaw);
-    if (!success) return;
-
-    // find max and min vertices
-    const max = new THREE.Vector3(-Infinity, -Infinity, -Infinity);
-    const min = new THREE.Vector3(Infinity, Infinity, Infinity);
-    for (let i = 0; i < rawFold.vertices_coords.length; i += 1) {
-      const vertex = new THREE.Vector3(rawFold.vertices_coords[i][0],
-        rawFold.vertices_coords[i][1], rawFold.vertices_coords[i][2]);
-      max.max(vertex);
-      min.min(vertex);
+    return false;
+  }
+  function valleyFilter(el) {
+    const stroke = getStroke(el);
+    if (typeForStroke(stroke) === "valley") {
+      const opacity = getOpacity(el);
+      el.targetAngle = opacity * Math.PI;
+      return true;
     }
-    if (min.x === Infinity) {
-      if (badColors.length === 0) globals.warn("no geometry found in file");
-      return;
-    }
-    max.sub(min);
-    const border = new THREE.Vector3(0.1, 0, 0.1);
-    let scale = max.x;
-    if (max.z < scale) scale = max.z;
-    if (scale === 0) return;
-
-    const strokeWidth = scale / 300;
-    border.multiplyScalar(scale);
-    min.sub(border);
-    max.add(border.multiplyScalar(2));
-    const viewBoxTxt = [min.x, min.z, max.x, max.z].join(" ");
-
-    const ns = "http://www.w3.org/2000/svg";
-    const newSVG = window.document.createElementNS(ns, "svg");
-    newSVG.setAttribute("viewBox", viewBoxTxt);
-    for (let i = 0; i < rawFold.edges_vertices.length; i += 1) {
-      const line = window.document.createElementNS(ns, "line");
-      const edge = rawFold.edges_vertices[i];
-      let vertex = rawFold.vertices_coords[edge[0]];
-      line.setAttribute("stroke", colorForAssignment(rawFold.edges_assignment[i]));
-      line.setAttribute("opacity", opacityForAngle(rawFold.edges_foldAngle[i], rawFold.edges_assignment[i]));
-      line.setAttribute("x1", vertex[0]);
-      line.setAttribute("y1", vertex[2]);
-      vertex = rawFold.vertices_coords[edge[1]];
-      line.setAttribute("x2", vertex[0]);
-      line.setAttribute("y2", vertex[2]);
-      line.setAttribute("stroke-width", strokeWidth);
-      newSVG.appendChild(line);
-    }
-    // $("#svgViewer").html(newSVG);
-    // window.document.querySelector("#svgViewer").innerHTML = newSVG;
+    return false;
+  }
+  function cutFilter(el) {
+    const stroke = getStroke(el);
+    return typeForStroke(stroke) === "cut";
+  }
+  function triangulationFilter(el) {
+    const stroke = getStroke(el);
+    return typeForStroke(stroke) === "triangulation";
+  }
+  function hingeFilter(el) {
+    const stroke = getStroke(el);
+    return typeForStroke(stroke) === "hinge";
   }
 
-  function loadSVG(svg) {
-    const segmentized = Segmentize(svg, { svg: true, string: false });
-    // const segmentized = new DOMParser().parseFromString(segmentizedString, "text/xml").childNodes[0];
-    loadSegmentedSVG(segmentized);
+  function findType(_verticesRaw, _segmentsRaw, filter, $paths, $lines, $rects, $polygons, $polylines) {
+    parsePath(_verticesRaw, _segmentsRaw, $paths.filter(filter));
+    parseLine(_verticesRaw, _segmentsRaw, $lines.filter(filter));
+    parseRect(_verticesRaw, _segmentsRaw, $rects.filter(filter));
+    parsePolygon(_verticesRaw, _segmentsRaw, $polygons.filter(filter));
+    parsePolyline(_verticesRaw, _segmentsRaw, $polylines.filter(filter));
   }
+
+  function applyTransformation(vertex, transformations) {
+    if (transformations == undefined) return;
+    transformations = transformations.baseVal;
+    for (let i = 0; i < transformations.length; i += 1) {
+      const t = transformations[i];
+      const M = [[t.matrix.a, t.matrix.c, t.matrix.e], [t.matrix.b, t.matrix.d, t.matrix.f], [0,0,1]];
+      const out = numeric.dot(M, [vertex.x, vertex.z, 1]);
+      vertex.x = out[0];
+      vertex.z = out[1];
+    }
+  }
+
+  function parsePath(_verticesRaw, _segmentsRaw, $elements) {
+    for (let i = 0; i < $elements.length; i += 1) {
+      let path = $elements[i];
+      let pathVertices = [];
+      if (path === undefined || path.getPathData === undefined) {//mobile problem
+        let elm = '<div id="coverImg" ' +
+          'style="background: url(assets/doc/crane.gif) no-repeat center center fixed;' +
+          '-webkit-background-size: cover;' +
+          '-moz-background-size: cover;' +
+          '-o-background-size: cover;' +
+          'background-size: cover;">'+
+          '</div>';
+        $(elm).appendTo($("body"));
+        $("#noSupportModal").modal("show");
+        console.warn("path parser not supported");
+        return;
+      }
+      const segments = path.getPathData();
+      for (let j = 0; j < segments.length; j += 1) {
+        const segment = segments[j];
+        const { type } = segment;
+        let vertex;
+        switch (type) {
+          case "m": // dx, dy
+            if (j === 0) { //problem with inkscape files
+              vertex = new THREE.Vector3(segment.values[0], 0, segment.values[1]);
+            } else {
+              vertex = _verticesRaw[_verticesRaw.length-1].clone();
+              vertex.x += segment.values[0];
+              vertex.z += segment.values[1];
+            }
+            _verticesRaw.push(vertex);
+            pathVertices.push(vertex);
+            break;
+
+          case "l": // dx, dy
+            _segmentsRaw.push([_verticesRaw.length-1, _verticesRaw.length]);
+            if (path.targetAngle && _segmentsRaw.length>0) _segmentsRaw[_segmentsRaw.length-1].push(path.targetAngle);
+            vertex = _verticesRaw[_verticesRaw.length-1].clone();
+            vertex.x += segment.values[0];
+            vertex.z += segment.values[1];
+            _verticesRaw.push(vertex);
+            pathVertices.push(vertex);
+            break;
+
+          case "v": // dy
+            _segmentsRaw.push([_verticesRaw.length-1, _verticesRaw.length]);
+            if (path.targetAngle && _segmentsRaw.length>0) _segmentsRaw[_segmentsRaw.length-1].push(path.targetAngle);
+            vertex = _verticesRaw[_verticesRaw.length-1].clone();
+            vertex.z += segment.values[0];
+            _verticesRaw.push(vertex);
+            pathVertices.push(vertex);
+            break;
+
+          case "h": // dx
+            _segmentsRaw.push([_verticesRaw.length-1, _verticesRaw.length]);
+            if (path.targetAngle && _segmentsRaw.length>0) _segmentsRaw[_segmentsRaw.length-1].push(path.targetAngle);
+            vertex = _verticesRaw[_verticesRaw.length-1].clone();
+            vertex.x += segment.values[0];
+            _verticesRaw.push(vertex);
+            pathVertices.push(vertex);
+            break;
+
+          case "M": // x, y
+            vertex = new THREE.Vector3(segment.values[0], 0, segment.values[1]);
+            _verticesRaw.push(vertex);
+            pathVertices.push(vertex);
+            break;
+
+          case "L": // x, y
+            _segmentsRaw.push([_verticesRaw.length-1, _verticesRaw.length]);
+            if (path.targetAngle && _segmentsRaw.length>0) _segmentsRaw[_segmentsRaw.length-1].push(path.targetAngle);
+            _verticesRaw.push(new THREE.Vector3(segment.values[0], 0, segment.values[1]));
+            pathVertices.push(vertex);
+            break;
+
+          case "V": // y
+            _segmentsRaw.push([_verticesRaw.length-1, _verticesRaw.length]);
+            if (path.targetAngle && _segmentsRaw.length>0) _segmentsRaw[_segmentsRaw.length-1].push(path.targetAngle);
+            vertex = _verticesRaw[_verticesRaw.length-1].clone();
+            vertex.z = segment.values[0];
+            _verticesRaw.push(vertex);
+            pathVertices.push(vertex);
+            break;
+
+          case "H": // x
+            _segmentsRaw.push([_verticesRaw.length-1, _verticesRaw.length]);
+            if (path.targetAngle && _segmentsRaw.length>0) _segmentsRaw[_segmentsRaw.length-1].push(path.targetAngle);
+            vertex = _verticesRaw[_verticesRaw.length-1].clone();
+            vertex.x = segment.values[0];
+            _verticesRaw.push(vertex);
+            pathVertices.push(vertex);
+            break;
+        }
+      }
+      for (var j=0;j<pathVertices.length;j++) {
+        applyTransformation(pathVertices[j], path.transform);
+      }
+    }
+  }
+
+  function parseLine(_verticesRaw, _segmentsRaw, $elements) {
+    for (var i=0;i<$elements.length;i++) {
+      var element = $elements[i];
+      _verticesRaw.push(new THREE.Vector3(element.x1.baseVal.value, 0, element.y1.baseVal.value));
+      _verticesRaw.push(new THREE.Vector3(element.x2.baseVal.value, 0, element.y2.baseVal.value));
+      _segmentsRaw.push([_verticesRaw.length-2, _verticesRaw.length-1]);
+      if (element.targetAngle) _segmentsRaw[_segmentsRaw.length-1].push(element.targetAngle);
+      applyTransformation(_verticesRaw[_verticesRaw.length-2], element.transform);
+      applyTransformation(_verticesRaw[_verticesRaw.length-1], element.transform);
+    }
+  }
+
+  function parseRect(_verticesRaw, _segmentsRaw, $elements) {
+    for (var i=0;i<$elements.length;i++) {
+      var element = $elements[i];
+      var x = element.x.baseVal.value;
+      var y = element.y.baseVal.value;
+      var width = element.width.baseVal.value;
+      var height = element.height.baseVal.value;
+      _verticesRaw.push(new THREE.Vector3(x, 0, y));
+      _verticesRaw.push(new THREE.Vector3(x+width, 0, y));
+      _verticesRaw.push(new THREE.Vector3(x+width, 0, y+height));
+      _verticesRaw.push(new THREE.Vector3(x, 0, y+height));
+      _segmentsRaw.push([_verticesRaw.length-4, _verticesRaw.length-3]);
+      _segmentsRaw.push([_verticesRaw.length-3, _verticesRaw.length-2]);
+      _segmentsRaw.push([_verticesRaw.length-2, _verticesRaw.length-1]);
+      _segmentsRaw.push([_verticesRaw.length-1, _verticesRaw.length-4]);
+      for (var j=1;j<=4;j++) {
+        if (element.targetAngle) _segmentsRaw[_segmentsRaw.length-j].push(element.targetAngle);
+        applyTransformation(_verticesRaw[_verticesRaw.length-j], element.transform);
+      }
+    }
+  }
+
+  function parsePolygon(_verticesRaw, _segmentsRaw, $elements) {
+    for (var i=0;i<$elements.length;i++) {
+      var element = $elements[i];
+      for (var j=0;j<element.points.length;j++) {
+        _verticesRaw.push(new THREE.Vector3(element.points[j].x, 0, element.points[j].y));
+        applyTransformation(_verticesRaw[_verticesRaw.length-1], element.transform);
+
+        if (j<element.points.length-1) _segmentsRaw.push([_verticesRaw.length-1, _verticesRaw.length]);
+        else _segmentsRaw.push([_verticesRaw.length-1, _verticesRaw.length-element.points.length]);
+
+        if (element.targetAngle) _segmentsRaw[_segmentsRaw.length-1].push(element.targetAngle);
+      }
+    }
+  }
+
+  function parsePolyline(_verticesRaw, _segmentsRaw, $elements) {
+    for (var i=0;i<$elements.length;i++) {
+      var element = $elements[i];
+      for (var j=0;j<element.points.length;j++) {
+        _verticesRaw.push(new THREE.Vector3(element.points[j].x, 0, element.points[j].y));
+        applyTransformation(_verticesRaw[_verticesRaw.length-1], element.transform);
+        if (j>0) _segmentsRaw.push([_verticesRaw.length-1, _verticesRaw.length-2]);
+        if (element.targetAngle) _segmentsRaw[_segmentsRaw.length-1].push(element.targetAngle);
+      }
+    }
+  }
+
+  function loadSVG(url) {
+    SVGloader.load(url, (svg) => {
+      // var _$svg = $(svg);
+      const _$svg = svg.xml;
+
+      clearAll();
+
+      // warn of global styling
+      const $style = Array.from(_$svg.childNodes).filter(n => n.tagName === "style");
+      if ($style.length > 0) {
+        globals.warn(`Global styling found on SVG, this is currently ignored by the app.  This may cause some lines to be styled incorrectly and missed during import.  Please find a way to save this file without using global style tags.<br/><br/>Global styling:<br/><br/><b>${$style.html()}</b>`);
+      }
+
+      // warn of groups
+      // var $groups = _$svg.children("g");
+      // if ($groups.length>0) {
+      //     globals.warn("Grouped elements found in SVG, these are currently ignored by the app.  " +
+      //         "Please ungroup all elements before importing.");
+      // }
+
+      // format all appropriate svg elements
+      const $paths = Array.from(_$svg.getElementsByTagName("path"));
+      const $lines = Array.from(_$svg.getElementsByTagName("line"));
+      const $rects = Array.from(_$svg.getElementsByTagName("rect"));
+      const $polygons = Array.from(_$svg.getElementsByTagName("polygon"));
+      const $polylines = Array.from(_$svg.getElementsByTagName("polyline"));
+
+      // var $paths = _$svg.find("path");
+      // var $lines = _$svg.find("line");
+      // var $rects = _$svg.find("rect");
+      // var $polygons = _$svg.find("polygon");
+      // var $polylines = _$svg.find("polyline");
+      const wipe = a => a.setAttribute("style", "fill: none; stroke-dasharray: none;");
+      $paths.forEach(a => wipe(a));
+      $lines.forEach(a => wipe(a));
+      $rects.forEach(a => wipe(a));
+      $polygons.forEach(a => wipe(a));
+      $polylines.forEach(a => wipe(a));
+      // $paths.css({fill:"none", 'stroke-dasharray':"none"});
+      // $lines.css({fill:"none", 'stroke-dasharray':"none"});
+      // $rects.css({fill:"none", 'stroke-dasharray':"none"});
+      // $polygons.css({fill:"none", 'stroke-dasharray':"none"});
+      // $polylines.css({fill:"none", 'stroke-dasharray':"none"});
+
+      findType(verticesRaw, bordersRaw, borderFilter, $paths, $lines, $rects, $polygons, $polylines);
+      findType(verticesRaw, mountainsRaw, mountainFilter, $paths, $lines, $rects, $polygons, $polylines);
+      findType(verticesRaw, valleysRaw, valleyFilter, $paths, $lines, $rects, $polygons, $polylines);
+      findType(verticesRaw, cutsRaw, cutFilter, $paths, $lines, $rects, $polygons, $polylines);
+      findType(verticesRaw, triangulationsRaw, triangulationFilter, $paths, $lines, $rects, $polygons, $polylines);
+      findType(verticesRaw, hingesRaw, hingeFilter, $paths, $lines, $rects, $polygons, $polylines);
+
+      if (badColors.length > 0) {
+        // badColors = _.uniq(badColors);
+        const badColorHash = {};
+        badColors.forEach((c) => { badColorHash[c] = true; });
+        badColors = Object.keys(badColorHash);
+        let string = "Some objects found with the following stroke colors:<br/><br/>";
+        badColors.forEach(function (color) {
+          string += "<span style='background:" + color + "' class='colorSwatch'></span>" + color + "<br/>";
+        });
+        string +=  "<br/>These objects were ignored.<br/>  Please check that your file is set up correctly, <br/>" +
+          "see <b>File > File Import Tips</b> for more information.";
+        globals.warn(string);
+      }
+
+      // todo revert back to old pattern if bad import
+      const success = parseSVG(verticesRaw, bordersRaw, mountainsRaw, valleysRaw, cutsRaw, triangulationsRaw, hingesRaw);
+      if (!success) return;
+
+      // find max and min vertices
+      const max = new THREE.Vector3(-Infinity, -Infinity, -Infinity);
+      const min = new THREE.Vector3(Infinity, Infinity, Infinity);
+      for (let i = 0; i < rawFold.vertices_coords.length; i += 1) {
+        const vertex = new THREE.Vector3(
+          rawFold.vertices_coords[i][0],
+          rawFold.vertices_coords[i][1],
+          rawFold.vertices_coords[i][2]
+        );
+        max.max(vertex);
+        min.min(vertex);
+      }
+      if (min.x === Infinity) {
+        if (badColors.length === 0) globals.warn("no geometry found in file");
+        return;
+      }
+      max.sub(min);
+      const border = new THREE.Vector3(0.1, 0, 0.1);
+      let scale = max.x;
+      if (max.z < scale) scale = max.z;
+      if (scale === 0) return;
+
+      const strokeWidth = scale / 300;
+      border.multiplyScalar(scale);
+      min.sub(border);
+      max.add(border.multiplyScalar(2));
+      const viewBoxTxt = [min.x, min.z, max.x, max.z].join(" ");
+
+      const ns = "http://www.w3.org/2000/svg";
+      const newSVG = window.document.createElementNS(ns, "svg");
+      newSVG.setAttribute("viewBox", viewBoxTxt);
+      for (let i = 0; i < rawFold.edges_vertices.length; i += 1) {
+        const line = window.document.createElementNS(ns, "line");
+        const edge = rawFold.edges_vertices[i];
+        let vertex = rawFold.vertices_coords[edge[0]];
+        line.setAttribute("stroke", colorForAssignment(rawFold.edges_assignment[i]));
+        line.setAttribute("opacity", opacityForAngle(rawFold.edges_foldAngle[i], rawFold.edges_assignment[i]));
+        line.setAttribute("x1", vertex[0]);
+        line.setAttribute("y1", vertex[2]);
+        vertex = rawFold.vertices_coords[edge[1]];
+        line.setAttribute("x2", vertex[0]);
+        line.setAttribute("y2", vertex[2]);
+        line.setAttribute("stroke-width", strokeWidth);
+        newSVG.appendChild(line);
+      }
+      // $("#svgViewer").html(svg);
+
+      },
+      function() {},
+      function(error) {
+        globals.warn("Error loading SVG " + url + " : " + error);
+        console.warn(error);
+    });
+  }
+
+  // function loadSVG(svg) {
+  //   const segmentized = Segmentize(svg, { svg: true, string: false });
+  //   // const segmentized = new DOMParser().parseFromString(segmentizedString, "text/xml").childNodes[0];
+  //   loadSegmentedSVG(segmentized);
+  // }
 
   function processFold(fold, returnCreaseParams) {
 

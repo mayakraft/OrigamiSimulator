@@ -18,6 +18,8 @@ import centerTexture from "../shaders/centerTexture.frag";
 import copyTexture from "../shaders/copyTexture.frag";
 import updateCreaseGeo from "../shaders/updateCreaseGeo.frag";
 
+import window from "../environment/window";
+
 const THREE = window.THREE || require("three");
 
 // ///////////////////////

@@ -35,25 +35,33 @@ div, canvas {
     <span>Fold: <span id="fold-percent-label">50</span>%</span>
   </div>
 
-  <!-- SVG crease pattern -->
+  <!-- SVG crease pattern (synchronous loading) -->
   <svg id="two-fold" display="none" version="1.1" xmlns="http://www.w3.org/2000/svg" width="1" height="1" viewBox="0 0 1 1"><rect width="1" height="1" fill="white" stroke="black"></rect><line x1="0" y1="0" x2="0.5" y2="0.5" stroke="red"></line><line x1="0.5" y1="0.5" x2="1" y2="1" stroke="red"></line><line y1="1" x2="0.5" y2="0.5" stroke="red"></line><line x1="1" x2="0.5" y2="0.5" stroke="blue"></line></svg>
 
+
+<!-- dependencies required before including origami-simulator.js -->
 <script src="js/three.min.js"></script>
 <script src="js/trackballcontrols.js"></script>
 <script src="js/fold.js"></script>
 <script src="js/earcut.min.js"></script>
-<script src="js/svg-segmentize.min.js"></script>
+<script src="js/SVGLoader.js"></script>
 
-<script type="text/javascript" src="../origami-simulator.js"></script>
+<script type="text/javascript" src="../origami-simulator.min.js"></script>
 
 <script>
 const app = OrigamiSimulator({ backgroundColor: "eee" });
+// const app = OrigamiSimulator({
+//  parent: document.querySelector("#simulator-container")
+// });
 
-// const container = document.querySelector("#simulator-container");
-// const app = OrigamiSimulator({ append: container });
+// sync load SVG file (from above)
+// window.addEventListener("load", () => {
+//   app.loadSVG(document.querySelector("#two-fold"));
+// });
 
+// async load SVG file
 window.addEventListener("load", () => {
-  app.loadSVG(document.querySelector("#two-fold"));
+  app.loadSVG("two-fold.svg");
 });
 
 document.getElementById("fold-percent-slider").oninput = function (e) {

@@ -2,15 +2,30 @@
  * Created by ghassaei on 9/16/16.
  */
 
+import window from "./environment/window";
+import {
+  isBrowser,
+  isNode
+} from "./environment/detect";
+
 const THREE = window.THREE || require("three");
-const TrackballControls = window.TrackballControls || require("three-trackballcontrols");
+// const TrackballControls = window.TrackballControls || require("three-trackballcontrols");
+
+// workaround for trackball controls in node. which isn't working server side
+let TrackballControls;
+if (isNode && !isBrowser) {
+  TrackballControls = function () { return {}; };
+} else {
+  TrackballControls = window.TrackballControls || require("three-trackballcontrols");
+}
+
 // import * as THREE from "../import/three.module";
 // import { TrackballControls } from "../import/trackballcontrols";
 
 function initThreeView(globals) {
   // todo, make sure whatever is calling this is waiting for DOM to load
   // to get the client rect below
-  const container = globals.append;
+  const container = globals.parent || window.document.getElementsByTagName("body")[0];
   const rect = (container != null
     ? container.getBoundingClientRect()
     : { x: 0, y: 0, width: 320, height: 240 });

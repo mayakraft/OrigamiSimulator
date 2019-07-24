@@ -5,6 +5,8 @@
 // const numeric = require("numeric"); // this is not the correct npm name.
 // search npm for the right package, or rewrite to match a new package
 
+import window from "./environment/window";
+
 const THREE = window.THREE || require("three");
 // import { THREE.Vector3 } from "../import/three.module";
 
