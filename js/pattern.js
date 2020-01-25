@@ -126,7 +126,7 @@ function initPattern(globals) {
   }
   function opacityForAngle(angle, assignment) {
     if (angle === null || assignment === "F") return 1;
-    return Math.abs(angle) / Math.PI;
+    return Math.abs(angle) / 180;
   }
 
   const multiply_vector2_matrix2 = function (vector, matrix) {
@@ -164,7 +164,7 @@ function initPattern(globals) {
     const stroke = getStroke(el);
     if (typeForStroke(stroke) === "mountain") {
       const opacity = getOpacity(el);
-      el.targetAngle = -opacity * Math.PI;
+      el.targetAngle = -opacity * 180;
       return true;
     }
     return false;
@@ -173,7 +173,7 @@ function initPattern(globals) {
     const stroke = getStroke(el);
     if (typeForStroke(stroke) === "valley") {
       const opacity = getOpacity(el);
-      el.targetAngle = opacity * Math.PI;
+      el.targetAngle = opacity * 180;
       return true;
     }
     return false;
@@ -1106,7 +1106,9 @@ function initPattern(globals) {
       const triangles = earcut(faceVert, null, is2d ? 2 : 3);
 
       for (let j = 0; j < triangles.length; j += 3) {
-        const tri = [face[triangles[j + 2]], face[triangles[j + 1]], face[triangles[j]]];
+        // this fixes the bug where triangles from earcut() have backwards winding
+        // const tri = [face[triangles[j + 2]], face[triangles[j + 1]], face[triangles[j]]];
+        const tri = [face[triangles[j + 1]], face[triangles[j + 2]], face[triangles[j]]];
         const foundEdges = [false, false, false]; // ab, bc, ca
 
         for (let k = 0; k < faceEdges.length; k += 1) {

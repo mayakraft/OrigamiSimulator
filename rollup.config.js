@@ -44,4 +44,5 @@ module.exports = [{
       include: ["**/*.frag", "**/*.vert"], // import shaders files
     }),
   ],
-}];
+}
+];

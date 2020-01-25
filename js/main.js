@@ -53,14 +53,18 @@ const OrigamiSimulator = function (options) {
 
 
   // object methods
+  const loadFOLD = function (foldObject) {
+    app.threeView.resetModel();
+    return app.pattern.setFoldData(foldObject)
+  };
   const loadSVG = function (svgAsDomNode) {
     app.threeView.resetModel();
-    app.pattern.loadSVG(svgAsDomNode);
+    return app.pattern.loadSVG(svgAsDomNode);
   };
   const loadSVGString = function (svgAsString) {
     app.threeView.resetModel();
     const svg = new DOMParser().parseFromString(svgAsString, "text/xml").childNodes[0];
-    app.pattern.loadSVG(svg);
+    return app.pattern.loadSVG(svg);
   };
   const warn = msg => console.warn(msg);
   const noCreasePatternAvailable = () => app.extension === "fold";
@@ -75,6 +79,7 @@ const OrigamiSimulator = function (options) {
     app.threeView.resetModel();
   };
 
+  Object.defineProperty(app, "loadFOLD", { value: loadFOLD });
   Object.defineProperty(app, "loadSVG", { value: loadSVG });
   Object.defineProperty(app, "loadSVGString", { value: loadSVGString });
   Object.defineProperty(app, "warn", { value: warn });
