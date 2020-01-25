@@ -46,7 +46,7 @@ div, canvas {
 <script src="js/earcut.min.js"></script>
 <script src="js/SVGLoader.js"></script>
 
-<script type="text/javascript" src="../origami-simulator.min.js"></script>
+<script type="text/javascript" src="../origami-simulator.js"></script>
 
 <script>
 const app = OrigamiSimulator({ backgroundColor: "eee" });
@@ -60,9 +60,27 @@ const app = OrigamiSimulator({ backgroundColor: "eee" });
 // });
 
 // async load SVG file
+// window.addEventListener("load", () => {
+//   app.loadSVG("two-fold.svg");
+// });
+
 window.addEventListener("load", () => {
-  app.loadSVG("two-fold.svg");
+  // fetch("fold/robby-kraft-walrus.fold")
+  fetch("fold/collinear.fold")
+  // fetch("fold/strip.fold")
+  // fetch("fold/simple.fold")
+  // fetch("fold/simple-2.fold")
+  // fetch("fold/single-vertex.fold")
+  // fetch("fold/single-vertex-2.fold")
+  // fetch("fold/bird.fold")
+  // fetch("fold/frog.fold")
+    .then(data => data.json())
+    .then(json => {
+      var loadedFOLD = app.loadFOLD(json);
+      console.log("loaded FOLD", loadedFOLD);
+    });
 });
+
 
 document.getElementById("fold-percent-slider").oninput = function (e) {
   app.foldPercent = parseInt(e.target.value, 10) / 100.0;

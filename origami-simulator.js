@@ -2,7 +2,7 @@
 (function (global, factory) {
   typeof exports === 'object' && typeof module !== 'undefined' ? module.exports = factory() :
   typeof define === 'function' && define.amd ? define(factory) :
-  (global.OrigamiSimulator = factory());
+  (global = global || self, global.OrigamiSimulator = factory());
 }(this, (function () { 'use strict';
 
   var globalDefaults = {
@@ -99,6 +99,10 @@
   }
 
   function _iterableToArrayLimit(arr, i) {
+    if (!(Symbol.iterator in Object(arr) || Object.prototype.toString.call(arr) === "[object Arguments]")) {
+      return;
+    }
+
     var _arr = [];
     var _n = true;
     var _d = false;
@@ -2037,7 +2041,7 @@
       for (var _i6 = 0; _i6 < creaseParams.length; _i6 += 1) {
         var _creaseParams = creaseParams[_i6];
         var type = _creaseParams[5] !== 0 ? 1 : 0;
-        creases.push(new Crease(globals, edges[_creaseParams[4]], _creaseParams[0], _creaseParams[2], _creaseParams[5], type, nodes[_creaseParams[1]], nodes[_creaseParams[3]], creases.length));
+        creases.push(new Crease(globals, edges[_creaseParams[4]], _creaseParams[0], _creaseParams[2], _creaseParams[5] * Math.PI / 180, type, nodes[_creaseParams[1]], nodes[_creaseParams[3]], creases.length));
       }
 
       vertices = [];
@@ -2306,7 +2310,7 @@
 
     function opacityForAngle(angle, assignment) {
       if (angle === null || assignment === "F") return 1;
-      return Math.abs(angle) / Math.PI;
+      return Math.abs(angle) / 180;
     }
 
     var multiply_vector2_matrix2 = function multiply_vector2_matrix2(vector, matrix) {
@@ -2342,7 +2346,7 @@
 
       if (typeForStroke(stroke) === "mountain") {
         var opacity = getOpacity(el);
-        el.targetAngle = -opacity * Math.PI;
+        el.targetAngle = -opacity * 180;
         return true;
       }
 
@@ -2354,7 +2358,7 @@
 
       if (typeForStroke(stroke) === "valley") {
         var opacity = getOpacity(el);
-        el.targetAngle = opacity * Math.PI;
+        el.targetAngle = opacity * 180;
         return true;
       }
 
@@ -3369,7 +3373,7 @@
         var triangles = earcut(faceVert, null, is2d ? 2 : 3);
 
         for (var _j4 = 0; _j4 < triangles.length; _j4 += 3) {
-          var tri = [face[triangles[_j4 + 2]], face[triangles[_j4 + 1]], face[triangles[_j4]]];
+          var tri = [face[triangles[_j4 + 1]], face[triangles[_j4 + 2]], face[triangles[_j4]]];
           var foundEdges = [false, false, false];
 
           for (var k = 0; k < faceEdges.length; k += 1) {
@@ -3549,15 +3553,20 @@
     app.dynamicSolver = initDynamicSolver(app);
     app.pattern = initPattern(app);
 
+    var loadFOLD = function loadFOLD(foldObject) {
+      app.threeView.resetModel();
+      return app.pattern.setFoldData(foldObject);
+    };
+
     var loadSVG = function loadSVG(svgAsDomNode) {
       app.threeView.resetModel();
-      app.pattern.loadSVG(svgAsDomNode);
+      return app.pattern.loadSVG(svgAsDomNode);
     };
 
     var loadSVGString = function loadSVGString(svgAsString) {
       app.threeView.resetModel();
       var svg = new DOMParser().parseFromString(svgAsString, "text/xml").childNodes[0];
-      app.pattern.loadSVG(svg);
+      return app.pattern.loadSVG(svg);
     };
 
     var warn = function warn(msg) {
@@ -3580,6 +3589,9 @@
       app.threeView.resetModel();
     };
 
+    Object.defineProperty(app, "loadFOLD", {
+      value: loadFOLD
+    });
     Object.defineProperty(app, "loadSVG", {
       value: loadSVG
     });

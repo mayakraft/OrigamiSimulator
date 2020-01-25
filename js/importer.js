@@ -127,7 +127,8 @@ function initImporter(globals) {
                   const normal2 = (vec2.cross(vec1)).normalize();
                   let angle = Math.abs(normal1.angleTo(normal2));
                   if (assignment == "M") angle *= -1;
-                  fold.edges_foldAngle[i] = angle;
+                  // up to this point, calculations were in radians
+                  fold.edges_foldAngle[i] = angle * 180 / Math.PI;
                   creaseParams[5] = angle;
                   j++;
                 }
@@ -137,8 +138,8 @@ function initImporter(globals) {
               const foldAngles = [];
               for (let i = 0; i < fold.edges_assignment.length; i += 1) {
                 const assignment = fold.edges_assignment[i];
-                if (assignment === "M") foldAngles.push(-Math.PI);
-                else if (assignment === "V") foldAngles.push(Math.PI);
+                if (assignment === "M") foldAngles.push(-180);
+                else if (assignment === "V") foldAngles.push(180);
                 else if (assignment === "F") foldAngles.push(0);
                 else foldAngles.push(null);
               }
