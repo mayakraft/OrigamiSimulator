@@ -5,8 +5,10 @@ import * as THREE from "three";
 import Node from "./node";
 import Beam from "./beam";
 import Crease from "./crease";
-import * as materials from "./materials";
+import * as defaultMaterials from "./materials";
 import getFacesAndVerticesForEdges from "../fold/creaseParams";
+
+// buffer geometry has materialIndex property. use this for front/back colors
 
 const assignments = Array.from("BMVFCU");
 
@@ -16,7 +18,7 @@ function Model({ scene, visible, axialStrain }) {
   this.backside = new THREE.Mesh(); // back face of mesh (different color)
   this.lines = {};
   assignments.forEach(key => {
-    this.lines[key] = new THREE.LineSegments(new THREE.BufferGeometry(), materials.line);
+    this.lines[key] = new THREE.LineSegments(new THREE.BufferGeometry(), defaultMaterials.line);
   });
   // vertex / color buffer arrays for GPU
   this.positions = null;
@@ -27,12 +29,18 @@ function Model({ scene, visible, axialStrain }) {
   this.creases = [];
   this.faces_vertices = [];
 
+  this.materials = {};
+  this.materials.front = defaultMaterials.front;
+  this.materials.back = defaultMaterials.back;
+  this.materials.strain = defaultMaterials.strain;
+  this.materials.line = defaultMaterials.line;
+
   this.makeNewGeometries();
   this.setAxialStrain(axialStrain);
   this.frontside.castShadow = true;
   this.frontside.receiveShadow = true;
   // this.backside.castShadow = true;
-  // this.backside.receiveShadow = true;
+  this.backside.receiveShadow = true;
 
   scene.add(this.frontside);
   scene.add(this.backside);
@@ -84,9 +92,9 @@ Model.prototype.makeNewGeometries = function () {
 
 Model.prototype.setAxialStrain = function (axialStrain) {
   this.frontside.material = axialStrain
-    ? materials.strain
-    : materials.front;
-  this.backside.material = materials.back;
+    ? this.materials.strain
+    : this.materials.front;
+  this.backside.material = this.materials.back;
   this.backside.visible = !axialStrain;
   // frontside.material.depthWrite = false;
   // backside.material.depthWrite = false;
@@ -110,8 +118,9 @@ Model.prototype.getMesh = function () { return [this.frontside, this.backside]; 
 Model.prototype.needsUpdate = function ({ axialStrain, vrEnabled }) {
   this.geometry.attributes.position.needsUpdate = true;
   if (axialStrain) this.geometry.attributes.color.needsUpdate = true;
-  // todo: need to bring this into the options
-  if (vrEnabled) this.geometry.computeBoundingBox();
+  // if (vrEnabled) this.geometry.computeBoundingBox();
+  // this is needed for the raycaster. even if VR is not enabled.
+  this.geometry.computeBoundingBox();
 };
 
 Model.prototype.makeObjects = function (fold, options) {
@@ -203,10 +212,10 @@ Model.prototype.setGeometryBuffers = function ({ positions, colors, indices, lin
 };
 
 Model.prototype.makeModelScale = function ({ scale, positions }) {
-  const factor = scale / this.geometry.boundingSphere.radius;
-  for (let i = 0; i < positions.length; i += 1) {
-    positions[i] *= factor;
-  }
+  // const factor = scale / this.geometry.boundingSphere.radius;
+  // for (let i = 0; i < positions.length; i += 1) {
+  //   positions[i] *= factor;
+  // }
   // positions.forEach(p => p *= factor);
   for (let i = 0; i < this.nodes.length; i += 1) {
     this.nodes[i].setOriginalPosition(

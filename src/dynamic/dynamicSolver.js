@@ -24,25 +24,20 @@
 
 import * as THREE from "three";
 import GPUMath from "./GPUMath";
-// loading raw text files into a react app is oddly difficult.
-// probably not very dependable but quickest workaround is to let the
-// raw.macro package handle everything. if package becomes unsupported,
-// figure out some kind of work around, all we need to be able to do is load raw text
-import raw from "raw.macro";
 
-const vertexShader = raw("../shaders/vertexShader.vert");
-const positionCalcShader = raw("../shaders/positionCalcShader.frag");
-const velocityCalcVerletShader = raw("../shaders/velocityCalcVerletShader.frag");
-const velocityCalcShader = raw("../shaders/velocityCalcShader.frag");
-const positionCalcVerletShader = raw("../shaders/positionCalcVerletShader.frag");
-const thetaCalcShader = raw("../shaders/thetaCalcShader.frag");
-const normalCalc = raw("../shaders/normalCalc.frag");
-const packToBytesShader = raw("../shaders/packToBytesShader.frag");
-const zeroTexture = raw("../shaders/zeroTexture.frag");
-const zeroThetaTexture = raw("../shaders/zeroThetaTexture.frag");
-const centerTexture = raw("../shaders/centerTexture.frag");
-const copyTexture = raw("../shaders/copyTexture.frag");
-const updateCreaseGeo = raw("../shaders/updateCreaseGeo.frag");
+import vertexShader from "../shaders/vertexShader.vert?raw";
+import positionCalcShader from "../shaders/positionCalcShader.frag?raw";
+import velocityCalcVerletShader from "../shaders/velocityCalcVerletShader.frag?raw";
+import velocityCalcShader from "../shaders/velocityCalcShader.frag?raw";
+import positionCalcVerletShader from "../shaders/positionCalcVerletShader.frag?raw";
+import thetaCalcShader from "../shaders/thetaCalcShader.frag?raw";
+import normalCalc from "../shaders/normalCalc.frag?raw";
+import packToBytesShader from "../shaders/packToBytesShader.frag?raw";
+import zeroTexture from "../shaders/zeroTexture.frag?raw";
+import zeroThetaTexture from "../shaders/zeroThetaTexture.frag?raw";
+import centerTexture from "../shaders/centerTexture.frag?raw";
+import copyTexture from "../shaders/copyTexture.frag?raw";
+import updateCreaseGeo from "../shaders/updateCreaseGeo.frag?raw";
 
 // ///////////////////////
 // currently looking into making this work on iOS.
@@ -133,6 +128,7 @@ function initDynamicSolver(options) {
       updateMaterials();
       options.materialHasChanged = false;
     }
+
     // if (options.shouldChangeCreasePercent) {
     //   setCreasePercent(creasePercent);
     //   options.shouldChangeCreasePercent = false;

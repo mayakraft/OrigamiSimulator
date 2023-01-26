@@ -121,23 +121,7 @@ DragControls.prototype.updateRaycaster = function (event) {
     ((event.clientX - bounds.x) / bounds.width) * 2 - 1,
     -((event.clientY - bounds.y) / bounds.height) * 2 + 1
   );
-  // const scaler = 0.6666;
-  // mouse.x *= scaler;
-  // mouse.y *= scaler;
   this.raycaster.setFromCamera(mouse, this.camera);
-
-  // setFromCamera(this.raycaster, mouse, this.camera);
-  // this.raycaster.camera = this.camera;
-
-  // optional
-  // console.log("help", this.arrowHelper);
-  // this.arrowHelper.direction.set(this.raycaster.ray.direction);
-  // this.arrowHelper.origin.set(this.raycaster.ray.origin);
-  // this.scene.remove(this.arrowHelper);
-  // this.arrowHelper = new THREE.ArrowHelper(this.raycaster.ray.direction, this.raycaster.ray.origin, 150, 0xff0000);
-  // this.scene.add(this.arrowHelper);
-
-  // console.log("origin, direction", this.raycaster.ray.origin, this.raycaster.ray.direction);
 };
 
 DragControls.prototype.highlightVertex = function (nearest) {
@@ -176,9 +160,10 @@ DragControls.prototype.highlightFace = function (nearest) {
 DragControls.prototype.nearestGraphComponents = function () {
   // simulator must have a model loaded
   if (!this.simulator.model) { return {}; }
-  const nearest = this.raycaster
-    .intersectObjects([this.simulator.model.frontside, this.simulator.model.backside])
-    .shift();
+  const intersections = this.raycaster
+    .intersectObjects([this.simulator.model.frontside, this.simulator.model.backside]);
+  console.log("intersections", intersections.length);
+  const nearest = intersections.shift();
   if (!nearest) { return {}; }
   const face_vertices = [nearest.face.a, nearest.face.b, nearest.face.c];
   const points = face_vertices
@@ -190,18 +175,12 @@ DragControls.prototype.nearestGraphComponents = function () {
     .sort((a, b) => a.d - b.d)
     .map(el => el.i)
     .shift();
-  return {
-    vertex: face_vertices[nearestFaceVertex],
-    // todo: edge
-    face: nearest.faceIndex,
-    face_vertices,
-    face_normal: nearest.face.normal,
-    points: points,
-  };
+  nearest.vertex = face_vertices[nearestFaceVertex];
+  nearest.face_vertices = face_vertices;
+  nearest.face_normal = nearest.face.normal;
+  nearest.points = points;
+  return nearest;
 };
-
-
-
 
 // call after setting raycaster to camera
 DragControls.prototype.moveNode = function (vertex) {
@@ -219,7 +198,7 @@ DragControls.prototype.moveNode = function (vertex) {
   const intersection = getIntersectionWithObjectPlane(highlightedObj.getPosition().clone());
   highlightedObj.moveManually(intersection);
   // globals.nodePositionHasChanged = true;
-}
+};
 
 /*
 function 3dUI(globals) {

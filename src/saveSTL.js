@@ -3,7 +3,6 @@
  */
 
 import * as THREE from "three";
-import window from "./environment/window";
 
 // Written by Paul Kaplan
 // import geometryToSTLBin from "../import/geometryToSTLBin";

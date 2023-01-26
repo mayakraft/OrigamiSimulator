@@ -1,9 +1,5 @@
-assets/attrib.txt
-.idea/
-todo.rtf
-
-CreasePatternScripts/**/*.pdf
-CreasePatternScripts/**/*.svg
-
 .DS_Store
-node_modules/**
+node_modules
+
+solidjs/node_modules
+solidjs/dist

@@ -5,6 +5,13 @@ import FOLD from "fold";
 import triangulateFold from "./triangulateFold";
 import splitCuts from "./splitCuts";
 import removeRedundantVertices from "./removeRedundantVertices";
+import boundingBox from "./boundingBox";
+
+const assignmentFlatAngles = {
+  M: -180, m: -180, V: 180, v: 180,
+};
+const makeEdgesFoldAngle = ({ edges_assignment }) => edges_assignment
+  .map(a => assignmentFlatAngles[a] || 0);
 /**
  * @description prepare a FOLD object for the GPU, returning a copy.
  * (does not modify the input object)
@@ -18,9 +25,29 @@ import removeRedundantVertices from "./removeRedundantVertices";
  * second optional parameter was also used to run "returnCreaseParams".
  * This is changed, now model/index calls "returnCreaseParams" directly.
  */
-function prepare(inputFOLD, epsilon = 0.01) {
+function prepare(inputFOLD, epsilon) {
   // copy input object
   let fold = JSON.parse(JSON.stringify(inputFOLD));
+  // these fields are absolutely necessary
+  if (!fold.vertices_coords || !fold.edges_vertices) {
+    throw new Error("model must contain vertices_coords and edges_vertices");
+  }
+  // one of these two fields is absolutely necessary.
+  // we need edges_foldAngle, but we can infer it from edges_assignment
+  if (!fold.edges_assignment && !fold.edges_foldAngle) {
+    throw new Error("model must contain either edges_assignment or edges_foldAngle");
+  }
+  // if edges_foldAngle does not exist, set it from edges_assignment
+  if (fold.edges_assignment && !fold.edges_foldAngle) {
+    fold.edges_foldAngle = makeEdgesFoldAngle(fold);
+  }
+
+  // find a nice epsilon for vertex merging, unless the user specified one.
+  if (epsilon === undefined) {
+    const box = boundingBox(fold);
+    epsilon = box ? Math.min(...box.span) * 1e-4 : 0.01;
+  }
+
   // make 3d in the X-Y plane
   for (let i = 0; i < fold.vertices_coords.length; i += 1) {
     const vertex = fold.vertices_coords[i];

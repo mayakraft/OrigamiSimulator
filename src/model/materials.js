@@ -20,7 +20,7 @@ const line = new THREE.LineBasicMaterial({
 });
 
 const strain = new THREE.MeshBasicMaterial({
-  vertexColors: THREE.VertexColors,
+  vertexColors: true,
   side: THREE.DoubleSide,
   polygonOffset: true,
   polygonOffsetFactor: polygonOffset, // positive value pushes polygon further away
@@ -61,7 +61,6 @@ const back = new THREE.MeshPhongMaterial({
 //   transparent: true
 // });
 
-
 // material = new THREE.MeshPhysicalMaterial( {
 //     map: null,
 //     color: 0x0000ff,
@@ -85,7 +84,6 @@ const back = new THREE.MeshPhongMaterial({
 //     premultipliedAlpha: true
 //     // TODO: Add custom blend mode that modulates background color by this materials color.
 // } );
-
 
 export {
   node,

@@ -4,7 +4,6 @@
 
 // try to get rid of this import
 import * as THREE from "three";
-import window from "./environment/window";
 
 function saveFOLD() {
 

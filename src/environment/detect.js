@@ -5,6 +5,8 @@ const isNode = typeof process !== "undefined"
   && process.versions != null
   && process.versions.node != null;
 
+// const isNode = true;
+
 // const isWebWorker = typeof self === "object"
 //   && self.constructor
 //   && self.constructor.name === "DedicatedWorkerGlobalScope";

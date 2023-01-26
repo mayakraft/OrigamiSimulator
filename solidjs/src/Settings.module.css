@@ -1,0 +1,26 @@
+.Container {
+	background-color: #0002;
+	z-index: 2;
+	position: absolute;
+	top: 0;
+	left: 0;
+	padding: 0.5rem;
+	overflow-y: auto;
+	max-height: 100vh;
+}
+
+.Container > * {
+	margin: 0.5rem 0;
+}
+
+.Container input[type=radio] + * {
+	margin: 0.5rem 0.25rem;
+}
+
+.Dark {
+	color: #ddd;
+}
+
+.Light {
+	color: black;
+}

@@ -4,7 +4,6 @@
 
 import * as THREE from "three";
 import numeric from "numeric";
-import window from "./environment/window";
 
 function initRigidSolver() {
 

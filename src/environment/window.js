@@ -4,12 +4,12 @@
  * - browser: get the built-in window object
  * - nodejs: package XMLDOM, https://www.npmjs.com/package/@xmldom/xmldom
  */
-import {
-  isBrowser,
-  isNode,
-} from "./detect";
-// the most minimal, valid, HTML5 document: doctype with non-whitespace title
-const htmlString = "<!DOCTYPE html><title>.</title>";
+// import {
+//   isBrowser,
+//   isNode,
+// } from "./detect";
+// import { DOMParser, XMLSerializer } from "@xmldom/xmldom";
+// const htmlString = "<!DOCTYPE html><title>.</title>";
 /**
  * @description an object named "window" with DOMParser, XMLSerializer,
  * and document.
@@ -17,15 +17,16 @@ const htmlString = "<!DOCTYPE html><title>.</title>";
  * in the case of nodejs, the package "xmldom" provides the methods.
  */
 const Window = (function () {
-  let win = {};
-  if (isNode) {
-    const { DOMParser, XMLSerializer } = require("@xmldom/xmldom");
-    win.DOMParser = DOMParser;
-    win.XMLSerializer = XMLSerializer;
-    win.document = new DOMParser().parseFromString(htmlString, "text/html");
-  } else if (isBrowser) {
-    win = window;
-  }
+  // let win = {};
+  // if (isNode) {
+  //   // const { DOMParser, XMLSerializer } = require("@xmldom/xmldom");
+  //   win.DOMParser = DOMParser;
+  //   win.XMLSerializer = XMLSerializer;
+  //   win.document = new DOMParser().parseFromString(htmlString, "text/html");
+  // } else if (isBrowser) {
+  //   win = window;
+  // }
+  let win = window;
   return win;
 }());
 

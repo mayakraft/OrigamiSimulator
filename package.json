@@ -1,0 +1,12 @@
+{
+  "name": "OrigamiSimulator",
+  "version": "0.0.0",
+  "description": "Origami Simulator by Amanda Ghassaei",
+  "license": "MIT",
+  "dependencies": {
+    "earcut": "^2.2.4",
+    "fold": "^0.11.3",
+    "numeric": "^1.2.6",
+    "three": "^0.148.0"
+  }
+}
