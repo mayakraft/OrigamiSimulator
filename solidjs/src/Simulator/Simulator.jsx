@@ -1,11 +1,15 @@
+/**
+ * Simulator (c) Kraft
+ * MIT license
+ */
 import Style from "./Simulator.module.css";
 import { createSignal, createEffect, onCleanup } from "solid-js";
 import * as THREE from "three";
-import ThreeCanvas from "./ThreeCanvas";
+import TrackballView from "../WebGL/TrackballView";
 import * as Materials from "./Materials";
 import { calculateTouches } from "./Touches";
-import OrigamiSimulator from "../../src/index.js";
-import boundingBox from "../../src/fold/boundingBox";
+import OrigamiSimulator from "../../../src/index.js";
+import boundingBox from "../../../src/fold/boundingBox";
 
 // intensity of point lights for light and dark mode
 const lightIntensityLightMode = 0.45;
@@ -33,8 +37,14 @@ const Simulator = (props) => {
 	const [pullNodesEnabled, setPullNodesEnabled] = createSignal(false);
 	const [requestResize, setRequestResize] = createSignal();
 
+	const windowDidResize = () => {
+		setupCamera(props.cameraRadius(), false);
+	};
+
+	const [modelSize, setModelSize] = createSignal(1);
+
 	// three js
-	let renderer, scene, camera;
+	let renderer, scene, camera, trackballControls;
 	// lighting
 	let lights, lightsRadius = 1;
 	// origami simulator
@@ -49,6 +59,7 @@ const Simulator = (props) => {
 	const updateViewDistance = () => {
 		const box = boundingBox(props.cp());
 		const vmax = box ? Math.max(...box.span) : 1;
+		setModelSize(vmax);
 		setCameraRadius(vmax);
 		lightsRadius = vmax * Math.SQRT1_2;
 		updateLightsPosition();
@@ -68,6 +79,9 @@ const Simulator = (props) => {
 
 		lights = lightVertices.map(() => new THREE.PointLight());
 		lights.forEach(light => scene.add(light));
+
+		// trackball.maxDistance = vmax * 30;
+		// trackball.minDistance = vmax * 0.1;
 
 		updateLightsPosition();
 		initializeRaycaster();
@@ -103,6 +117,7 @@ const Simulator = (props) => {
 		createEffect(() => props.simulatorOn() ? simulator.start() : simulator.stop());
 		createEffect(() => simulator.setStrain(props.simulatorStrain()));
 		createEffect(() => simulator.setFoldAmount(props.simulatorFoldAmount()));
+		// createEffect(() => { trackballControls.enabled = trackballEnabled(); });
 		createEffect(() => {
 			const shadows = props.simulatorShowShadows();
 			// renderer.shadowMap.enabled = shadows;
@@ -125,6 +140,7 @@ const Simulator = (props) => {
 	});
 
 	const animate = () => {
+		// if (trackballEnabled()) { trackballControls.update(); }
 		// highlighting is already happening in the moveHandler, but
 		// if the simulator is on (more precisely, the fold percentage
 		// is changing), we need to update the highlighted vertices/faces.
@@ -185,6 +201,29 @@ const Simulator = (props) => {
 			[new THREE.MeshBasicMaterial(), new THREE.MeshBasicMaterial()]);
 		scene.add(raycasterFace);
 	};
+
+	const setupCamera = (vmax = 1, reset = true) => {
+		const scale = 1.25;
+		// the distance the camera should be to nicely fit the object (of size vmax)
+		const fitLength = camera.aspect > 1
+			? vmax * scale
+			: vmax * scale * (1 / camera.aspect);
+		if (reset) {
+			camera.position.set(0, 0, fitLength);
+			camera.up = new THREE.Vector3(0, 1, 0);
+		} else {
+			const length = fitLength / camera.position.length();
+			camera.position.x = camera.position.x * length;
+			camera.position.y = camera.position.y * length;
+			camera.position.z = camera.position.z * length;
+		}
+		camera.lookAt(0, 0, 0);
+		camera.far = vmax * 100;
+		camera.near = vmax / 100;
+		trackballControls.maxDistance = vmax * 30;
+		trackballControls.minDistance = vmax * 0.1;
+	};
+
 
 	// for the pull-vertex tool.
 	// orient the raycaster plane towards the camera and move it to the selected FOLD vertex.
@@ -307,12 +346,19 @@ const Simulator = (props) => {
 
 	return (<>
 		<div class={Style.Simulator}>
-			<ThreeCanvas
-				trackballEnabled={trackballEnabled}
+			<TrackballView
+				// props for the TrackballView
+				isEnabled={trackballEnabled()}
+				maxDistance={modelSize() * 30}
+				minDistance={modelSize() * 0.1}
+				panSpeed={1}
+				rotateSpeed={4}
+				zoomSpeed={16}
+				dynamicDampingFactor={1}
+				// props for the ThreeView child component
 				didMount={onMount}
-				requestResize={requestResize}
+				didResize={windowDidResize}
 				animate={animate}
-				cameraRadius={cameraRadius}
 			/>
 		</div>
 	</>);

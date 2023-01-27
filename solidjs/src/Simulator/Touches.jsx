@@ -1,3 +1,7 @@
+/**
+ * Simulator (c) Kraft
+ * MIT license
+ */
 import * as THREE from "three";
 
 export const calculateTouches = (model, raycaster) => {

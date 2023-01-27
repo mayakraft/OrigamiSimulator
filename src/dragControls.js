@@ -2,7 +2,6 @@
  * Created by amandaghassaei on 5/5/17.
  */
 import * as THREE from "three";
-// import window from "./environment/window";
 
 function DragControls ({ renderer, camera, simulator }) {
   this.renderer = renderer;

@@ -2,30 +2,33 @@
 
 This is a fork of Origami Simulator, by Amanda Ghassaei; see the [original repo](https://github.com/amandaghassaei/OrigamiSimulator) for an introduction.
 
-The primary purpose of the rewrite is to uncouple the codebase from its frontend and UI. This allows Origami Simulator to be instanced (multiple times even) inside of a custom Javascript app, including React, Svelte, SolidJS, etc..
+The primary purpose of the rewrite is to uncouple the codebase from its frontend and UI. This allows Origami Simulator to be instanced (multiple times even) inside of a custom Javascript framework, React, Svelte, SolidJS, etc..
+
+> this repo has become so heavily modified from the original, besides the core which has been preserved, the two repos are not really interchangeable anymore.
 
 # examples
 
-To run the examples, clone this repository and run `npm i` in **two directories**:
+To run the examples, clone this repository and run `npm i` **twice, in two directories**:
 
 - in the root of this project (this installs Origami Simulator's dependencies)
-- inside the directory matching the name of your preferred JS app.
+- choose a framework (Svelte, SolidJS...), cd into that directory and run `npm i` again.
 
-`cd` into the app directory and run the app (for example, Svelte or SolidJS start with `npm run dev`)
+Everything should be installed. Run the app using the standard command according to whichever framework you chose (`npm run dev` for Svelte/SolidJS).
 
 # installation
 
-create your project in whatever app of choice. install these additional dependencies:
+To incorporate Origami Simulator into your existing project, copy the `src/` directory in the root of this repository, and install Origami Simulator's dependencies:
 
 ```
 npm i three fold earcut numeric
 ```
 
-see the examples in this repo for getting an app up and running.
+Instancing OrigamiSimulator is not a simple process, maybe someday a tutorial will get written, until then, check out the examples included in this repo. A brief usage description follows.
 
 # usage
 
 The workflow goes something like this.
+
 You are in charge of setting up and managing three.js.
 
 1. initialize a three.js renderer, scene, camera, and animation loop. (there are hundreds of tutorials for this)

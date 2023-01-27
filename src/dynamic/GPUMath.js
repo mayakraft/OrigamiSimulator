@@ -3,7 +3,6 @@
  */
 
 import GLBoilerPlate from "./GLBoilerplate";
-import window from "../environment/window";
 
 function initGPUMath() {
   const glBoilerplate = GLBoilerPlate();
