@@ -6,54 +6,52 @@ import Settings from "./Settings";
 import craneCP from "../../fold/crane-cp.fold?raw";
 
 function App() {
-	// cp is the origami model, in FOLD format
-	const [cp, setCP] = createSignal(JSON.parse(craneCP));
-	// tool is either ["inspect", "pull"]
-	const [tool, setTool] = createSignal("inspect");
+	// the origami model, in FOLD format
+	const [origami, setOrigami] = createSignal(JSON.parse(craneCP));
+	// tool is either ["trackball", "pull"]
+	const [tool, setTool] = createSignal("trackball");
+	// turn on/off Origami Simulator's folding engine
+	const [active, setActive] = createSignal(false);
+	// override the material to show the model's strain forces
+	const [strain, setStrain] = createSignal(false);
+	// fold the origami model, float (0.0-1.0)
+	const [foldAmount, setFoldAmount] = createSignal(0);
+	// highlight vertices/faces under the cursor
+	const [showTouches, setShowTouches] = createSignal(true);
+	// turn on three.js shadows
+	const [showShadows, setShowShadows] = createSignal(false);
+	// swap materials based on the app color theme
 	const [darkMode, setDarkMode] = createSignal(true);
-	const [simulatorOn, setSimulatorOn] = createSignal(false);
-	const [simulatorStrain, setSimulatorStrain] = createSignal(false);
-	// float (0.0-1.0)
-	const [simulatorFoldAmount, setSimulatorFoldAmount] = createSignal(0);
-	const [simulatorShowTouches, setSimulatorShowTouches] = createSignal(true);
-	const [simulatorShowShadows, setSimulatorShowShadows] = createSignal(false);
-	// todo
-	const [simulatorPointers, setSimulatorPointers] = createSignal([]);
 
 	return (
 		<div class={styles.App}>
 			<Settings
-				cp={cp}
-				setCP={setCP}
+				origami={origami}
+				setOrigami={setOrigami}
 				tool={tool}
 				setTool={setTool}
+				active={active}
+				setActive={setActive}
+				strain={strain}
+				setStrain={setStrain}
+				foldAmount={foldAmount}
+				setFoldAmount={setFoldAmount}
+				showTouches={showTouches}
+				setShowTouches={setShowTouches}
+				showShadows={showShadows}
+				setShowShadows={setShowShadows}
 				darkMode={darkMode}
 				setDarkMode={setDarkMode}
-				simulatorOn={simulatorOn}
-				setSimulatorOn={setSimulatorOn}
-				simulatorStrain={simulatorStrain}
-				setSimulatorStrain={setSimulatorStrain}
-				simulatorFoldAmount={simulatorFoldAmount}
-				setSimulatorFoldAmount={setSimulatorFoldAmount}
-				simulatorShowTouches={simulatorShowTouches}
-				setSimulatorShowTouches={setSimulatorShowTouches}
-				simulatorShowShadows={simulatorShowShadows}
-				setSimulatorShowShadows={setSimulatorShowShadows}
-				simulatorPointers={simulatorPointers}
-				setSimulatorPointers={setSimulatorPointers}
 			/>
 			<Simulator
-				cp={cp}
+				origami={origami}
+				active={active}
+				foldAmount={foldAmount}
+				strain={strain}
 				tool={tool}
+				showTouches={showTouches}
+				showShadows={showShadows}
 				darkMode={darkMode}
-				// simulator
-				simulatorOn={simulatorOn}
-				simulatorShowTouches={simulatorShowTouches}
-				simulatorStrain={simulatorStrain}
-				simulatorFoldAmount={simulatorFoldAmount}
-				simulatorShowShadows={simulatorShowShadows}
-				// events
-				setSimulatorPointers={setSimulatorPointers}
 			/>
 		</div>
 	);

@@ -1,12 +1,12 @@
 import Style from "./Settings.module.css";
 
 const Settings = (props) => {
-
+	// throws error if file is not a valid JSON format
 	const fileDialogDidLoad = (string, filename, mimeType) => {
-		try { props.setCP(JSON.parse(string)); }
+		try { props.setOrigami(JSON.parse(string)); }
 		catch (error) { window.alert(error); }
 	};
-
+	// event handler for file dialog <input>
 	const fileDialogOnInput = (e) => {
 		const file = e.target.files[0];
 		let mimeType, filename;
@@ -31,8 +31,8 @@ const Settings = (props) => {
 				simulator active
 				<input
 					type="checkbox"
-					checked={props.simulatorOn()}
-					onClick={() => props.setSimulatorOn(!props.simulatorOn())}
+					checked={props.active()}
+					onClick={() => props.setActive(!props.active())}
 				/>
 			</h3>
 
@@ -42,18 +42,18 @@ const Settings = (props) => {
 				min="0"
 				max="1"
 				step="0.01"
-				disabled={!props.simulatorOn()}
-				value={props.simulatorFoldAmount()}
-				onInput={e => props.setSimulatorFoldAmount(e.target.value)} />
+				disabled={!props.active()}
+				value={props.foldAmount()}
+				onInput={e => props.setFoldAmount(e.target.value)} />
 
 			<h3>pointer tool</h3>
 			<input
 				type="radio"
 				name="radio-webgl-tool"
-				value="radio-webgl-tool-inspect"
-				onClick={() => props.setTool("inspect")}
-				checked={props.tool() === "inspect"} />
-			<label for="radio-webgl-tool-inspect">inspect</label>
+				value="radio-webgl-tool-trackball"
+				onClick={() => props.setTool("trackball")}
+				checked={props.tool() === "trackball"} />
+			<label for="radio-webgl-tool-trackball">trackball</label>
 			<input
 				type="radio"
 				name="radio-webgl-tool"
@@ -66,9 +66,9 @@ const Settings = (props) => {
 				show strain
 				<input
 					type="checkbox"
-					disabled={!props.simulatorOn()}
-					checked={props.simulatorStrain()}
-					onClick={() => props.setSimulatorStrain(!props.simulatorStrain())}
+					disabled={!props.active()}
+					checked={props.strain()}
+					onClick={() => props.setStrain(!props.strain())}
 				/>
 			</h3>
 
@@ -76,8 +76,8 @@ const Settings = (props) => {
 				show touches
 				<input
 					type="checkbox"
-					checked={props.simulatorShowTouches()}
-					onClick={() => props.setSimulatorShowTouches(!props.simulatorShowTouches())}
+					checked={props.showTouches()}
+					onClick={() => props.setShowTouches(!props.showTouches())}
 				/>
 			</h3>
 
@@ -85,8 +85,9 @@ const Settings = (props) => {
 				show shadows
 				<input
 					type="checkbox"
-					checked={props.simulatorShowShadows()}
-					onClick={() => props.setSimulatorShowShadows(!props.simulatorShowShadows())}
+					disabled={props.strain()}
+					checked={props.showShadows()}
+					onClick={() => props.setShowShadows(!props.showShadows())}
 				/>
 			</h3>
 

@@ -1,15 +1,19 @@
 /**
- * Simulator (c) Kraft
+ * Origami Simulator for SolidJS (c) Kraft
  * MIT license
  */
 import * as THREE from "three";
-
-export const calculateTouches = (model, raycaster) => {
+/**
+ * @description Given a 3D model and a raycaster, gather helpful information
+ * such as which face was intersected, what is the nearest vertex, etc..
+ * @returns {object[]} array of touch objects, or empty array if none.
+ */
+const makeTouches = (model, raycaster) => {
 	// simulator must have a model loaded
 	if (!model) { return []; }
+	const timeStamp = Date.now();
 	const intersections = raycaster
 		.intersectObjects([model.frontside, model.backside]);
-	const timeStamp = Date.now();
 	// for every intersection point, calculate a few more properties
 	intersections.forEach(touch => {
 		touch.timeStamp = timeStamp;
@@ -42,3 +46,5 @@ export const calculateTouches = (model, raycaster) => {
 	});
 	return intersections;
 };
+
+export default makeTouches;

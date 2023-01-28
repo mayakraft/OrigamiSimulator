@@ -1,5 +1,5 @@
 /**
- * Simulator (c) Kraft
+ * Origami Simulator for SolidJS (c) Kraft
  * MIT license
  */
 import Style from "./Simulator.module.css";

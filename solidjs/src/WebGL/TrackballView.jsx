@@ -1,5 +1,5 @@
 /**
- * TrackballView (c) Kraft
+ * TrackballView for SolidJS (c) Kraft
  * MIT license
  */
 import { createEffect, onCleanup } from "solid-js";
@@ -11,7 +11,7 @@ import ThreeView from "./ThreeView";
  * @param {object} props see ThreeView for its props, additionally, this
  * component offers these optional props (none are required), all relate
  * to the setup of the trackball controlls:
- * - isEnabled (boolean)
+ * - enabled (boolean)
  * - maxDistance (number)
  * - minDistance (number)
  * - panSpeed (number)
@@ -23,9 +23,9 @@ const TrackballView = (props) => {
 
 	let trackball;
 
-	const didMount = (renderer, scene, camera) => {
+	const didMount = ({ renderer, scene, camera }) => {
 		trackball = new TrackballControls(camera, renderer.domElement.parentNode);
-		createEffect(() => { trackball.enabled = props.isEnabled; });
+		createEffect(() => { trackball.enabled = props.enabled; });
 		createEffect(() => { trackball.maxDistance = props.maxDistance; });
 		createEffect(() => { trackball.minDistance = props.minDistance; });
 		createEffect(() => { trackball.panSpeed = props.panSpeed; });
@@ -36,7 +36,7 @@ const TrackballView = (props) => {
 		});
 		// bubble up event handler
 		if (props.didMount) {
-			props.didMount(renderer, scene, camera);
+			props.didMount({ renderer, scene, camera });
 		}
 	};
 

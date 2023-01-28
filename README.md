@@ -4,7 +4,7 @@ This is a fork of Origami Simulator, by Amanda Ghassaei; see the [original repo]
 
 The primary purpose of the rewrite is to uncouple the codebase from its frontend and UI. This allows Origami Simulator to be instanced (multiple times even) inside of a custom Javascript framework, React, Svelte, SolidJS, etc..
 
-> this repo has become so heavily modified from the original, besides the core which has been preserved, the two repos are not really interchangeable anymore.
+*This repo has become so heavily modified from the original, aside from the core which has been preserved. It's not really an intention to merge these repos at this point.*
 
 # examples
 
@@ -23,13 +23,13 @@ To incorporate Origami Simulator into your existing project, copy the `src/` dir
 npm i three fold earcut numeric
 ```
 
-Instancing OrigamiSimulator is not a simple process, maybe someday a tutorial will get written, until then, check out the examples included in this repo. A brief usage description follows.
+Now you can create an instance of OrigamiSimulator. Getting a simple instance up and running is simple, if you want some of the more advanced features like the vertex-grab UI, maybe check the framework examples for an implementation example.
 
 # usage
 
 The workflow goes something like this.
 
-You are in charge of setting up and managing three.js.
+You are in charge of setting up and managing three.js, meaning, you get to decorate the scene as you like, including lighting, but OrigamiSimulator will add and manage/update the origami model.
 
 1. initialize a three.js renderer, scene, camera, and animation loop. (there are hundreds of tutorials for this)
 2. initialize this simulator by passing in the renderer, scene, and camera.

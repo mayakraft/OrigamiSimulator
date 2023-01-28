@@ -1,5 +1,5 @@
 /**
- * ThreeView (c) Kraft
+ * ThreeView for SolidJS (c) Kraft
  * MIT license
  */
 import { createEffect, onMount, onCleanup } from "solid-js";
@@ -13,8 +13,8 @@ import Style from "./ThreeView.module.css";
  * didResize method and didMount where you are given a pointer to camera.
  * @param {object} props, this component does not require any props. However,
  * it does offer these optional prop bindings, all are event handlers.
- * - didMount(renderer, scene, camera), will be called just after three.js has
- *   finished initialization, but before the animation loop has started.
+ * - didMount({ renderer, scene, camera }), will be called just after three.js
+ *   has finished initialization, but before the animation loop has started.
  * - didResize(event), will be called following a window "resize" event.
  * - animate(), will be called inside the animation loop, right before the
  *   renderer draws to the screen.
@@ -113,7 +113,7 @@ const ThreeView = (props) => {
 		window.addEventListener("resize", onResize);
 		// bubble up the didMount event before starting the animation loop
 		if (props.didMount) {
-			props.didMount(renderer, scene, camera);
+			props.didMount({ renderer, scene, camera });
 		}
 		initializeAnimationLoop();
 	});

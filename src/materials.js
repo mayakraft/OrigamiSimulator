@@ -1,7 +1,3 @@
-/**
- * Simulator (c) Kraft
- * MIT license
- */
 import * as THREE from "three";
 
 const polygonOffsetFactor = 0.5;

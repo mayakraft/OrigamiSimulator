@@ -1,14 +1,15 @@
 /**
- * Simulator (c) Kraft
+ * Origami Simulator for SolidJS (c) Kraft
  * MIT license
  */
-import Style from "./Simulator.module.css";
 import { createSignal, createEffect, onCleanup } from "solid-js";
 import * as THREE from "three";
+import Style from "./Simulator.module.css";
 import TrackballView from "../WebGL/TrackballView";
-import * as Materials from "./Materials";
-import { calculateTouches } from "./Touches";
 import OrigamiSimulator from "../../../src/index.js";
+import Highlights from "../../../src/highlights.js";
+import Raycasters from "../../../src/raycasters.js";
+import * as Materials from "../../../src/materials";
 import boundingBox from "../../../src/fold/boundingBox";
 
 // intensity of point lights for light and dark mode
@@ -27,328 +28,168 @@ const lightVertices = [
 	[ 1, -1, -1],
 	[-1, -1, -1],
 ];
-
+/**
+ * @description SolidJS component and interface for Origami Simulator
+ * by Amanda Ghassaei.
+ * @param {object} props These props are hard coded into the app and
+ * are currently required:
+ * - props.origami (the origami model in FOLD format)
+ * - props.active (the active state of the folding engine, on or off)
+ * - props.foldAmount (the amount the model is folded, 0.0 - 1.0)
+ * - props.strain (override the material to show strain forces)
+ * - props.tool (the UI tool, currently there are two: "trackball", "pull")
+ * - props.showTouches (highlight the vertex/face underneath the cursor)
+ * - props.showShadows (turn on three.js shadows)
+ * - props.darkMode (swap materials based on light/dark mode)
+ */
 const Simulator = (props) => {
-	// const [foldAmount, setFoldAmount] = createSignal(0.5);
-	// const [strain, setStrain] = createSignal(false);
-	// const [isActive, setIsActive] = createSignal(true);
-	const [cameraRadius, setCameraRadius] = createSignal(1);
+	// model size will update the position of the lights, camera, and
+	// trackball controlls, allowing for models to be of vastly different scales
+	const [modelSize, setModelSize] = createSignal(1);
+	// the following are mutually exclusive, and activated/deactivated
+	// based on which UI tool is currently selected.
 	const [trackballEnabled, setTrackballEnabled] = createSignal(true);
 	const [pullNodesEnabled, setPullNodesEnabled] = createSignal(false);
-	const [requestResize, setRequestResize] = createSignal();
-
-	const windowDidResize = () => {
-		setupCamera(props.cameraRadius(), false);
-	};
-
-	const [modelSize, setModelSize] = createSignal(1);
-
-	// three js
-	let renderer, scene, camera, trackballControls;
-	// lighting
-	let lights, lightsRadius = 1;
+	// "touches" are the current position of the cursor and where the raycaster
+	// has intersected the origami mesh, nearest vertex/face, etc..
+	const [touches, setTouches] = createSignal([]);
 	// origami simulator
-	let simulator, raycaster;
-	// for the pull-vertex tool. "raycasterPullVertex" is the currently moving vertex
-	let raycasterPlane, raycasterPullVertex;
-	// visualize the raycaster
-	let raycasterPoint, raycasterVertex, raycasterFace;
-	// todo: idea- duplicate highlighted vertex, one obeys depthTest with full
-	// opacity, the other is always visible with half opacity.
-
-	const updateViewDistance = () => {
-		const box = boundingBox(props.cp());
-		const vmax = box ? Math.max(...box.span) : 1;
-		setModelSize(vmax);
-		setCameraRadius(vmax);
-		lightsRadius = vmax * Math.SQRT1_2;
-		updateLightsPosition();
-	};
-
-	createEffect(() => {
-		cameraRadius();
-		setRequestResize(Math.random());
-	});
+	let simulator;
+	// all raycaster methods for the user interface
+	let raycasters;
+	// highlighted geometry indicating the selected vertex/face
+	let highlights;
+	// three.js lights for this scene
+	let lights;
 	/**
-	 * note, this is not Solid-JS's onMount function, but it functions as the same
+	 * @description This is the callback from ThreeView after three.js has
+	 * finished initializing. This is not the JS framework's builtin function.
 	 */
-	const onMount = (_renderer, _scene, _camera) => {
-		renderer = _renderer;
-		scene = _scene;
-		camera = _camera;
-
-		lights = lightVertices.map(() => new THREE.PointLight());
-		lights.forEach(light => scene.add(light));
-
-		// trackball.maxDistance = vmax * 30;
-		// trackball.minDistance = vmax * 0.1;
-
-		updateLightsPosition();
-		initializeRaycaster();
-		simulator = OrigamiSimulator({
-			renderer: renderer,
-			scene: scene,
-			camera: camera,
-		});
-
-		createEffect(() => {
-			try {
-				simulator.load(props.cp());
-				updateViewDistance();
-			} catch (error) {
-				window.alert(error);
-			}
-		});
-		// refresh the canvas
-		createEffect(() => {
-			props.tool();
-			updateViewDistance();
-			setRequestResize(Math.random());
-			raycasterPullVertex = undefined;
-		});
-		createEffect(() => {
-			setTrackballEnabled(props.tool() !== "pull");
-			setPullNodesEnabled(props.tool() === "pull");
-			// this.simulator.strain = this.state.strain;
-			// this.rotateControls.enabled = this.state.tool === "rotate"
-			// this.dragControls.enabled = this.state.tool === "grab";
-		});
-		createEffect(() => updateStyle(props.darkMode()));
-		createEffect(() => props.simulatorOn() ? simulator.start() : simulator.stop());
-		createEffect(() => simulator.setStrain(props.simulatorStrain()));
-		createEffect(() => simulator.setFoldAmount(props.simulatorFoldAmount()));
-		// createEffect(() => { trackballControls.enabled = trackballEnabled(); });
-		createEffect(() => {
-			const shadows = props.simulatorShowShadows();
-			// renderer.shadowMap.enabled = shadows;
-			simulator.shadows = shadows;
-			lights[0].castShadow = shadows;
-			lights[7].castShadow = shadows;
-			lights[3].castShadow = shadows;
-			lights[4].castShadow = shadows;
-		});
-		renderer.domElement.addEventListener("mousedown", raycasterPressHandler, false);
-		renderer.domElement.addEventListener("mouseup", raycasterReleaseHandler, false);
-		renderer.domElement.addEventListener("mousemove", raycasterMoveHandler, false);
-	};
-
-	onCleanup(() => {
-		renderer.domElement.removeEventListener("mousedown", raycasterPressHandler, false);
-		renderer.domElement.removeEventListener("mouseup", raycasterReleaseHandler, false);
-		renderer.domElement.removeEventListener("mousemove", raycasterMoveHandler, false);
-		simulator.dealloc();
-	});
-
-	const animate = () => {
-		// if (trackballEnabled()) { trackballControls.update(); }
-		// highlighting is already happening in the moveHandler, but
-		// if the simulator is on (more precisely, the fold percentage
-		// is changing), we need to update the highlighted vertices/faces.
-		// also, only do this when the pull tool is not pulling
-		if (simulator && simulator.isOn) {
-			const isPulling = pullNodesEnabled() && raycasterPullVertex !== undefined;
-			const touch = isPulling ? undefined : calculateTouches(simulator.model, raycaster)[0];
-			highlightTouch(touch);
-			// if the user is pulling on a node, manually move the node to the raycaster's
-			// new intersection with the raycaster plane.
-			if (isPulling) {
-				const node = simulator.model.nodes[raycasterPullVertex];
-				if (!node) { return; }
-				let intersection = new THREE.Vector3();
-				raycaster.ray.intersectPlane(raycasterPlane, intersection);
-				node.moveManually(intersection);
-				simulator.modelDidChange();
-			}
-		}
-	};
-	/**
-	 * all initialize methods are intended to only be called once. onMount
-	 */
-	const initializeRaycaster = () => {
-		// setup raycaster and plane (both will be dynamically updated)
-		raycaster = new THREE.Raycaster();
-		// raycaster.setFromCamera({x: 0.001, y: 0.002}, camera);
-		raycaster.setFromCamera({x: Infinity, y: 0}, camera);
-		raycasterPlane = new THREE.Plane(new THREE.Vector3(0, 0, 1));
-
-		// setup highlighted point. does not adhere to depthTest
-		const raycasterPointPositionAttr = new THREE.BufferAttribute(new Float32Array([0, 0, 0]), 3);
-		raycasterPointPositionAttr.setUsage(THREE.DynamicDrawUsage);
-		const raycasterPointBuffer = new THREE.BufferGeometry();
-		raycasterPointBuffer.setAttribute("position", raycasterPointPositionAttr);
-		raycasterPoint = new THREE.Points(raycasterPointBuffer);
-		raycasterPoint.renderOrder = 1000;
-		scene.add(raycasterPoint);
-
-		// setup highlighted vertex. does not adhere to depthTest
-		const raycasterVertexPositionAttr = new THREE.BufferAttribute(new Float32Array([0, 0, 0]), 3);
-		raycasterVertexPositionAttr.setUsage(THREE.DynamicDrawUsage);
-		const raycasterVertexBuffer = new THREE.BufferGeometry();
-		raycasterVertexBuffer.setAttribute("position", raycasterVertexPositionAttr);
-		raycasterVertex = new THREE.Points(raycasterVertexBuffer);
-		raycasterVertex.renderOrder = 1001;
-		scene.add(raycasterVertex);
-
-		// setup highlighted face. two triangle faces, three vertices with x, y, z
-		const raycasterFacePositionBuffer = new Float32Array(Array(2 * 3 * 3).fill(0.0));
-		const raycasterFacePositionAttr = new THREE.BufferAttribute(raycasterFacePositionBuffer, 3);
-		raycasterFacePositionAttr.setUsage(THREE.DynamicDrawUsage);
-		const raycasterFaceBuffer = new THREE.BufferGeometry();
-		raycasterFaceBuffer.setAttribute("position", raycasterFacePositionAttr);
-		raycasterFaceBuffer.addGroup(0, 3, 1);
-		raycasterFaceBuffer.addGroup(3, 3, 0);
-		raycasterFace = new THREE.Mesh(raycasterFaceBuffer,
-			[new THREE.MeshBasicMaterial(), new THREE.MeshBasicMaterial()]);
-		scene.add(raycasterFace);
-	};
-
-	const setupCamera = (vmax = 1, reset = true) => {
-		const scale = 1.25;
-		// the distance the camera should be to nicely fit the object (of size vmax)
-		const fitLength = camera.aspect > 1
-			? vmax * scale
-			: vmax * scale * (1 / camera.aspect);
-		if (reset) {
-			camera.position.set(0, 0, fitLength);
-			camera.up = new THREE.Vector3(0, 1, 0);
-		} else {
-			const length = fitLength / camera.position.length();
-			camera.position.x = camera.position.x * length;
-			camera.position.y = camera.position.y * length;
-			camera.position.z = camera.position.z * length;
-		}
-		camera.lookAt(0, 0, 0);
-		camera.far = vmax * 100;
-		camera.near = vmax / 100;
-		trackballControls.maxDistance = vmax * 30;
-		trackballControls.minDistance = vmax * 0.1;
-	};
-
-
-	// for the pull-vertex tool.
-	// orient the raycaster plane towards the camera and move it to the selected FOLD vertex.
-	const raycasterPressHandler = (event) => {
-		const firstTouch = calculateTouches(simulator.model, raycaster)[0];
-		if (!firstTouch || firstTouch.vertex === undefined) { return; }
-		raycasterPullVertex = firstTouch.vertex;
-		const position = new THREE.Vector3(
-			simulator.model.positions[firstTouch.vertex * 3 + 0],
-			simulator.model.positions[firstTouch.vertex * 3 + 1],
-			simulator.model.positions[firstTouch.vertex * 3 + 2]
-		);
-		let cameraOrientation = new THREE.Vector3();
-		camera.getWorldDirection(cameraOrientation);
-		const dist = position.dot(cameraOrientation);
-		raycasterPlane.set(cameraOrientation, -dist);
-	};
-	// for the pull-vertex tool. disable the pull motion when mouseup
-	const raycasterReleaseHandler = (event) => {
-		raycasterPullVertex = undefined;
-	};
-
-	const raycasterMoveHandler = (event) => {
-		const bounds = renderer.domElement.getBoundingClientRect();
-		const mouse = new THREE.Vector2(
-			((event.clientX - bounds.x) / bounds.width) * 2 - 1,
-			-((event.clientY - bounds.y) / bounds.height) * 2 + 1
-		);
-		raycaster.setFromCamera(mouse, camera);
-		const touches = calculateTouches(simulator.model, raycaster);
-		if (!simulator.isOn) { highlightTouch(touches[0]); }
-		props.setSimulatorPointers(touches);
-	};
-
-	const updateLightsPosition = () => {
-		let matrix = new THREE.Matrix4();
-		if (camera) {
-			matrix = camera.matrixWorldInverse.clone();
-			matrix.setPosition(0, 0, 0);
-		}
-		lights.forEach((light, i) => {
-			light.position.set(...lightVertices[i % lightVertices.length]);
-			light.position.setLength(lightsRadius);
-			// light.position.applyMatrix4(matrix);
+	const onMount = ({ renderer, scene, camera }) => {
+		// initialize origami simulator
+		simulator = OrigamiSimulator({ renderer, scene, camera });
+		highlights = Highlights({ scene, simulator });
+		raycasters = Raycasters({ renderer, scene, camera, simulator, setTouches });
+		lights = lightVertices.map(pos => {
+			const light = new THREE.PointLight();
+			light.position.set(...pos);
 			light.distance = 0;
 			light.decay = 2;
 			light.castShadow = false;
 			light.shadow.mapSize.width = 512; // default
 			light.shadow.mapSize.height = 512; // default
-			light.shadow.camera.near = lightsRadius / 10; // 0.5 default
-			light.shadow.camera.far = lightsRadius * 10; // 500 default
+			scene.add(light);
+			return light;
+		});
+		// load a new origami model. thrown errors will be bad file format.
+		createEffect(() => {
+			try {
+				simulator.load(props.origami());
+				const box = boundingBox(props.origami());
+				const vmax = box ? Math.max(...box.span) : 1;
+				setModelSize(vmax);
+			} catch (error) {
+				window.alert(error);
+			}
+		});
+		// on model change, update camera position
+		createEffect(() => {
+			const vmax = modelSize();
+			// scale is due to the camera's FOV
+			const scale = 1.25;
+			// the distance the camera should be to nicely fit the object (of size vmax)
+			const fitLength = camera.aspect > 1
+				? vmax * scale
+				: vmax * scale * (1 / camera.aspect);
+			const length = fitLength / camera.position.length();
+			camera.position.multiplyScalar(length);
+			camera.lookAt(0, 0, 0);
+			camera.far = vmax * 100;
+			camera.near = vmax / 100;
+		});
+		// on model change, update the position of the lights
+		createEffect(() => {
+			const radius = modelSize() * Math.SQRT1_2;
+			// todo, might need these inside the initialize method
+			lights.forEach((light, i) => {
+				light.position.set(...lightVertices[i % lightVertices.length]);
+				light.position.setLength(radius);
+				light.shadow.camera.near = radius / 10; // 0.5 default
+				light.shadow.camera.far = radius * 10; // 500 default
+			});
+		});
+		// tool -> what happens when cursor is pressed
+		createEffect(() => {
+			setTrackballEnabled(props.tool() !== "pull");
+			setPullNodesEnabled(props.tool() === "pull");
+		});
+		// forward these props to settings of origami simulator
+		createEffect(() => props.active() ? simulator.start() : simulator.stop());
+		createEffect(() => simulator.setStrain(props.strain()));
+		createEffect(() => simulator.setFoldAmount(props.foldAmount()));
+		// deliver the touch data from the raycaster to be highlighted
+		createEffect(() => highlights.highlightTouch(touches()[0]));
+		// nitpicky. upon tool change we need raycasterPullVertex to be undefined
+		createEffect(() => raycasters.raycasterReleaseHandler(props.tool()));
+		// reset materials depending on dark or light mode
+		createEffect(() => updateStyle(props.darkMode(), scene));
+		// shadows
+		createEffect(() => {
+			simulator.shadows = props.showShadows();
+			[0, 3, 4, 7].forEach(i => {
+				lights[i].castShadow = props.showShadows();
+			});
 		});
 	};
 
+	onCleanup(() => {
+		raycasters.dealloc();
+		simulator.dealloc();
+	});
+
+	const animate = () => {
+		raycasters.animate({ pullEnabled: pullNodesEnabled() });
+	};
+
 	// setup (or re-apply) all mesh materials, like when switching to dark mode.
-	const updateStyle = (darkMode) => {
-		scene.background = darkMode ? new THREE.Color("#0F0F10") : new THREE.Color("#eee");
-		simulator.model.materials.front = darkMode ? Materials.materialDarkFront : Materials.materialLightFront;
-		simulator.model.materials.back = darkMode ? Materials.materialDarkBack : Materials.materialLightBack;
-		raycasterFace.material = darkMode
+	const updateStyle = (darkMode, scene) => {
+		scene.background = darkMode
+			? new THREE.Color("#0F0F10")
+			: new THREE.Color("#eee");
+		simulator.model.materials.front = darkMode
+			? Materials.materialDarkFront
+			: Materials.materialLightFront;
+		simulator.model.materials.back = darkMode
+			? Materials.materialDarkBack
+			: Materials.materialLightBack;
+		highlights.face.material = darkMode
 			? [Materials.materialHighlightFrontDark, Materials.materialHighlightBackDark]
 			: [Materials.materialHighlightFrontLight, Materials.materialHighlightBackLight];
-		raycasterPoint.material = darkMode
+		highlights.point.material = darkMode
 			? Materials.materialRaycastPointDark
 			: Materials.materialRaycastPointLight;
-		raycasterVertex.material = darkMode
+		highlights.vertex.material = darkMode
 			? Materials.materialHighlightVertexDark
 			: Materials.materialHighlightVertexLight;
-		const lineMaterial = darkMode ? Materials.materialDarkLine : Materials.materialLightLine;
+		const lineMaterial = darkMode
+			? Materials.materialDarkLine
+			: Materials.materialLightLine;
 		Object.keys(simulator.model.lines)
 			.forEach(key => { simulator.model.lines[key].material = lineMaterial; });
-		const lightIntensity = darkMode ? lightIntensityDarkMode : lightIntensityLightMode;
+		const lightIntensity = darkMode
+			? lightIntensityDarkMode
+			: lightIntensityLightMode;
 		lights.forEach(light => { light.intensity = lightIntensity; });
-		// todo: why is this here?
-		// simulator.strain = strain();
-	};
-
-	const highlightTouch = (nearest) => {
-		raycasterPoint.visible = false;
-		raycasterVertex.visible = false;
-		raycasterFace.visible = false;
-		if (nearest === undefined || !props.simulatorShowTouches()) {
-			return;
-		}
-		highlightPoint(nearest);
-		highlightVertex(nearest);
-		highlightFace(nearest);
-	};
-
-	const highlightPoint = (nearest) => {
-		raycasterPoint.visible = nearest.point != null;
-		if (!raycasterPoint.visible) { return; }
-		raycasterPoint.geometry.attributes.position.array[0] = nearest.point.x;
-		raycasterPoint.geometry.attributes.position.array[1] = nearest.point.y;
-		raycasterPoint.geometry.attributes.position.array[2] = nearest.point.z;
-		raycasterPoint.geometry.attributes.position.needsUpdate = true;
-	};
-
-	const highlightVertex = (nearest) => {
-		raycasterVertex.visible = nearest.vertex != null;
-		if (!raycasterVertex.visible) { return; }
-		raycasterVertex.geometry.attributes.position.array[0] = nearest.vertex_coords.x;
-		raycasterVertex.geometry.attributes.position.array[1] = nearest.vertex_coords.y;
-		raycasterVertex.geometry.attributes.position.array[2] = nearest.vertex_coords.z;
-		raycasterVertex.geometry.attributes.position.needsUpdate = true;
-	};
-
-	const highlightFace = (nearest) => {
-		raycasterFace.visible = nearest.face != null;
-		if (!raycasterFace.visible) { return; }
-		nearest.face_vertices
-			.map(vert => [0, 1, 2].map(i => simulator.model.positions[vert * 3 + i]))
-			.forEach((p, j) => [0, 1].forEach((_, i) => {
-				raycasterFace.geometry.attributes.position.array[i * 9 + j * 3 + 0] = p[0];
-				raycasterFace.geometry.attributes.position.array[i * 9 + j * 3 + 1] = p[1];
-				raycasterFace.geometry.attributes.position.array[i * 9 + j * 3 + 2] = p[2];
-			}));
-		raycasterFace.geometry.attributes.position.needsUpdate = true;
+		// i see why this was here. material won't update on the model.
+		// we need a better setter that propagates through the correct model data.
+		simulator.setStrain(props.strain());
 	};
 
 	return (<>
 		<div class={Style.Simulator}>
 			<TrackballView
 				// props for the TrackballView
-				isEnabled={trackballEnabled()}
+				enabled={trackballEnabled()}
 				maxDistance={modelSize() * 30}
 				minDistance={modelSize() * 0.1}
 				panSpeed={1}
@@ -357,7 +198,7 @@ const Simulator = (props) => {
 				dynamicDampingFactor={1}
 				// props for the ThreeView child component
 				didMount={onMount}
-				didResize={windowDidResize}
+				didResize={() => {}}
 				animate={animate}
 			/>
 		</div>
