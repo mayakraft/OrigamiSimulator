@@ -2,22 +2,20 @@ import Style from "./Settings.module.css";
 
 const Settings = (props) => {
 	// throws error if file is not a valid JSON format
-	const fileDialogDidLoad = (string, filename, mimeType) => {
-		try { props.setOrigami(JSON.parse(string)); }
-		catch (error) { window.alert(error); }
-	};
 	// event handler for file dialog <input>
 	const fileDialogOnInput = (e) => {
-		const file = e.target.files[0];
-		let mimeType, filename;
 		const reader = new FileReader();
-		reader.onload = loadEvent => fileDialogDidLoad(loadEvent.target.result, filename, mimeType);
+		reader.onload = event => {
+			try {
+				props.setOrigami(JSON.parse(event.target.result));
+			} catch (error) {
+				window.alert(error);
+			}
+		};
 		if (e.target.files.length) {
-			mimeType = e.target.files[0].type;
-			filename = e.target.files[0].name;
 			reader.readAsText(e.target.files[0]);
 		}
-	}
+	};
 
 	const containerClasses = props.darkMode()
 		? [Style.Container, Style.Dark]
@@ -26,7 +24,7 @@ const Settings = (props) => {
 	return (
 		<div class={containerClasses.join(" ")}>
 			<input type="file" onInput={fileDialogOnInput} />
-			
+
 			<h3>
 				simulator active
 				<input

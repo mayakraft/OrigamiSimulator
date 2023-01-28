@@ -5,10 +5,9 @@
 import { createSignal, createEffect, onCleanup } from "solid-js";
 import * as THREE from "three";
 import Style from "./Simulator.module.css";
-import TrackballView from "../WebGL/TrackballView";
-import OrigamiSimulator from "../../../src/index.js";
-import Highlights from "../../../src/highlights.js";
-import Raycasters from "../../../src/raycasters.js";
+import OrigamiSimulator from "../../../src/index";
+import Highlights from "../../../src/highlights";
+import Raycasters from "../../../src/raycasters";
 import * as Materials from "../../../src/materials";
 import boundingBox from "../../../src/fold/boundingBox";
 
@@ -19,13 +18,13 @@ const lightIntensityDarkMode = 0.707;
 // const lightVertices = [[1,0,0], [0,1,0], [0,0,1], [-1,0,0], [0,-1,0], [0,0,-1]];
 // cube
 const lightVertices = [
-	[ 1,  1,  1],
-	[-1,  1,  1],
-	[ 1, -1,  1],
-	[-1, -1,  1],
-	[ 1,  1, -1],
-	[-1,  1, -1],
-	[ 1, -1, -1],
+	[+1, +1, +1],
+	[-1, +1, +1],
+	[+1, -1, +1],
+	[-1, -1, +1],
+	[+1, +1, -1],
+	[-1, +1, -1],
+	[+1, -1, -1],
 	[-1, -1, -1],
 ];
 /**
@@ -69,7 +68,9 @@ const Simulator = (props) => {
 		// initialize origami simulator
 		simulator = OrigamiSimulator({ renderer, scene, camera });
 		highlights = Highlights({ scene, simulator });
-		raycasters = Raycasters({ renderer, scene, camera, simulator, setTouches });
+		raycasters = Raycasters({
+			renderer, camera, simulator, setTouches,
+		});
 		lights = lightVertices.map(pos => {
 			const light = new THREE.PointLight();
 			light.position.set(...pos);
@@ -81,7 +82,7 @@ const Simulator = (props) => {
 			scene.add(light);
 			return light;
 		});
-		// load a new origami model. thrown errors will be bad file format.
+		// load a new origami model. thrown errors are because of a bad file format
 		createEffect(() => {
 			try {
 				simulator.load(props.origami());
@@ -97,7 +98,7 @@ const Simulator = (props) => {
 			const vmax = modelSize();
 			// scale is due to the camera's FOV
 			const scale = 1.25;
-			// the distance the camera should be to nicely fit the object (of size vmax)
+			// the distance the camera should be to nicely fit the object
 			const fitLength = camera.aspect > 1
 				? vmax * scale
 				: vmax * scale * (1 / camera.aspect);
@@ -124,13 +125,13 @@ const Simulator = (props) => {
 			setPullNodesEnabled(props.tool() === "pull");
 		});
 		// forward these props to settings of origami simulator
-		createEffect(() => props.active() ? simulator.start() : simulator.stop());
+		createEffect(() => simulator.setActive(props.active()));
 		createEffect(() => simulator.setStrain(props.strain()));
 		createEffect(() => simulator.setFoldAmount(props.foldAmount()));
 		// deliver the touch data from the raycaster to be highlighted
 		createEffect(() => highlights.highlightTouch(touches()[0]));
 		// nitpicky. upon tool change we need raycasterPullVertex to be undefined
-		createEffect(() => raycasters.raycasterReleaseHandler(props.tool()));
+		createEffect(() => raycasters.raycasterReleaseHandler(pullNodesEnabled()));
 		// reset materials depending on dark or light mode
 		createEffect(() => updateStyle(props.darkMode(), scene));
 		// shadows
@@ -141,17 +142,27 @@ const Simulator = (props) => {
 			});
 		});
 	};
-
+	/**
+	 * @description This is tied to the animation loop event managed by
+	 * the ThreeView, attached to window.requestAnimationFrame.
+	 */
+	const animate = () => {
+		// The raycaster will update on a mousemove event, but if the origami is
+		// in a folding animation, the raycaster will not update and the visuals
+		// will mismatch, hence, the raycaster can fire on a frame update if needed
+		raycasters.animate({ pullEnabled: pullNodesEnabled() });
+	};
+	/**
+	 * @description cleanup all memory associated with origami simulator
+	 */
 	onCleanup(() => {
 		raycasters.dealloc();
 		simulator.dealloc();
 	});
-
-	const animate = () => {
-		raycasters.animate({ pullEnabled: pullNodesEnabled() });
-	};
-
-	// setup (or re-apply) all mesh materials, like when switching to dark mode.
+	/**
+	 * @description Initialize/reset all mesh materials including those
+	 * associated with the hover face/vertex selection.
+	 */
 	const updateStyle = (darkMode, scene) => {
 		scene.background = darkMode
 			? new THREE.Color("#0F0F10")
@@ -185,7 +196,7 @@ const Simulator = (props) => {
 		simulator.setStrain(props.strain());
 	};
 
-	return (<>
+	return (
 		<div class={Style.Simulator}>
 			<TrackballView
 				// props for the TrackballView
@@ -202,7 +213,7 @@ const Simulator = (props) => {
 				animate={animate}
 			/>
 		</div>
-	</>);
+	);
 };
 
 export default Simulator;

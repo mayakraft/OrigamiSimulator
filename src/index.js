@@ -1,25 +1,21 @@
 /**
  * Created by ghassaei on 2/22/17.
  */
-import window from "./environment/window";
-import Model from "./model/";
+import Model from "./model";
 import DynamicSolver from "./dynamic/dynamicSolver";
 import prepare from "./fold/prepare";
-// import VideoAnimator from "./videoAnimator"; // haven't touched yet
-
-const empty_square_fold = {
-	vertices_coords:[[0,0],[1,0],[1,1],[0,1]],
-	edges_vertices:[[0,1],[1,2],[2,3],[3,0]],
-	edges_assignment:["B","B","B","B"],
-	faces_vertices:[[0,1,2,3]]
-};
 /**
- * @description Origami Simulator by Amanda Ghassaei. refactored so that:
- * - global variables removed to allow for multiple simultaneous instances
- * - ability to dealloc() and reinitialize, and memory is freed.
- * - can work as a node package inside a Node JS project, including React.
+ * @description Origami Simulator by Amanda Ghassaei.
+ * refactored so that:
+ * - encapsulate global variables to allow for multiple simultaneous instances
+ * - ability to dealloc() and reinitialize, memory will properly free itself.
+ * - rewrite in ES6 module for functionality in popular JS frameworks.
+ *
+ * This will create an instance of an Origami Simulator, which is meant to
+ * be created just after you create a ThreeJS canvas, so that Ori Sim can
+ * bind itself to the ThreeJS instance.
  */
-const OrigamiSimulator = function ({ renderer, scene, camera }) {
+const OrigamiSimulator = function ({ scene }) {
 	// app variables
 	const visible = {
 		B: true,
@@ -29,32 +25,14 @@ const OrigamiSimulator = function ({ renderer, scene, camera }) {
 		C: false,
 		U: true,
 	};
-	let creasePercent = 0.0;
-	let axialStrain = false;
-	let shadows = true;
-
-	// carryovers from global
-	let nodePositionHasChanged = false;
-	let shouldCenterGeo = false;
-	const modelDidChange = () => {
-		nodePositionHasChanged = true;
-		shouldCenterGeo = true;
-	};
-
-	/** initialize the app */
-	const model = new Model({
-		scene,
-		visible,
-		axialStrain,
-	});
-
+	const model = new Model({ scene });
 	const solver = DynamicSolver({
 		fixedHasChanged: false,
 		nodePositionHasChanged: false,
+		shouldCenterGeo: false,
 		creaseMaterialHasChanged: false,
 		materialHasChanged: false,
 		shouldZeroDynamicVelocity: false,
-		shouldCenterGeo: false,
 		numSteps: 100,
 		integrationType: "euler",
 		strainClip: 0.5,
@@ -62,85 +40,27 @@ const OrigamiSimulator = function ({ renderer, scene, camera }) {
 		axialStiffness: 20,
 		faceStiffness: 0.2,
 	});
-
-	// // app.controls = Controls(app);
-	// app.UI3D = UI3D(app);
-	// // app.importer = Importer(app);
-
 	/**
-	 * @description this load method can throw an error. wrap it in a try catch
-	 * and deliver the error to the end user.
+	 * @description Fold the origami, between 0.0 and 1.0.
 	 */
-	const loadFOLD = function (foldObject) {
-		if (!foldObject.vertices_coords || !foldObject.edges_vertices || !foldObject.faces_vertices) {
-			foldObject = JSON.parse(JSON.stringify(empty_square_fold));
-		}
-		// app.threeView.resetModel();
-		const fold = prepare(foldObject);
-		model.load(fold, {
-			axialStiffness: 20,
-			percentDamping: 0.45, // damping ratio
-			panelStiffness: 0.7,
-			creaseStiffness: 0.7,
-			visible,
-			axialStrain,
-		});
-		solver.syncNodesAndEdges(model, { creasePercent });
-	};
-
-	// const changeTouchMode = (newGrabMode) => {
-	//   isGrabMode = newGrabMode;
-	//   // app.threeView.enableCameraRotate(true);
-	//   // app.threeView.enableCameraRotate(false);
-	//   // app.threeView.resetModel();
-	//   // app.UI3D.hideHighlighters();
-	// };
-
-	// const getEdgesFoldAngle = () => {
-	// };
-
-	// one single iteration of the compute loop. useful to call as a draw-refresh
-	const compute = () => {
-		solver.solve(100, { axialStrain, creasePercent, nodePositionHasChanged, shouldCenterGeo }); // globals.numSteps
-		model.needsUpdate({ axialStrain });
-		// reset single loop variables
-		nodePositionHasChanged = false;
-		shouldCenterGeo = false;
-	};
-
-	let computeLoopID = undefined;
-	function startLoop() {
-		// console.log("Starting...");
-		computeLoopID = window.requestAnimationFrame(startLoop);
-		compute();
-	}
-
-	const stopLoop = () => {
-		window.cancelAnimationFrame(computeLoopID);
-		computeLoopID = undefined;
-	};
-
-	const dealloc = () => {
-		stopLoop();
-		model.dealloc();
-		solver.dealloc();
-	};
-
+	let foldAmount = 0.0;
 	const setFoldAmount = (value) => {
-		creasePercent = value;
-		solver.setCreasePercent(creasePercent);
+		const float = parseFloat(value);
+		foldAmount = !Number.isNaN(float) ? float : 0.0;
+		solver.setCreasePercent(foldAmount);
 	};
-
+	/**
+	 * @description Override the material with the strain forces visualization.
+	 */
+	let strain = false;
 	const setStrain = (value) => {
-		const boolean = !!value;
-		axialStrain = boolean;
-		// solverOptions.materialHasChanged = true;
-		// solverOptions.fixedHasChanged = true;
-		// solverOptions.nodePositionHasChanged = true;
-		// solverOptions.creaseMaterialHasChanged = true;
-		model.setAxialStrain(axialStrain);
+		strain = !!value;
+		model.setAxialStrain(strain);
 	};
-
+	/**
+	 * @description Activate three.js shadows on the materials.
+	 */
+	let shadows = false;
 	const setShadows = (value) => {
 		shadows = value;
 		model.frontside.castShadow = shadows;
@@ -148,36 +68,96 @@ const OrigamiSimulator = function ({ renderer, scene, camera }) {
 		// model.backside.castShadow = shadows;
 		model.backside.receiveShadow = shadows;
 	};
-
-	const app = {};
-	Object.defineProperty(app, "dealloc", { value: dealloc });
-	Object.defineProperty(app, "stop", { value: stopLoop });
-	Object.defineProperty(app, "start", { value: startLoop });
-	Object.defineProperty(app, "isOn", { get: () => computeLoopID !== undefined });
-	Object.defineProperty(app, "load", { value: loadFOLD });
-	// Object.defineProperty(app, "loadSVG", { value: loadSVG });
-	// Object.defineProperty(app, "loadSVGString", { value: loadSVGString });
-	Object.defineProperty(app, "modelDidChange", { value: modelDidChange });
-	Object.defineProperty(app, "model", { get: () => model });
-	Object.defineProperty(app, "setFoldAmount", { value: setFoldAmount });
-	Object.defineProperty(app, "foldAmount", {
-		set: setFoldAmount,
-		get: () => creasePercent
-	});
-	Object.defineProperty(app, "setStrain", { value: setStrain });
-	Object.defineProperty(app, "strain", {
-		set: setStrain,
-		get: () => axialStrain
-	});
-	Object.defineProperty(app, "setShadows", { value: setShadows });
-	Object.defineProperty(app, "shadows", {
-		set: setShadows,
-		get: () => shadows
-	});
-	// Object.defineProperty(app, "getEdgesFoldAngle", {
-	//   get: () => getEdgesFoldAngle
-	// });
-
+	/**
+	 * @description When the user pulls on a node, call this method, it will
+	 * relay the information to the solver
+	 */
+	let nodePositionHasChanged = false;
+	let shouldCenterGeo = false;
+	const nodeDidMove = () => {
+		nodePositionHasChanged = true;
+		shouldCenterGeo = true;
+	};
+	/**
+	 * @description One call to origami simulator's solver
+	 */
+	const compute = () => {
+		solver.solve(100, {
+			axialStrain: strain,
+			creasePercent: foldAmount,
+			nodePositionHasChanged,
+			shouldCenterGeo,
+			// globals.numSteps
+		});
+		model.needsUpdate({ axialStrain: strain });
+		// reset single loop variables
+		nodePositionHasChanged = false;
+		shouldCenterGeo = false;
+	};
+	/**
+	 * @description Start a loop with window.requestAnimationFrame
+	 * which will call the compute method on every frame.
+	 */
+	let computeLoopID;
+	const computeLoop = () => {
+		computeLoopID = window.requestAnimationFrame(computeLoop);
+		compute();
+	};
+	/**
+	 * @description Activate origami simulator's compute loop.
+	 */
+	let active = false;
+	const setActive = (isActive) => {
+		active = isActive;
+		if (active) {
+			computeLoop();
+		} else {
+			window.cancelAnimationFrame(computeLoopID);
+			computeLoopID = undefined;
+		}
+	};
+	/**
+	 * @description this load method can throw an error. wrap it in a try catch
+	 * and deliver the error to the end user.
+	 */
+	const load = function (foldObject) {
+		const fold = prepare(foldObject);
+		model.load(fold, {
+			axialStiffness: 20,
+			percentDamping: 0.45,
+			panelStiffness: 0.7,
+			creaseStiffness: 0.7,
+			visible,
+			axialStrain: strain,
+		});
+		solver.syncNodesAndEdges(model, { creasePercent: foldAmount });
+	};
+	/**
+	 * @description Stop the compute loop and free all associated memory
+	 */
+	const dealloc = () => {
+		setActive(false);
+		model.dealloc();
+		solver.dealloc();
+	};
+	/**
+	 * @description Origami Simulator
+	 */
+	const app = {
+		load,
+		model,
+		dealloc,
+		nodeDidMove,
+		setActive,
+		setFoldAmount,
+		setStrain,
+		setShadows,
+	};
+	// getters and setters
+	Object.defineProperty(app, "active", { get: () => active, set: setActive });
+	Object.defineProperty(app, "foldAmount", { get: () => foldAmount, set: setFoldAmount });
+	Object.defineProperty(app, "strain", { get: () => strain, set: setStrain });
+	Object.defineProperty(app, "shadows", { get: () => shadows, set: setShadows });
 	return app;
 };
 

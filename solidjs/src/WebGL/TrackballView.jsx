@@ -4,7 +4,7 @@
  */
 import { createEffect, onCleanup } from "solid-js";
 import { TrackballControls } from "three/examples/jsm/controls/TrackballControls";
-import ThreeView from "./ThreeView";
+import ThreeView from "./ThreeView.jsx";
 /**
  * @description Extends the ThreeView component to include a three.js
  * TrackballControls; otherwise, the functionality is the same as ThreeView.
@@ -20,7 +20,6 @@ import ThreeView from "./ThreeView";
  * - dynamicDampingFactor (number)
  */
 const TrackballView = (props) => {
-
 	let trackball;
 
 	const didMount = ({ renderer, scene, camera }) => {
@@ -44,10 +43,10 @@ const TrackballView = (props) => {
 		trackball.handleResize();
 		// bubble up event handler
 		if (props.didResize) {
-			props.didResize(event)
+			props.didResize(event);
 		}
 	};
-	
+
 	const animate = () => {
 		trackball.update();
 		// bubble up event handler

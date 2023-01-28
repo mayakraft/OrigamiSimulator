@@ -5,7 +5,9 @@ import * as THREE from "three";
 
 const Highlights = ({ scene, simulator }) => {
 	// visualize the raycaster
-	let point, vertex, face;
+	let point;
+	let vertex;
+	let face;
 
 	const highlightPoint = (nearest) => {
 		point.visible = nearest.point != null;
@@ -31,9 +33,9 @@ const Highlights = ({ scene, simulator }) => {
 		nearest.face_vertices
 			.map(vert => [0, 1, 2].map(i => simulator.model.positions[vert * 3 + i]))
 			.forEach((p, j) => [0, 1].forEach((_, i) => {
-				face.geometry.attributes.position.array[i * 9 + j * 3 + 0] = p[0];
-				face.geometry.attributes.position.array[i * 9 + j * 3 + 1] = p[1];
-				face.geometry.attributes.position.array[i * 9 + j * 3 + 2] = p[2];
+				for (let d = 0; d < 3; d += 1) {
+					face.geometry.attributes.position.array[i * 9 + j * 3 + d] = p[d];
+				}
 			}));
 		face.geometry.attributes.position.needsUpdate = true;
 	};

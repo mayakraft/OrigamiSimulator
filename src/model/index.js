@@ -12,7 +12,7 @@ import getFacesAndVerticesForEdges from "../fold/creaseParams";
 
 const assignments = Array.from("BMVFCU");
 
-function Model({ scene, visible, axialStrain }) {
+function Model({ scene, visible }) {
   this.geometry = null;
   this.frontside = new THREE.Mesh(); // front face of mesh
   this.backside = new THREE.Mesh(); // back face of mesh (different color)
@@ -36,7 +36,7 @@ function Model({ scene, visible, axialStrain }) {
   this.materials.line = defaultMaterials.line;
 
   this.makeNewGeometries();
-  this.setAxialStrain(axialStrain);
+  this.setAxialStrain(false);
   this.frontside.castShadow = true;
   this.frontside.receiveShadow = true;
   // this.backside.castShadow = true;

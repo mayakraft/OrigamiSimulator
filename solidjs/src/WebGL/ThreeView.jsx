@@ -2,7 +2,7 @@
  * ThreeView for SolidJS (c) Kraft
  * MIT license
  */
-import { createEffect, onMount, onCleanup } from "solid-js";
+import { onMount, onCleanup } from "solid-js";
 import * as THREE from "three";
 import Style from "./ThreeView.module.css";
 /**
@@ -26,7 +26,9 @@ import Style from "./ThreeView.module.css";
  */
 const ThreeView = (props) => {
 	// these will be initialized and managed by this component
-	let renderer, scene, camera;
+	let renderer;
+	let scene;
+	let camera;
 	// the parent of the <canvas> element
 	let parentNode;
 	// the value returned from window.requestAnimationFrame

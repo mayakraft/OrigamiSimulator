@@ -42,7 +42,8 @@ const makeTouches = (model, raycaster) => {
 		touch.vertex_coords = new THREE.Vector3(
 			model.positions[touch.vertex * 3 + 0],
 			model.positions[touch.vertex * 3 + 1],
-			model.positions[touch.vertex * 3 + 2]);
+			model.positions[touch.vertex * 3 + 2],
+		);
 	});
 	return intersections;
 };

@@ -5,22 +5,25 @@ import makeTouches from "./makeTouches";
  * one Raycaster to manage all event handling/highlighting/interacting
  * with the vertices/edges/faces of the origami model.
  */
-const Raycasters = ({ renderer, scene, camera, simulator, setTouches }) => {
+const Raycasters = ({
+	renderer, camera, simulator, setTouches,
+}) => {
 	// for the pull-vertex tool. "raycasterPullVertex" is the currently moving vertex
-	let raycaster, raycasterPlane, raycasterPullVertex;
-
+	let raycaster;
+	let raycasterPlane;
+	let raycasterPullVertex;
 	// for the pull-vertex tool.
 	// orient the raycaster plane towards the camera and move it to the selected FOLD vertex.
-	const raycasterPressHandler = (event) => {
+	const raycasterPressHandler = () => {
 		const firstTouch = makeTouches(simulator.model, raycaster)[0];
 		if (!firstTouch || firstTouch.vertex === undefined) { return; }
 		raycasterPullVertex = firstTouch.vertex;
 		const position = new THREE.Vector3(
 			simulator.model.positions[firstTouch.vertex * 3 + 0],
 			simulator.model.positions[firstTouch.vertex * 3 + 1],
-			simulator.model.positions[firstTouch.vertex * 3 + 2]
+			simulator.model.positions[firstTouch.vertex * 3 + 2],
 		);
-		let cameraOrientation = new THREE.Vector3();
+		const cameraOrientation = new THREE.Vector3();
 		camera.getWorldDirection(cameraOrientation);
 		const dist = position.dot(cameraOrientation);
 		raycasterPlane.set(cameraOrientation, -dist);
@@ -30,11 +33,11 @@ const Raycasters = ({ renderer, scene, camera, simulator, setTouches }) => {
 		const bounds = renderer.domElement.getBoundingClientRect();
 		const mouse = new THREE.Vector2(
 			((event.clientX - bounds.x) / bounds.width) * 2 - 1,
-			-((event.clientY - bounds.y) / bounds.height) * 2 + 1
+			-((event.clientY - bounds.y) / bounds.height) * 2 + 1,
 		);
 		raycaster.setFromCamera(mouse, camera);
 		const touches = makeTouches(simulator.model, raycaster);
-		if (setTouches) { setTouches(touches); };
+		if (setTouches) { setTouches(touches); }
 	};
 
 	// for the pull-vertex tool. disable the pull motion when mouseup
@@ -47,10 +50,10 @@ const Raycasters = ({ renderer, scene, camera, simulator, setTouches }) => {
 	const pullVertex = () => {
 		const node = simulator.model.nodes[raycasterPullVertex];
 		if (!node) { return; }
-		let intersection = new THREE.Vector3();
+		const intersection = new THREE.Vector3();
 		raycaster.ray.intersectPlane(raycasterPlane, intersection);
 		node.moveManually(intersection);
-		simulator.modelDidChange();
+		simulator.nodeDidMove();
 	};
 
 	// Touch detection is already happening in the moveHandler, but
@@ -60,12 +63,12 @@ const Raycasters = ({ renderer, scene, camera, simulator, setTouches }) => {
 	// To fix this, during the animation loop, if the simulator is on,
 	// calculate the touches under the cursor.
 	const animate = ({ pullEnabled }) => {
-		if (!simulator.isOn) { return; }
-		// console.log("pullEnabled && raycasterPullVertex !== undefined", pullEnabled && raycasterPullVertex !== undefined);
+		if (!simulator.active) { return; }
+		// console.log("pullEnabled, raycasterPullVertex", pullEnabled, raycasterPullVertex);
 		const touches = pullEnabled && raycasterPullVertex !== undefined
 			? []
 			: makeTouches(simulator.model, raycaster);
-		if (setTouches) { setTouches(touches); };
+		if (setTouches) { setTouches(touches); }
 		// if the user is pulling on a node, manually move the node to the raycaster's
 		// new intersection with the raycaster plane.
 		if (pullEnabled && raycasterPullVertex !== undefined) {
@@ -82,7 +85,7 @@ const Raycasters = ({ renderer, scene, camera, simulator, setTouches }) => {
 	// setup raycaster and plane (both will be dynamically updated)
 	raycaster = new THREE.Raycaster();
 	raycasterPlane = new THREE.Plane(new THREE.Vector3(0, 0, 1));
-	raycaster.setFromCamera({x: Infinity, y: 0}, camera);
+	raycaster.setFromCamera({ x: Infinity, y: 0 }, camera);
 
 	renderer.domElement.addEventListener("mousedown", raycasterPressHandler, false);
 	renderer.domElement.addEventListener("mouseup", raycasterReleaseHandler, false);
