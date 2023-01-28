@@ -24,7 +24,6 @@
 
 import * as THREE from "three";
 import GPUMath from "./GPUMath";
-
 import vertexShader from "../shaders/vertexShader.vert?raw";
 import positionCalcShader from "../shaders/positionCalcShader.frag?raw";
 import velocityCalcVerletShader from "../shaders/velocityCalcVerletShader.frag?raw";
@@ -48,10 +47,35 @@ import updateCreaseGeo from "../shaders/updateCreaseGeo.frag?raw";
 // https://github.com/mrdoob/three.js/issues/9628
 // http://yomboprime.github.io/GPGPU-threejs-demos/webgl_gpgpu_water.html
 
+// default settings for origami simulator
+const DEFAULTS = Object.freeze({
+	creasePercent: 0.0,
+	axialStiffness: 20,
+	faceStiffness: 0.2,
+	calcFaceStrain: false,
+});
+
 function initDynamicSolver(options) {
+	let integrationType = "euler";
+	// const o = {
+	// 	fixedHasChanged: false,
+	// 	nodePositionHasChanged: false,
+	// 	shouldCenterGeo: false,
+	// 	creaseMaterialHasChanged: false,
+	// 	materialHasChanged: false,
+	// 	shouldZeroDynamicVelocity: false,
+	// 	numSteps: 100,
+	// 	integrationType: "euler",
+	// 	strainClip: 0.5,
+	// 	calcFaceStrain: false,
+	// 	axialStiffness: 20, // 10 to 100
+	// 	faceStiffness: 0.2, // 0 to 5
+	// };
+
 	const float_type = "FLOAT";
 
-	const gpuMath = GPUMath();
+	// to be initialized in setModel
+	let gpuMath;
 
 	let model;
 
@@ -80,19 +104,6 @@ function initDynamicSolver(options) {
 	let theta; // [theta, w, normalIndex1, normalIndex2]
 	let lastTheta; // [theta, w, normalIndex1, normalIndex2]
 
-	function dealloc() {
-		gpuMath.dealloc();
-	}
-
-	function syncNodesAndEdges(_model, { creasePercent }) {
-		model = _model;
-		initTypedArrays({ creasePercent });
-		initTexturesAndPrograms(gpuMath, { creasePercent });
-		setSolveParams();
-	}
-
-	let programsInited = false; // flag for initial setup
-
 	let textureDim = 0;
 	let textureDimEdges = 0;
 	let textureDimFaces = 0;
@@ -100,65 +111,28 @@ function initDynamicSolver(options) {
 	let textureDimNodeCreases = 0;
 	let textureDimNodeFaces = 0;
 
-	function reset() {
-		gpuMath.step("zeroTexture", [], "u_position");
-		gpuMath.step("zeroTexture", [], "u_lastPosition");
-		gpuMath.step("zeroTexture", [], "u_lastLastPosition");
-		gpuMath.step("zeroTexture", [], "u_velocity");
-		gpuMath.step("zeroTexture", [], "u_lastVelocity");
-		gpuMath.step("zeroThetaTexture", ["u_lastTheta"], "u_theta");
-		gpuMath.step("zeroThetaTexture", ["u_theta"], "u_lastTheta");
-		render();
-	}
+	const getBoundingBoxCenter = () => {
+		model.geometry.computeBoundingBox();
+		const center = new THREE.Vector3();
+		model.geometry.boundingBox.getCenter(center);
+		return center;
+	};
 
-	function solve(_numSteps, {
-		creasePercent, axialStrain, nodePositionHasChanged, shouldCenterGeo,
-	}) {
-		if (options.fixedHasChanged) {
-			updateFixed();
-			options.fixedHasChanged = false;
-		}
-		if (nodePositionHasChanged) {
-			updateLastPosition();
-			// nodePositionHasChanged = false;
-		}
-		if (options.creaseMaterialHasChanged) {
-			updateCreasesMeta();
-			options.creaseMaterialHasChanged = false;
-		}
-		if (options.materialHasChanged) {
-			updateMaterials();
-			options.materialHasChanged = false;
-		}
-
-		// if (options.shouldChangeCreasePercent) {
-		//   setCreasePercent(creasePercent);
-		//   options.shouldChangeCreasePercent = false;
-		// }
-		
-		// if (options.shouldZeroDynamicVelocity) {
-		//     gpuMath.step("zeroTexture", [], "u_velocity");
-		//     gpuMath.step("zeroTexture", [], "u_lastVelocity");
-		//     options.shouldZeroDynamicVelocity = false;
-		// }
-		if (shouldCenterGeo) {
-			const avgPosition = getAvgPosition();
-			gpuMath.setProgram("centerTexture");
-			gpuMath.setUniformForProgram("centerTexture", "u_center", [avgPosition.x, avgPosition.y, avgPosition.z], "3f");
-			gpuMath.step("centerTexture", ["u_lastPosition"], "u_position");
-			if (options.integrationType === "verlet") gpuMath.step("copyTexture", ["u_position"], "u_lastLastPosition");
-			gpuMath.swapTextures("u_position", "u_lastPosition");
-			gpuMath.step("zeroTexture", [], "u_lastVelocity");
-			gpuMath.step("zeroTexture", [], "u_velocity");
-			// shouldCenterGeo = false;
-		}
-
-		if (_numSteps === undefined) _numSteps = options.numSteps;
-		for (let j = 0; j < _numSteps; j += 1) {
-			solveStep();
-		}
-		render({ axialStrain });
-	}
+	// this doesn't calculate the center of the convex hull
+	// if the vertices are heavily weighted to one side, the center is off
+	// function getBoundingBoxCenter() {
+	//   let xavg = 0;
+	//   let yavg = 0;
+	//   let zavg = 0;
+	//   for (let i = 0; i < model.positions.length; i += 3) {
+	//     xavg += model.positions[i];
+	//     yavg += model.positions[i + 1];
+	//     zavg += model.positions[i + 2];
+	//   }
+	//   const avgPosition = new THREE.Vector3(xavg, yavg, zavg);
+	//   avgPosition.multiplyScalar(3 / model.positions.length);
+	//   return avgPosition;
+	// }
 
 	function solveStep() {
 		gpuMath.setProgram("normalCalc");
@@ -174,7 +148,7 @@ function initDynamicSolver(options) {
 		// already at textureDimCreasesxtextureDimCreases
 		gpuMath.step("updateCreaseGeo", ["u_lastPosition", "u_originalPosition", "u_creaseMeta2"], "u_creaseGeo");
 
-		if (options.integrationType === "verlet") {
+		if (integrationType === "verlet") {
 			gpuMath.setProgram("positionCalcVerlet");
 			gpuMath.setSize(textureDim, textureDim);
 			gpuMath.step("positionCalcVerlet", ["u_lastPosition", "u_lastLastPosition", "u_lastVelocity", "u_originalPosition", "u_externalForces",
@@ -197,30 +171,12 @@ function initDynamicSolver(options) {
 	}
 
 	// let $errorOutput = $("#globalError");
-
-	function getAvgPosition() {
-		model.geometry.computeBoundingBox();
-		let center = new THREE.Vector3();
-		model.geometry.boundingBox.getCenter(center);
-		return center;
-	}
-	// this doesn't calculate the center of the convex hull
-	// if the vertices are heavily weighted to one side, the center is off
-	// function getAvgPosition() {
-	//   let xavg = 0;
-	//   let yavg = 0;
-	//   let zavg = 0;
-	//   for (let i = 0; i < model.positions.length; i += 3) {
-	//     xavg += model.positions[i];
-	//     yavg += model.positions[i + 1];
-	//     zavg += model.positions[i + 2];
-	//   }
-	//   const avgPosition = new THREE.Vector3(xavg, yavg, zavg);
-	//   avgPosition.multiplyScalar(3 / model.positions.length);
-	//   return avgPosition;
-	// }
-
+	/**
+	 * @description
+	 * @returns {number} the global error
+	 */
 	function render({ axialStrain }) {
+		if (!gpuMath) { return 0; }
 		const vectorLength = 4;
 		gpuMath.setProgram("packToBytes");
 		gpuMath.setUniformForProgram("packToBytes", "u_vectorLength", vectorLength, "1f");
@@ -228,44 +184,53 @@ function initDynamicSolver(options) {
 		gpuMath.setSize(textureDim * vectorLength, textureDim);
 		gpuMath.step("packToBytes", ["u_lastPosition"], "outputBytes");
 
-		if (gpuMath.readyToRead()) {
-			const numPixels = model.nodes.length * vectorLength;
-			const height = Math.ceil(numPixels / (textureDim * vectorLength));
-			const pixels = new Uint8Array(height * textureDim * 4 * vectorLength);
-			gpuMath.readPixels(0, 0, textureDim * vectorLength, height, pixels);
-			const parsedPixels = new Float32Array(pixels.buffer);
-			// let globalError = 0;
-			for (let i = 0; i < model.nodes.length; i += 1) {
-				const rgbaIndex = i * vectorLength;
-				let nodeError = parsedPixels[rgbaIndex + 3] * 100;
-				// globalError += nodeError;
-				const nodePosition = new THREE.Vector3(
-					parsedPixels[rgbaIndex],
-					parsedPixels[rgbaIndex + 1],
-					parsedPixels[rgbaIndex + 2],
-				);
-				nodePosition.add(model.nodes[i]._originalPosition);
-				model.positions[3 * i] = nodePosition.x;
-				model.positions[3 * i + 1] = nodePosition.y;
-				model.positions[3 * i + 2] = nodePosition.z;
-				if (axialStrain) {
-					if (nodeError > options.strainClip) nodeError = options.strainClip;
-					const scaledVal = (1 - nodeError / options.strainClip) * 0.7;
-					const color = new THREE.Color();
-					color.setHSL(scaledVal, 1, 0.5);
-					model.colors[3 * i] = color.r;
-					model.colors[3 * i + 1] = color.g;
-					model.colors[3 * i + 2] = color.b;
-				}
+		if (!gpuMath.readyToRead()) { return 0; }
+		const numPixels = model.nodes.length * vectorLength;
+		const height = Math.ceil(numPixels / (textureDim * vectorLength));
+		const pixels = new Uint8Array(height * textureDim * 4 * vectorLength);
+		gpuMath.readPixels(0, 0, textureDim * vectorLength, height, pixels);
+		const parsedPixels = new Float32Array(pixels.buffer);
+		let globalError = 0;
+		for (let i = 0; i < model.nodes.length; i += 1) {
+			const rgbaIndex = i * vectorLength;
+			let nodeError = parsedPixels[rgbaIndex + 3] * 100;
+			globalError += nodeError;
+			const nodePosition = new THREE.Vector3(
+				parsedPixels[rgbaIndex],
+				parsedPixels[rgbaIndex + 1],
+				parsedPixels[rgbaIndex + 2],
+			);
+			nodePosition.add(model.nodes[i]._originalPosition);
+			model.positions[3 * i] = nodePosition.x;
+			model.positions[3 * i + 1] = nodePosition.y;
+			model.positions[3 * i + 2] = nodePosition.z;
+			if (axialStrain) {
+				if (nodeError > options.strainClip) nodeError = options.strainClip;
+				const scaledVal = (1 - nodeError / options.strainClip) * 0.7;
+				const color = new THREE.Color();
+				color.setHSL(scaledVal, 1, 0.5);
+				model.colors[3 * i] = color.r;
+				model.colors[3 * i + 1] = color.g;
+				model.colors[3 * i + 2] = color.b;
 			}
-			// $errorOutput.html((globalError / model.nodes.length).toFixed(7) + " %");
-		} else {
-			console.log("shouldn't be here");
 		}
+		return globalError / model.nodes.length;
+		// $errorOutput.html((globalError / model.nodes.length).toFixed(7) + " %");
 	}
 
+	const calcDt = () => {
+		let maxFreqNat = 0;
+		model.edges.forEach((beam) => {
+			if (beam.getNaturalFrequency() > maxFreqNat) {
+				maxFreqNat = beam.getNaturalFrequency();
+			}
+		});
+		// 0.9 of max delta t for good measure
+		return (1 / (2 * Math.PI * maxFreqNat)) * 0.9;
+	};
+
 	function setSolveParams() {
-		let dt = calcDt();
+		const dt = calcDt();
 		// $("#deltaT").html(dt);
 		gpuMath.setProgram("thetaCalc");
 		gpuMath.setUniformForProgram("thetaCalc", "u_dt", dt, "1f");
@@ -279,16 +244,16 @@ function initDynamicSolver(options) {
 		gpuMath.setUniformForProgram("velocityCalcVerlet", "u_dt", dt, "1f");
 		// options.controls.setDeltaT(dt);
 	}
+	/**
+	 * @description This method is called when a new model is loaded.
+	 * This allocates all space needed for communication back and forth
+	 * with the GPU.
+	 * @param {object} options these options are not required, if empty it
+	 * will default to origami simulator's default settings.
+	 */
+	function initTexturesAndPrograms(options = {}) {
+		const defaults = { ...DEFAULTS, ...options };
 
-	function calcDt() {
-		let maxFreqNat = 0;
-		model.edges.forEach((beam) => {
-			if (beam.getNaturalFrequency() > maxFreqNat) maxFreqNat = beam.getNaturalFrequency();
-		});
-		return (1 / (2 * Math.PI * maxFreqNat)) * 0.9; // 0.9 of max delta t for good measure
-	}
-
-	function initTexturesAndPrograms(gpuMath, { creasePercent }) {
 		gpuMath.initTextureFromData("u_position", textureDim, textureDim, float_type, position, true);
 		gpuMath.initTextureFromData("u_lastPosition", textureDim, textureDim, float_type, lastPosition, true);
 		gpuMath.initTextureFromData("u_lastLastPosition", textureDim, textureDim, float_type, lastLastPosition, true);
@@ -352,10 +317,10 @@ function initDynamicSolver(options) {
 		gpuMath.setUniformForProgram("velocityCalc", "u_textureDimCreases", [textureDimCreases, textureDimCreases], "2f");
 		gpuMath.setUniformForProgram("velocityCalc", "u_textureDimNodeCreases", [textureDimNodeCreases, textureDimNodeCreases], "2f");
 		gpuMath.setUniformForProgram("velocityCalc", "u_textureDimNodeFaces", [textureDimNodeFaces, textureDimNodeFaces], "2f");
-		gpuMath.setUniformForProgram("velocityCalc", "u_creasePercent", creasePercent, "1f");
-		gpuMath.setUniformForProgram("velocityCalc", "u_axialStiffness", options.axialStiffness, "1f");
-		gpuMath.setUniformForProgram("velocityCalc", "u_faceStiffness", options.faceStiffness, "1f");
-		gpuMath.setUniformForProgram("velocityCalc", "u_calcFaceStrain", options.calcFaceStrain, "1f");
+		gpuMath.setUniformForProgram("velocityCalc", "u_creasePercent", defaults.creasePercent, "1f");
+		gpuMath.setUniformForProgram("velocityCalc", "u_axialStiffness", defaults.axialStiffness, "1f");
+		gpuMath.setUniformForProgram("velocityCalc", "u_faceStiffness", defaults.faceStiffness, "1f");
+		gpuMath.setUniformForProgram("velocityCalc", "u_calcFaceStrain", defaults.calcFaceStrain, "1f");
 
 		gpuMath.createProgram("positionCalcVerlet", vertexShader, positionCalcVerletShader);
 		gpuMath.setUniformForProgram("positionCalcVerlet", "u_lastPosition", 0, "1i");
@@ -380,10 +345,10 @@ function initDynamicSolver(options) {
 		gpuMath.setUniformForProgram("positionCalcVerlet", "u_textureDimCreases", [textureDimCreases, textureDimCreases], "2f");
 		gpuMath.setUniformForProgram("positionCalcVerlet", "u_textureDimNodeCreases", [textureDimNodeCreases, textureDimNodeCreases], "2f");
 		gpuMath.setUniformForProgram("positionCalcVerlet", "u_textureDimNodeFaces", [textureDimNodeFaces, textureDimNodeFaces], "2f");
-		gpuMath.setUniformForProgram("positionCalcVerlet", "u_creasePercent", creasePercent, "1f");
-		gpuMath.setUniformForProgram("positionCalcVerlet", "u_axialStiffness", options.axialStiffness, "1f");
-		gpuMath.setUniformForProgram("positionCalcVerlet", "u_faceStiffness", options.faceStiffness, "1f");
-		gpuMath.setUniformForProgram("positionCalcVerlet", "u_calcFaceStrain", options.calcFaceStrain, "1f");
+		gpuMath.setUniformForProgram("positionCalcVerlet", "u_creasePercent", defaults.creasePercent, "1f");
+		gpuMath.setUniformForProgram("positionCalcVerlet", "u_axialStiffness", defaults.axialStiffness, "1f");
+		gpuMath.setUniformForProgram("positionCalcVerlet", "u_faceStiffness", defaults.faceStiffness, "1f");
+		gpuMath.setUniformForProgram("positionCalcVerlet", "u_calcFaceStrain", defaults.calcFaceStrain, "1f");
 
 		gpuMath.createProgram("thetaCalc", vertexShader, thetaCalcShader);
 		gpuMath.setUniformForProgram("thetaCalc", "u_normals", 0, "1i");
@@ -429,14 +394,12 @@ function initDynamicSolver(options) {
 		gpuMath.setUniformForProgram("updateCreaseGeo", "u_textureDimCreases", [textureDimCreases, textureDimCreases], "2f");
 
 		gpuMath.setSize(textureDim, textureDim);
-
-		programsInited = true;
 	}
 
 	function calcTextureSize(numNodes) {
 		if (numNodes === 1) return 2;
 		for (let i = 0; i < numNodes; i += 1) {
-			if ((2 ** 2 * i) >= numNodes) {
+			if ((2 ** (2 * i)) >= numNodes) {
 				return (2 ** i);
 			}
 		}
@@ -444,7 +407,7 @@ function initDynamicSolver(options) {
 		return 2;
 	}
 
-	function updateMaterials(initing) {
+	function updateMaterials(initing = false) {
 		let index = 0;
 		for (let i = 0; i < model.nodes.length; i += 1) {
 			if (initing) {
@@ -463,16 +426,6 @@ function initDynamicSolver(options) {
 			}
 		}
 		gpuMath.initTextureFromData("u_beamMeta", textureDimEdges, textureDimEdges, float_type, beamMeta, true);
-
-		if (programsInited) {
-			gpuMath.setProgram("velocityCalc");
-			gpuMath.setUniformForProgram("velocityCalc", "u_axialStiffness", options.axialStiffness, "1f");
-			gpuMath.setUniformForProgram("velocityCalc", "u_faceStiffness", options.faceStiffness, "1f");
-			gpuMath.setProgram("positionCalcVerlet");
-			gpuMath.setUniformForProgram("positionCalcVerlet", "u_axialStiffness", options.axialStiffness, "1f");
-			gpuMath.setUniformForProgram("positionCalcVerlet", "u_faceStiffness", options.faceStiffness, "1f");
-			setSolveParams(); // recalc dt
-		}
 	}
 
 	function updateExternalForces() {
@@ -513,17 +466,22 @@ function initDynamicSolver(options) {
 		gpuMath.initTextureFromData("u_creaseVectors", textureDimCreases, textureDimCreases, float_type, creaseVectors, true);
 	}
 
-	function updateCreasesMeta(initing) {
+	function updateCreasesMeta(initing = false) {
 		for (let i = 0; i < model.creases.length; i += 1) {
 			const crease = model.creases[i];
 			creaseMeta[i * 4] = crease.getK();
 			// creaseMeta[i*4+1] = crease.getD();
-			if (initing) creaseMeta[i * 4 + 2] = crease.getTargetTheta();
+		}
+		if (initing) {
+			for (let i = 0; i < model.creases.length; i += 1) {
+				const crease = model.creases[i];
+				creaseMeta[i * 4 + 2] = crease.getTargetTheta();
+			}
 		}
 		gpuMath.initTextureFromData("u_creaseMeta", textureDimCreases, textureDimCreases, float_type, creaseMeta, true);
 	}
 
-	function updateLastPosition() {
+	const updateLastPosition = () => {
 		for (let i = 0; i < model.nodes.length; i += 1) {
 			const _position = model.nodes[i].getRelativePosition();
 			lastPosition[4 * i] = _position.x;
@@ -532,19 +490,10 @@ function initDynamicSolver(options) {
 		}
 		gpuMath.initTextureFromData("u_lastPosition", textureDim, textureDim, float_type, lastPosition, true);
 		gpuMath.initFrameBufferForTexture("u_lastPosition", true);
-	}
+	};
 
-	function setCreasePercent(percent) {
-		if (!programsInited) return;
-		gpuMath.setProgram("velocityCalc");
-		gpuMath.setUniformForProgram("velocityCalc", "u_creasePercent", percent, "1f");
-		gpuMath.setProgram("positionCalcVerlet");
-		gpuMath.setUniformForProgram("positionCalcVerlet", "u_creasePercent", percent, "1f");
-	}
-
-	function initTypedArrays({ creasePercent }) {
+	const initTypedArrays = () => {
 		textureDim = calcTextureSize(model.nodes.length);
-
 		let numNodeFaces = 0;
 		const nodeFaces = [];
 		for (let i = 0; i < model.nodes.length; i += 1) {
@@ -557,26 +506,21 @@ function initDynamicSolver(options) {
 			}
 		}
 		textureDimNodeFaces = calcTextureSize(numNodeFaces);
-
 		let numEdges = 0;
 		for (let i = 0; i < model.nodes.length; i += 1) {
 			numEdges += model.nodes[i].numBeams();
 		}
 		textureDimEdges = calcTextureSize(numEdges);
-
 		const numCreases = model.creases.length;
 		textureDimCreases = calcTextureSize(numCreases);
-
 		let numNodeCreases = 0;
 		for (let i = 0; i < model.nodes.length; i += 1) {
 			numNodeCreases += model.nodes[i].numCreases();
 		}
 		numNodeCreases += numCreases * 2; // reactions
 		textureDimNodeCreases = calcTextureSize(numNodeCreases);
-
 		const numFaces = model.faces_vertices.length;
 		textureDimFaces = calcTextureSize(numFaces);
-
 		originalPosition = new Float32Array(textureDim * textureDim * 4);
 		position = new Float32Array(textureDim * textureDim * 4);
 		lastPosition = new Float32Array(textureDim * textureDim * 4);
@@ -588,7 +532,6 @@ function initDynamicSolver(options) {
 		meta = new Float32Array(textureDim * textureDim * 4);
 		meta2 = new Float32Array(textureDim * textureDim * 4);
 		beamMeta = new Float32Array(textureDimEdges * textureDimEdges * 4);
-
 		normals = new Float32Array(textureDimFaces * textureDimFaces * 4);
 		faceVertexIndices = new Float32Array(textureDimFaces * textureDimFaces * 4);
 		creaseMeta = new Float32Array(textureDimCreases * textureDimCreases * 4);
@@ -600,13 +543,11 @@ function initDynamicSolver(options) {
 		creaseVectors = new Float32Array(textureDimCreases * textureDimCreases * 4);
 		theta = new Float32Array(textureDimCreases * textureDimCreases * 4);
 		lastTheta = new Float32Array(textureDimCreases * textureDimCreases * 4);
-
 		for (let i = 0; i < model.faces_vertices.length; i += 1) {
 			const face = model.faces_vertices[i];
 			faceVertexIndices[4 * i] = face[0];
 			faceVertexIndices[4 * i + 1] = face[1];
 			faceVertexIndices[4 * i + 2] = face[2];
-
 			const a = model.nodes[face[0]].getOriginalPosition();
 			const b = model.nodes[face[1]].getOriginalPosition();
 			const c = model.nodes[face[2]].getOriginalPosition();
@@ -616,7 +557,6 @@ function initDynamicSolver(options) {
 			nominalTriangles[4 * i] = Math.acos(ab.dot(ac));
 			nominalTriangles[4 * i + 1] = Math.acos(-1*ab.dot(bc));
 			nominalTriangles[4 * i + 2] = Math.acos(ac.dot(bc));
-
 			if (Math.abs(nominalTriangles[4 * i]
 				+ nominalTriangles[4 * i + 1]
 				+ nominalTriangles[4 * i + 2]
@@ -624,11 +564,9 @@ function initDynamicSolver(options) {
 				console.warn("bad angles");
 			}
 		}
-
 		for (let i = 0; i < textureDim * textureDim; i += 1) {
 			mass[4 * i + 1] = 1; // set all fixed by default
 		}
-
 		for (let i = 0; i < textureDimCreases * textureDimCreases; i += 1) {
 			if (i >= numCreases) {
 				lastTheta[i * 4 + 2] = -1;
@@ -638,7 +576,6 @@ function initDynamicSolver(options) {
 			lastTheta[i * 4 + 2] = model.creases[i].getNormal1Index();
 			lastTheta[i * 4 + 3] = model.creases[i].getNormal2Index();
 		}
-
 		let index = 0;
 		for (let i = 0; i < model.nodes.length; i += 1) {
 			meta2[4 * i] = index;
@@ -654,7 +591,6 @@ function initDynamicSolver(options) {
 			}
 			index += num;
 		}
-
 		index = 0;
 		for (let i = 0; i < model.nodes.length; i += 1) {
 			mass[4 * i] = model.nodes[i].getSimMass();
@@ -662,7 +598,6 @@ function initDynamicSolver(options) {
 			const nodeCreases = model.nodes[i].creases;
 			// nodes attached to crease move in opposite direction
 			const nodeInvCreases = model.nodes[i].invCreases;
-			// console.log(nodeInvCreases);
 			meta[i * 4 + 3] = nodeCreases.length + nodeInvCreases.length;
 			for (let j = 0; j < nodeCreases.length; j += 1) {
 				nodeCreaseMeta[index * 4] = nodeCreases[j].getIndex();
@@ -685,24 +620,159 @@ function initDynamicSolver(options) {
 			creaseMeta2[i * 4 + 3] = crease.edge.nodes[1].getIndex();
 			index += 1;
 		}
-
 		updateOriginalPosition();
 		updateMaterials(true);
 		updateFixed();
 		updateExternalForces();
 		updateCreasesMeta(true);
 		updateCreaseVectors();
-		setCreasePercent(creasePercent);
-	}
+	};
+	/**
+	 * @returns {number} the global error
+	 */
+	const solve = (_numSteps, {
+		creasePercent, axialStrain, nodePositionHasChanged, shouldCenterGeo,
+	}) => {
+		if (options.fixedHasChanged) {
+			updateFixed();
+			options.fixedHasChanged = false;
+		}
+		if (nodePositionHasChanged) {
+			updateLastPosition();
+			// nodePositionHasChanged = false;
+		}
+		if (options.creaseMaterialHasChanged) {
+			updateCreasesMeta();
+			options.creaseMaterialHasChanged = false;
+		}
+		if (options.materialHasChanged) {
+			updateMaterials();
+			options.materialHasChanged = false;
+		}
+
+		// if (options.shouldChangeCreasePercent) {
+		//   setCreasePercent(creasePercent);
+		//   options.shouldChangeCreasePercent = false;
+		// }
+
+		// if (options.shouldZeroDynamicVelocity) {
+		//     gpuMath.step("zeroTexture", [], "u_velocity");
+		//     gpuMath.step("zeroTexture", [], "u_lastVelocity");
+		//     options.shouldZeroDynamicVelocity = false;
+		// }
+		if (shouldCenterGeo) {
+			const avgPosition = getBoundingBoxCenter();
+			gpuMath.setProgram("centerTexture");
+			gpuMath.setUniformForProgram("centerTexture", "u_center", [avgPosition.x, avgPosition.y, avgPosition.z], "3f");
+			gpuMath.step("centerTexture", ["u_lastPosition"], "u_position");
+			if (integrationType === "verlet") {
+				gpuMath.step("copyTexture", ["u_position"], "u_lastLastPosition");
+			}
+			gpuMath.swapTextures("u_position", "u_lastPosition");
+			gpuMath.step("zeroTexture", [], "u_lastVelocity");
+			gpuMath.step("zeroTexture", [], "u_velocity");
+			// shouldCenterGeo = false;
+		}
+		if (_numSteps === undefined) {
+			_numSteps = options.numSteps;
+		}
+		for (let j = 0; j < _numSteps; j += 1) {
+			solveStep();
+		}
+		return render({ axialStrain });
+	};
+
+	const dealloc = () => {
+		if (gpuMath) {
+			gpuMath.dealloc();
+			gpuMath = undefined;
+		}
+	};
+	/**
+	 * @description call this after a new model has been loaded
+	 * @params {object} model the origami simulator model
+	 * @params {object} options options to be set on initialization. includes:
+	 * - creasePercent: 0.0,
+	 * - axialStiffness: 20,
+	 * - faceStiffness: 0.2,
+	 * - calcFaceStrain: false,
+	 */
+	const setModel = (newModel, params = {}) => {
+		// these next 2 might be unnecessary
+		dealloc();
+		gpuMath = GPUMath();
+
+		model = newModel;
+		initTypedArrays();
+		initTexturesAndPrograms(params);
+		setSolveParams();
+	};
+	/**
+	 * @returns {number} the global error
+	 */
+	const reset = () => {
+		if (!gpuMath) { return 0; }
+		gpuMath.step("zeroTexture", [], "u_position");
+		gpuMath.step("zeroTexture", [], "u_lastPosition");
+		gpuMath.step("zeroTexture", [], "u_lastLastPosition");
+		gpuMath.step("zeroTexture", [], "u_velocity");
+		gpuMath.step("zeroTexture", [], "u_lastVelocity");
+		gpuMath.step("zeroThetaTexture", ["u_lastTheta"], "u_theta");
+		gpuMath.step("zeroThetaTexture", ["u_theta"], "u_lastTheta");
+		return render({ axialStrain: false });
+	};
+
+	const setIntegration = (integration) => {
+		integrationType = integration;
+		reset();
+	};
+
+	const setCreasePercent = (percent) => {
+		if (!gpuMath) { return; }
+		const number = parseFloat(percent);
+		gpuMath.setProgram("velocityCalc");
+		gpuMath.setUniformForProgram("velocityCalc", "u_creasePercent", number, "1f");
+		gpuMath.setProgram("positionCalcVerlet");
+		gpuMath.setUniformForProgram("positionCalcVerlet", "u_creasePercent", number, "1f");
+	};
+
+	const setAxialStiffness = (value) => {
+		if (!gpuMath) { return; }
+		const number = parseFloat(value);
+		gpuMath.setProgram("velocityCalc");
+		gpuMath.setUniformForProgram("velocityCalc", "u_axialStiffness", number, "1f");
+		gpuMath.setProgram("positionCalcVerlet");
+		gpuMath.setUniformForProgram("positionCalcVerlet", "u_axialStiffness", number, "1f");
+	};
+
+	const setFaceStiffness = (value) => {
+		if (!gpuMath) { return; }
+		const number = parseFloat(value);
+		gpuMath.setProgram("velocityCalc");
+		gpuMath.setUniformForProgram("velocityCalc", "u_faceStiffness", number, "1f");
+		gpuMath.setProgram("positionCalcVerlet");
+		gpuMath.setUniformForProgram("positionCalcVerlet", "u_faceStiffness", number, "1f");
+	};
+
+	const setFaceStrain = (value) => {
+		if (!gpuMath) { return; }
+		const number = parseFloat(value);
+		gpuMath.setProgram("velocityCalc");
+		gpuMath.setUniformForProgram("velocityCalc", "u_calcFaceStrain", number, "1f");
+		gpuMath.setProgram("positionCalcVerlet");
+		gpuMath.setUniformForProgram("positionCalcVerlet", "u_calcFaceStrain", number, "1f");
+	};
 
 	return {
-		dealloc,
-		syncNodesAndEdges,
-		setCreasePercent,
-		updateFixed,
 		solve,
-		render,
+		setModel,
 		reset,
+		dealloc,
+		setIntegration,
+		setCreasePercent,
+		setAxialStiffness,
+		setFaceStiffness,
+		setFaceStrain,
 	};
 }
 

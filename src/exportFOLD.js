@@ -8,8 +8,10 @@ import * as THREE from "three";
  * the original FOLD graph, update the edges_foldAngle to their current
  * fold angle as well, and if the user chooses, replace the faces with
  * their triangulated counterparts, creating additional "J" (join) edges.
+ * @param {object} fold a FOLD object, the original one loaded into the app.
+ * @param {object} model the OrigamiSimulator Model object
  */
-const exportFOLD = ({ model }) => {
+const exportFOLD = (fold, model) => {
 	// todo. all of this
 	const geo = new THREE.Geometry().fromBufferGeometry(model.getGeometry());
 
@@ -17,10 +19,12 @@ const exportFOLD = ({ model }) => {
 		globals.warn("No geometry to save.");
 		return;
 	}
-	const FOLD = {};
-	FOLD.vertices_coords = geo.vertices.map(v => [v.x, v.y, v.z]);
+	const FOLD = JSON.parse(JSON.stringify(fold));
+	// FOLD.file_spec = 1.1;
+	FOLD.file_creator = "Origami Simulator: http://git.amandaghassaei.com/OrigamiSimulator/";
 	FOLD.frame_classes = ["singleModel"];
 	FOLD.frame_attributes = ["3D"];
+	FOLD.vertices_coords = geo.vertices.map(v => [v.x, v.y, v.z]);
 
 	const useTriangulated = globals.triangulateFOLDexport;
 	const fold = globals.pattern.getFoldData(!useTriangulated);
@@ -36,20 +40,6 @@ const exportFOLD = ({ model }) => {
 	if (globals.exportFoldAngle) {
 		json.edges_foldAngle = fold.edges_foldAngle;
 	}
-
-	const json = {
-		file_spec: 1.1,
-		file_creator: "Origami Simulator: http://git.amandaghassaei.com/OrigamiSimulator/",
-		file_author: $("#foldAuthor").val(),
-		frame_title: filename,
-		frame_classes: ["singleModel"],
-		frame_attributes: ["3D"],
-		frame_unit: globals.foldUnits,
-		vertices_coords: [],
-		edges_vertices: [],
-		edges_assignment: [],
-		faces_vertices: []
-	};
 
 	const blob = new Blob([JSON.stringify(json, null, 4)], { type: "application/octet-binary" });
 	saveAs(blob, filename + ".fold");

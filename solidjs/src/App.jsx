@@ -23,6 +23,14 @@ function App() {
 	// swap materials based on the app color theme
 	const [darkMode, setDarkMode] = createSignal(true);
 
+	// information relayed up from the simulator
+	const [error, setError] = createSignal(0);
+	const [reset, setReset] = createSignal();
+	const [integration, setIntegration] = createSignal("euler");
+	const [axialStiffness, setAxialStiffness] = createSignal(20);
+	const [faceStiffness, setFaceStiffness] = createSignal(0.2);
+	const [joinStiffness, setJoinStiffness] = createSignal(0.7);
+
 	return (
 		<div class={styles.App}>
 			<Settings
@@ -42,6 +50,16 @@ function App() {
 				setShowShadows={setShowShadows}
 				darkMode={darkMode}
 				setDarkMode={setDarkMode}
+				error={error}
+				reset={reset}
+				integration={integration}
+				setIntegration={setIntegration}
+				axialStiffness={axialStiffness}
+				setAxialStiffness={setAxialStiffness}
+				faceStiffness={faceStiffness}
+				setFaceStiffness={setFaceStiffness}
+				joinStiffness={joinStiffness}
+				setJoinStiffness={setJoinStiffness}
 			/>
 			<Simulator
 				origami={origami}
@@ -52,6 +70,12 @@ function App() {
 				showTouches={showTouches}
 				showShadows={showShadows}
 				darkMode={darkMode}
+				setError={setError}
+				setReset={setReset}
+				integration={integration}
+				axialStiffness={axialStiffness}
+				faceStiffness={faceStiffness}
+				joinStiffness={joinStiffness}
 			/>
 		</div>
 	);

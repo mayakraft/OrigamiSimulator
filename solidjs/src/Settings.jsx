@@ -89,6 +89,83 @@ const Settings = (props) => {
 				/>
 			</h3>
 
+			<h3>integration</h3>
+			<input
+				type="radio"
+				name="radio-integration"
+				value="radio-integration-euler"
+				onClick={() => props.setIntegration("euler")}
+				checked={props.integration() === "euler"} />
+			<label for="radio-integration-euler">euler</label>
+			<input
+				type="radio"
+				name="radio-integration"
+				value="radio-integration-verlet"
+				onClick={() => props.setIntegration("verlet")}
+				checked={props.integration() === "verlet"} />
+			<label for="radio-integration-verlet">verlet</label>
+
+			<h3>
+				axial stiffness
+				<input
+					type="text"
+					class={Style.Short}
+					value={props.axialStiffness()}
+				/>
+			</h3>
+			<input
+				type="range"
+				min="10"
+				max="100"
+				step="1"
+				value={props.axialStiffness()}
+				onInput={e => props.setAxialStiffness(e.target.value)} />
+
+			<h3>
+				face stiffness
+				<input
+					type="text"
+					class={Style.Short}
+					value={props.faceStiffness()}
+				/>
+			</h3>
+			<input
+				type="range"
+				min="0"
+				max="5"
+				step="0.02"
+				value={props.faceStiffness()}
+				onInput={e => props.setFaceStiffness(e.target.value)} />
+
+			<h3>
+				join stiffness
+				<input
+					type="text"
+					class={Style.Short}
+					value={props.joinStiffness()}
+				/>
+			</h3>
+			<input
+				type="range"
+				min="0"
+				max="3"
+				step="0.01"
+				value={props.joinStiffness()}
+				onInput={e => props.setJoinStiffness(e.target.value)} />
+
+			<h3>
+				error
+				<input
+					type="text"
+					class={Style.Long}
+					disabled={!props.active()}
+					value={props.error()}
+				/>
+			</h3>
+
+			<button onClick={() => props.reset()()}>reset model</button>
+			<br />
+
 		</div>
 	);
 };

@@ -15,7 +15,7 @@ function initRigidSolver() {
 	let C;
 	let F;
 
-	function syncNodesAndEdges() {
+	function setModel() {
 		nodes = globals.model.getNodes();
 		edges = globals.model.getEdges();
 		faces = globals.model.getFaces();
@@ -242,9 +242,9 @@ function initRigidSolver() {
 	}
 
 	return {
-		syncNodesAndEdges,
+		setModel,
 		solve,
-		reset
+		reset,
 	};
 }
 

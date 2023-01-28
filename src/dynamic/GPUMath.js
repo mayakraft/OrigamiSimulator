@@ -102,7 +102,7 @@ function initGPUMath() {
 			console.warn(`no program with name ${programName}`);
 			return;
 		}
-		let uniforms = this.programs[programName].uniforms;
+		const uniforms = this.programs[programName].uniforms;
 		let location = uniforms[name];
 		if (!location) {
 			location = gl.getUniformLocation(this.programs[programName].program, name);

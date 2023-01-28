@@ -9,13 +9,14 @@ import prepare from "./fold/prepare";
  * refactored so that:
  * - encapsulate global variables to allow for multiple simultaneous instances
  * - ability to dealloc() and reinitialize, memory will properly free itself.
- * - rewrite in ES6 module for functionality in popular JS frameworks.
+ * - rewrite in ES6 module format to work in popular JS frameworks.
  *
  * This will create an instance of an Origami Simulator, which is meant to
- * be created just after you create a ThreeJS canvas, so that Ori Sim can
+ * be created just after you create a ThreeJS canvas, so that this can
  * bind itself to the ThreeJS instance.
+ * @param {object} props provide a pre-initialized three.js scene (THREE.Scene)
  */
-const OrigamiSimulator = function ({ scene }) {
+const OrigamiSimulator = ({ scene, didUpdate }) => {
 	// app variables
 	const visible = {
 		B: true,
@@ -26,6 +27,7 @@ const OrigamiSimulator = function ({ scene }) {
 		U: true,
 	};
 	const model = new Model({ scene });
+	// the
 	const solver = DynamicSolver({
 		fixedHasChanged: false,
 		nodePositionHasChanged: false,
@@ -37,16 +39,24 @@ const OrigamiSimulator = function ({ scene }) {
 		integrationType: "euler",
 		strainClip: 0.5,
 		calcFaceStrain: false,
-		axialStiffness: 20,
-		faceStiffness: 0.2,
+		axialStiffness: 20, // 10 to 100
+		faceStiffness: 0.2, // 0 to 5
 	});
+	// this is the error in the folding, the deviation
+	// from where it's supposed to be.
+	let error = 0;
+
+	// foldStiffness, 0 to 3  (creaseStiffness) on the model
+	// facetCreaseStiffness, 0 to 3 (panelStiffness) on the model
+	// damping ratio, 0.01 to 0.5 (percentDamping). on the model
+
 	/**
 	 * @description Fold the origami, between 0.0 and 1.0.
 	 */
 	let foldAmount = 0.0;
 	const setFoldAmount = (value) => {
-		const float = parseFloat(value);
-		foldAmount = !Number.isNaN(float) ? float : 0.0;
+		const number = parseFloat(value);
+		foldAmount = !Number.isNaN(number) ? number : 0.0;
 		solver.setCreasePercent(foldAmount);
 	};
 	/**
@@ -77,12 +87,15 @@ const OrigamiSimulator = function ({ scene }) {
 	const nodeDidMove = () => {
 		nodePositionHasChanged = true;
 		shouldCenterGeo = true;
+		// fixedHasChanged
 	};
 	/**
 	 * @description One call to origami simulator's solver
 	 */
 	const compute = () => {
-		solver.solve(100, {
+		// error is the global error in the folding of the model
+		// not a computational error.
+		error = solver.solve(100, {
 			axialStrain: strain,
 			creasePercent: foldAmount,
 			nodePositionHasChanged,
@@ -102,6 +115,7 @@ const OrigamiSimulator = function ({ scene }) {
 	const computeLoop = () => {
 		computeLoopID = window.requestAnimationFrame(computeLoop);
 		compute();
+		if (didUpdate) { didUpdate({ error }); }
 	};
 	/**
 	 * @description Activate origami simulator's compute loop.
@@ -120,7 +134,7 @@ const OrigamiSimulator = function ({ scene }) {
 	 * @description this load method can throw an error. wrap it in a try catch
 	 * and deliver the error to the end user.
 	 */
-	const load = function (foldObject) {
+	const load = (foldObject) => {
 		const fold = prepare(foldObject);
 		model.load(fold, {
 			axialStiffness: 20,
@@ -130,8 +144,32 @@ const OrigamiSimulator = function ({ scene }) {
 			visible,
 			axialStrain: strain,
 		});
-		solver.syncNodesAndEdges(model, { creasePercent: foldAmount });
+		solver.setModel(model, {
+			creasePercent: foldAmount,
+			// axialStiffness,
+			// faceStiffness,
+			// calcFaceStrain,
+		});
 	};
+	/**
+	 *
+	 */
+	const setIntegration = (value) => {
+		solver.setIntegration(value);
+	};
+	const setAxialStiffness = (value) => {
+		solver.setAxialStiffness(value);
+	};
+	const setFaceStiffness = (value) => {
+		solver.setFaceStiffness(value);
+	};
+	const setJoinStiffness = (value) => {
+		model.setJoinStiffness(value);
+	};
+	/**
+	 * @description Reset the vertices of the model to their original position
+	 */
+	const reset = () => solver.reset();
 	/**
 	 * @description Stop the compute loop and free all associated memory
 	 */
@@ -146,12 +184,17 @@ const OrigamiSimulator = function ({ scene }) {
 	const app = {
 		load,
 		model,
+		reset,
 		dealloc,
 		nodeDidMove,
 		setActive,
 		setFoldAmount,
 		setStrain,
 		setShadows,
+		setIntegration,
+		setAxialStiffness,
+		setFaceStiffness,
+		setJoinStiffness,
 	};
 	// getters and setters
 	Object.defineProperty(app, "active", { get: () => active, set: setActive });

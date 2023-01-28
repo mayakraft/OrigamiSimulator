@@ -13,9 +13,13 @@
 	margin: 0.5rem 0;
 }
 
-.Container input[type=radio] + * {
-	margin: 0.5rem 0.25rem;
+/*.Container input[type=radio] + * {*/
+.Container input {
+	margin: 0rem 0.25rem;
 }
+
+.Long { width: 8rem; }
+.Short { width: 2.5rem; }
 
 .Dark {
 	color: #ddd;

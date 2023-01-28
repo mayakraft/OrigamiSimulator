@@ -1,8 +1,6 @@
 import * as THREE from "three";
-
 // todo: idea- duplicate highlighted vertex, one obeys depthTest with full
 // opacity, the other is always visible with half opacity.
-
 const Highlights = ({ scene, simulator }) => {
 	// visualize the raycaster
 	let point;

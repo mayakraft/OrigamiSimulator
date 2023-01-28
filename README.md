@@ -33,7 +33,13 @@ You are in charge of setting up and managing three.js, meaning, you get to decor
 2. initialize this simulator by passing in the renderer, scene, and camera.
 3. you are in charge of setting up any lighting or UI controls like trackball.
 
-now the app should run. Interface with your origamiSimulator instance:
+```js
+import OrigamiSimulator from "./src/index";
+
+const origamiSimulator = OrigamiSimulator({ renderer, scene, camera });
+```
+
+now the app should run. Interface with your `origamiSimulator` instance:
 
 - `load()` load in an origami model in FOLD format
 - `setActive(boolean)` turn on/off origami simulator's compute loop

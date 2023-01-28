@@ -53,12 +53,12 @@ export const materialHighlightBackDark = new THREE.MeshBasicMaterial({
 export const materialLightLine = new THREE.LineBasicMaterial({
 	color: 0x000000,
 	transparent: true,
-	opacity: 0.5
+	opacity: 0.5,
 });
 export const materialDarkLine = new THREE.LineBasicMaterial({
 	color: 0x000000,
 	transparent: false,
-	opacity: 1.0
+	opacity: 1.0,
 });
 
 // faces

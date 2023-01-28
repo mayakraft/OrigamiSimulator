@@ -5,6 +5,7 @@
 import { createSignal, createEffect, onCleanup } from "solid-js";
 import * as THREE from "three";
 import Style from "./Simulator.module.css";
+import TrackballView from "../WebGL/TrackballView.jsx";
 import OrigamiSimulator from "../../../src/index";
 import Highlights from "../../../src/highlights";
 import Raycasters from "../../../src/raycasters";
@@ -40,6 +41,8 @@ const lightVertices = [
  * - props.showTouches (highlight the vertex/face underneath the cursor)
  * - props.showShadows (turn on three.js shadows)
  * - props.darkMode (swap materials based on light/dark mode)
+ * new ones
+ * - props.reset (reset the vertices of the origami model)
  */
 const Simulator = (props) => {
 	// model size will update the position of the lights, camera, and
@@ -61,12 +64,19 @@ const Simulator = (props) => {
 	// three.js lights for this scene
 	let lights;
 	/**
+	 * @description Origami Simulator solver just executed. This is attached
+	 * to the window.requestAnimationFrame and will fire at the end of every loop
+	 */
+	const didUpdate = ({ error }) => {
+		props.setError(error);
+	};
+	/**
 	 * @description This is the callback from ThreeView after three.js has
 	 * finished initializing. This is not the JS framework's builtin function.
 	 */
-	const onMount = ({ renderer, scene, camera }) => {
+	const didMount = ({ renderer, scene, camera }) => {
 		// initialize origami simulator
-		simulator = OrigamiSimulator({ renderer, scene, camera });
+		simulator = OrigamiSimulator({ renderer, scene, camera, didUpdate });
 		highlights = Highlights({ scene, simulator });
 		raycasters = Raycasters({
 			renderer, camera, simulator, setTouches,
@@ -128,6 +138,10 @@ const Simulator = (props) => {
 		createEffect(() => simulator.setActive(props.active()));
 		createEffect(() => simulator.setStrain(props.strain()));
 		createEffect(() => simulator.setFoldAmount(props.foldAmount()));
+		createEffect(() => simulator.setIntegration(props.integration()));
+		createEffect(() => simulator.setAxialStiffness(props.axialStiffness()));
+		createEffect(() => simulator.setFaceStiffness(props.faceStiffness()));
+		createEffect(() => simulator.setJoinStiffness(props.joinStiffness()));
 		// deliver the touch data from the raycaster to be highlighted
 		createEffect(() => highlights.highlightTouch(touches()[0]));
 		// nitpicky. upon tool change we need raycasterPullVertex to be undefined
@@ -141,6 +155,8 @@ const Simulator = (props) => {
 				lights[i].castShadow = props.showShadows();
 			});
 		});
+		// upstream
+		props.setReset(() => simulator.reset);
 	};
 	/**
 	 * @description This is tied to the animation loop event managed by
@@ -156,8 +172,8 @@ const Simulator = (props) => {
 	 * @description cleanup all memory associated with origami simulator
 	 */
 	onCleanup(() => {
-		raycasters.dealloc();
-		simulator.dealloc();
+		if (raycasters) { raycasters.dealloc(); }
+		if (simulator) { simulator.dealloc(); }
 	});
 	/**
 	 * @description Initialize/reset all mesh materials including those
@@ -208,7 +224,7 @@ const Simulator = (props) => {
 				zoomSpeed={16}
 				dynamicDampingFactor={1}
 				// props for the ThreeView child component
-				didMount={onMount}
+				didMount={didMount}
 				didResize={() => {}}
 				animate={animate}
 			/>
