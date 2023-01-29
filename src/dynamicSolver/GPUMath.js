@@ -2,10 +2,15 @@
  * Created by ghassaei on 2/24/16.
  */
 
-import GLBoilerPlate from "./GLBoilerplate";
+// import GLBoilerPlate from "./GLBoilerplate";
+import {
+	createProgramFromSource,
+	loadVertexData,
+	makeTexture,
+} from "./GLBoilerplate";
 
 function initGPUMath() {
-	const glBoilerplate = GLBoilerPlate();
+	// const glBoilerplate = GLBoilerPlate();
 
 	const canvas = window.document.createElement("canvas");
 	canvas.setAttribute("style", "display:none;");
@@ -42,9 +47,9 @@ function initGPUMath() {
 			// console.warn("already a program with the name " + programName);
 			return;
 		}
-		program = glBoilerplate.createProgramFromSource(gl, vertexShader, fragmentShader);
+		program = createProgramFromSource(gl, vertexShader, fragmentShader);
 		gl.useProgram(program);
-		glBoilerplate.loadVertexData(gl, program);
+		loadVertexData(gl, program);
 		programs[programName] = {
 			program,
 			uniforms: {},
@@ -52,7 +57,12 @@ function initGPUMath() {
 	};
 
 	GPUMath.prototype.initTextureFromData = function (
-		name, width, height, typeName, data, shouldReplace,
+		name,
+		width,
+		height,
+		typeName,
+		data,
+		shouldReplace,
 	) {
 		let texture = this.textures[name];
 
@@ -63,7 +73,7 @@ function initGPUMath() {
 			}
 			gl.deleteTexture(texture);
 		}
-		texture = glBoilerplate.makeTexture(gl, width, height, gl[typeName], data);
+		texture = makeTexture(gl, width, height, gl[typeName], data);
 		this.textures[name] = texture;
 	};
 
