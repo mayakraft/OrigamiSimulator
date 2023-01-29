@@ -1,8 +1,8 @@
 /**
  * Created by ghassaei on 2/22/17.
  */
-import Model from "./model";
-import DynamicSolver from "./dynamic/dynamicSolver";
+import Model from "./model/index";
+import DynamicSolver from "./dynamicSolver/index";
 import prepare from "./fold/prepare";
 /**
  * @description Origami Simulator by Amanda Ghassaei.
@@ -28,20 +28,7 @@ const OrigamiSimulator = ({ scene, didUpdate }) => {
 	};
 	const model = new Model({ scene });
 	// the
-	const solver = DynamicSolver({
-		fixedHasChanged: false,
-		nodePositionHasChanged: false,
-		shouldCenterGeo: false,
-		creaseMaterialHasChanged: false,
-		materialHasChanged: false,
-		shouldZeroDynamicVelocity: false,
-		numSteps: 100,
-		integrationType: "euler",
-		strainClip: 0.5,
-		calcFaceStrain: false,
-		axialStiffness: 20, // 10 to 100
-		faceStiffness: 0.2, // 0 to 5
-	});
+	const solver = DynamicSolver();
 	// this is the error in the folding, the deviation
 	// from where it's supposed to be.
 	let error = 0;
@@ -82,13 +69,8 @@ const OrigamiSimulator = ({ scene, didUpdate }) => {
 	 * @description When the user pulls on a node, call this method, it will
 	 * relay the information to the solver
 	 */
-	let nodePositionHasChanged = false;
-	let shouldCenterGeo = false;
-	const nodeDidMove = () => {
-		nodePositionHasChanged = true;
-		shouldCenterGeo = true;
-		// fixedHasChanged
-	};
+	const nodeDidMove = () => solver.nodeDidMove();
+
 	/**
 	 * @description One call to origami simulator's solver
 	 */
@@ -97,15 +79,9 @@ const OrigamiSimulator = ({ scene, didUpdate }) => {
 		// not a computational error.
 		error = solver.solve(100, {
 			axialStrain: strain,
-			creasePercent: foldAmount,
-			nodePositionHasChanged,
-			shouldCenterGeo,
-			// globals.numSteps
 		});
 		model.needsUpdate({ axialStrain: strain });
 		// reset single loop variables
-		nodePositionHasChanged = false;
-		shouldCenterGeo = false;
 	};
 	/**
 	 * @description Start a loop with window.requestAnimationFrame

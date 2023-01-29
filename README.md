@@ -27,16 +27,16 @@ Now you can create an instance of OrigamiSimulator. Getting an instance up and r
 
 The workflow goes something like this.
 
-You are in charge of setting up and managing three.js, meaning, you get to decorate the scene as you like, including lighting, but OrigamiSimulator will add and manage/update the origami model.
+You are in charge of setting up and managing three.js, you get to decorate the scene as you like, including lighting, but OrigamiSimulator will add and manage the origami model.
 
 1. initialize a three.js renderer, scene, camera, and animation loop. (there are hundreds of tutorials for this)
-2. initialize this simulator by passing in the renderer, scene, and camera.
+2. initialize origami simulator by passing in the three.js scene.
 3. you are in charge of setting up any lighting or UI controls like trackball.
 
 ```js
 import OrigamiSimulator from "./src/index";
 
-const origamiSimulator = OrigamiSimulator({ renderer, scene, camera });
+const origamiSimulator = OrigamiSimulator({ scene });
 ```
 
 now the app should run. Interface with your `origamiSimulator` instance:

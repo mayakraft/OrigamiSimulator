@@ -76,7 +76,7 @@ const Simulator = (props) => {
 	 */
 	const didMount = ({ renderer, scene, camera }) => {
 		// initialize origami simulator
-		simulator = OrigamiSimulator({ renderer, scene, camera, didUpdate });
+		simulator = OrigamiSimulator({ scene, didUpdate });
 		highlights = Highlights({ scene, simulator });
 		raycasters = Raycasters({
 			renderer, camera, simulator, setTouches,
