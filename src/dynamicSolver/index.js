@@ -3,22 +3,12 @@
  */
 import GPUMath from "./GPUMath";
 import modelCenter from "../model/modelCenter";
-import initialize from "./initialize";
+import initialize from "./initialize/index";
 import { updateLastPosition } from "./update";
 import {
 	solveStep,
 	render,
 } from "./solve";
-
-// ///////////////////////
-// currently looking into making this work on iOS.
-// problem appears to be the need to support and switch to using HALF_FLOAT
-//
-// update: seems to be working. iOS might have added support to the float type.
-//
-// https://github.com/mrdoob/three.js/issues/9628
-// http://yomboprime.github.io/GPGPU-threejs-demos/webgl_gpgpu_water.html
-
 // these few options are still remaining to be handled.
 // not sure where the were used exactly
 // - fixedHasChanged: false,
@@ -30,24 +20,12 @@ const DynamicSolver = () => {
 	let gpuMath;
 	// store reference to the Origami Simulator model
 	let model;
-	// store here due to being used in the user-called method, nodeDidMove()
-	// let lastPosition;
-	// "euler" or "verlet". also used in a few places, including nodeDidMove()
-	// let integrationType = "euler";
-	// // store these up here. they are used in lots of places.
-	// let textureDim = 0;
-	// let textureDimEdges = 0;
-	// let textureDimFaces = 0;
-	// let textureDimCreases = 0;
-	// let textureDimNodeCreases = 0;
-	// let textureDimNodeFaces = 0;
-
+	// store these here due to being used the solve loop or nodeDidMove
 	let textureDim;
 	let textureDimCreases;
 	let textureDimFaces;
 	let lastPosition;
 	let integrationType = "euler";
-
 	/**
 	 * @description The user will call this method when the UI is pulling on a
 	 * vertex, this conveys to the solver that a node is being manually moved.
@@ -93,7 +71,9 @@ const DynamicSolver = () => {
 		}
 		return render(gpuMath, model, { textureDim, axialStrain: computeStrain });
 	};
-
+	/**
+	 * @description deallocate everything involved with the dynamic solver
+	 */
 	const dealloc = () => {
 		if (gpuMath) {
 			gpuMath.dealloc();
@@ -113,7 +93,9 @@ const DynamicSolver = () => {
 		// these next 2 might be unnecessary
 		dealloc();
 		gpuMath = GPUMath();
+		// store the model
 		model = newModel;
+		// save these initialization variables
 		({
 			textureDim,
 			textureDimCreases,
