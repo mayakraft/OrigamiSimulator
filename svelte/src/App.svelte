@@ -27,6 +27,8 @@
 	let axialStiffness = 20;
 	let faceStiffness = 0.2;
 	let joinStiffness = 0.7;
+	let creaseStiffness = 0.7;
+	let dampingRatio = 0.45;
 	// information relayed up from the simulator
 	let error = 0;
 
@@ -45,6 +47,8 @@
 		bind:axialStiffness={axialStiffness}
 		bind:faceStiffness={faceStiffness}
 		bind:joinStiffness={joinStiffness}
+		bind:creaseStiffness={creaseStiffness}
+		bind:dampingRatio={dampingRatio}
 		{darkMode}
 		{error}
 		{reset}
@@ -62,6 +66,8 @@
 		{axialStiffness}
 		{faceStiffness}
 		{joinStiffness}
+		{creaseStiffness}
+		{dampingRatio}
 		bind:error={error}
 		bind:reset={reset}
 	/>

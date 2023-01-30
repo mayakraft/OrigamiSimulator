@@ -115,6 +115,14 @@ const fillArrays = (gpuMath, model, {
 	updateExternalForces(gpuMath, model, { externalForces, textureDim });
 	updateCreasesMeta(gpuMath, model, { creaseMeta, textureDimCreases }, true);
 	updateCreaseVectors(gpuMath, model, { creaseVectors, textureDimCreases });
+	return {
+		originalPosition,
+		externalForces,
+		mass,
+		beamMeta,
+		creaseVectors,
+		creaseMeta,
+	};
 };
 
 export default fillArrays;

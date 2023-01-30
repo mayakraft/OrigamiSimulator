@@ -1,11 +1,7 @@
 /**
  * Created by ghassaei on 9/16/16.
  */
-
 import * as THREE from "three";
-import * as materials from "./materials";
-
-const nodeGeo = new THREE.SphereGeometry(0.02, 20);
 
 function Node(position, index, model) {
 	this.type = "node";
@@ -25,16 +21,13 @@ function Node(position, index, model) {
 
 Node.prototype.setFixed = function (fixed) {
 	this.fixed = fixed;
-	// if (fixed) {
-	//     this.object3D.material = nodeMaterialFixed;
-	//     this.object3D.geometry = nodeFixedGeo;
-	//     if (this.externalForce) this.externalForce.hide();
-	// }
-	// else {
-	//     this.object3D.material = materials.node;
-	//     this.object3D.geometry = nodeGeo;
-	//     if (this.externalForce) this.externalForce.show();
-	// }
+	if (this.externalForce) {
+		if (fixed) {
+			this.externalForce.hide();
+		} else {
+			this.externalForce.show();
+		}
+	}
 };
 
 Node.prototype.isFixed = function () {
@@ -51,8 +44,9 @@ Node.prototype.addExternalForce = function (force) {
 };
 
 Node.prototype.getExternalForce = function () {
-	if (!this.externalForce) return new THREE.Vector3(0, 0, 0);
-	return this.externalForce.getForce();
+	return (!this.externalForce)
+		? new THREE.Vector3(0, 0, 0)
+		: this.externalForce.getForce();
 };
 
 Node.prototype.addCrease = function (crease) {
@@ -60,7 +54,7 @@ Node.prototype.addCrease = function (crease) {
 };
 
 Node.prototype.removeCrease = function (crease) {
-	if (this.creases === null) return;
+	if (this.creases === null) { return; }
 	const index = this.creases.indexOf(crease);
 	if (index >= 0) this.creases.splice(index, 1);
 };
@@ -70,7 +64,7 @@ Node.prototype.addInvCrease = function (crease) {
 };
 
 Node.prototype.removeInvCrease = function (crease) {
-	if (this.invCreases === null) return;
+	if (this.invCreases === null) { return; }
 	const index = this.invCreases.indexOf(crease);
 	if (index >= 0) this.invCreases.splice(index, 1);
 };
@@ -80,7 +74,7 @@ Node.prototype.addBeam = function (beam) {
 };
 
 Node.prototype.removeBeam = function (beam) {
-	if (this.beams === null) return;
+	if (this.beams === null) { return; }
 	const index = this.beams.indexOf(beam);
 	if (index >= 0) this.beams.splice(index, 1);
 };
@@ -107,62 +101,6 @@ Node.prototype.numCreases = function () {
 Node.prototype.getIndex = function () { // in nodes array
 	return this.index;
 };
-
-Node.prototype.getObject3D = function () {
-	return this.object3D;
-};
-
-// Node.prototype.highlight = function () {
-//     this.object3D.material = nodeMaterialHighlight;
-// };
-//
-// Node.prototype.unhighlight = function () {
-//     if (!this.object3D) return;
-//     if (this.fixed) {
-//         this.object3D.material = nodeMaterialFixed;
-//     }
-//     else {
-//         this.object3D.material = materials.node;
-//     }
-// };
-
-Node.prototype.setTransparent = function () {
-	if (!this.object3D) {
-		this.object3D = new THREE.Mesh(nodeGeo, materials.node);
-		this.object3D.visible = false;
-	}
-	this.object3D.material = materials.nodeTransparent;
-};
-
-Node.prototype.setTransparentVR = function () {
-	if (!this.object3D) {
-		this.object3D = new THREE.Mesh(nodeGeo, materials.node);
-		this.object3D.visible = false;
-	}
-	this.object3D.material = materials.nodeTransparent;
-	this.object3D.scale.set(0.4, 0.4, 0.4);
-};
-
-// Node.prototype.hide = function () {
-//     this.object3D.visible = false;
-// };
-
-// Node.prototype.render = function (position) {
-// if (this.fixed) return;
-// position.add(this.getOriginalPosition());
-// console.log(position);
-// this.object3D.position.set(position.x, position.y, position.z);
-// return position;
-// };
-// Node.prototype.renderDelta = function (delta) {
-//     // if (this.fixed) return;
-//     this.object3D.position.add(delta);
-//     return this.object3D.position;
-// };
-
-// Node.prototype.renderChange = function (change) {
-//     this.object3D.position.add(change);
-// };
 
 // dynamic solve
 
@@ -200,11 +138,6 @@ Node.prototype.getSimMass = function () {
 };
 
 Node.prototype.destroy = function () {
-	// console.log("--- dealloc: Node()");
-	if (this.object3D) {
-		if (this.object3D.geometry) { this.object3D.geometry.dispose(); }
-		if (this.object3D.material) { this.object3D.material.dispose(); }
-	}
 	this.object3D = null;
 	this.beams = null;
 	this.creases = null;

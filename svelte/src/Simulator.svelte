@@ -41,6 +41,8 @@
 	export let axialStiffness;
 	export let faceStiffness;
 	export let joinStiffness;
+	export let creaseStiffness;
+	export let dampingRatio;
 	export let error;
 	export let reset;
 
@@ -170,6 +172,8 @@
 	$: if (simulator) { simulator.setAxialStiffness(axialStiffness); }
 	$: if (simulator) { simulator.setFaceStiffness(faceStiffness); }
 	$: if (simulator) { simulator.setJoinStiffness(joinStiffness); }
+	$: if (simulator) { simulator.setCreaseStiffness(creaseStiffness); }
+	$: if (simulator) { simulator.setDampingRatio(dampingRatio); }
 	// nitpicky. upon tool change we need raycasterPullVertex to be undefined
 	$: if (raycasters) { raycasters.raycasterReleaseHandler(pullNodesEnabled); }
 	// deliver the touch data from the raycaster to be highlighted

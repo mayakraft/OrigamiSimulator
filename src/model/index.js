@@ -12,7 +12,7 @@ import getFacesAndVerticesForEdges from "../fold/creaseParams";
 
 const assignments = Array.from("BMVFCU");
 
-function Model({ scene, visible }) {
+function Model({ scene, axialStiffness, joinStiffness, creaseStiffness, dampingRatio }) {
 	this.geometry = null;
 	this.frontside = new THREE.Mesh(); // front face of mesh
 	this.backside = new THREE.Mesh(); // back face of mesh (different color)
@@ -23,6 +23,10 @@ function Model({ scene, visible }) {
 			defaultMaterials.line,
 		);
 	});
+	this.axialStiffness = axialStiffness !== undefined ? axialStiffness : 20;
+	this.joinStiffness = joinStiffness !== undefined ? joinStiffness : 0.7;
+	this.creaseStiffness = creaseStiffness !== undefined ? creaseStiffness : 0.7;
+	this.dampingRatio = dampingRatio !== undefined ? dampingRatio : 0.45;
 	// vertex / color buffer arrays for GPU
 	this.positions = null;
 	this.colors = null;
@@ -135,7 +139,13 @@ Model.prototype.needsUpdate = function ({ axialStrain, vrEnabled }) {
 	this.geometry.computeBoundingBox();
 };
 
-Model.prototype.makeObjects = function (fold, options) {
+Model.prototype.makeObjects = function (fold) {
+	const options = {
+		axialStiffness: this.axialStiffness,
+		joinStiffnes: this.joinStiffnes,
+		creaseStiffness: this.creaseStiffness,
+		dampingRatio: this.dampingRatio,
+	};
 	this.nodes = fold.vertices_coords
 		.map(vertex => new THREE.Vector3(...vertex))
 		// .map((vector, i) => new Node(vector.clone(), i, Model.prototype.getPositionsArray));
@@ -242,15 +252,15 @@ Model.prototype.makeModelScale = function ({ scale, positions }) {
 	this.edges.forEach(edge => edge.recalcOriginalLength());
 };
 
-// options: { axialStiffness, percentDamping, panelStiffness, creaseStiffness, visible }
+// options: { axialStiffness, dampingRatio, joinStiffness, creaseStiffness, visible }
 Model.prototype.load = function (fold, options) {
 	const scale = 1; // the intended width of the buffer geometry
 
 	this.dealloc();
 	this.makeNewGeometries();
-	this.updateEdgeVisibility(options.visible);
+	// this.updateEdgeVisibility(options.visible);
 	this.setAxialStrain(options.axialStrain);
-	this.makeObjects(fold, options);
+	this.makeObjects(fold);
 	const { positions, colors, indices, lineIndices } = this.makeTypedArrays(fold);
 	this.setGeometryBuffers({ positions, colors, indices, lineIndices });
 	this.makeModelScale({ scale, positions });
@@ -263,9 +273,27 @@ Model.prototype.load = function (fold, options) {
 	// if (!globals.simulationRunning) reset();
 };
 
+Model.prototype.setAxialStiffness = function (value) {
+	this.axialStiffness = parseFloat(value);
+	this.edges.forEach(edge => { edge.axialStiffness = this.axialStiffness; });
+};
+
 Model.prototype.setJoinStiffness = function (value) {
-	const number = parseFloat(value);
-	console.log("TODO: setJoinStiffness", number);
+	this.joinStiffness = parseFloat(value);
+	this.creases.forEach(crease => { crease.joinStiffness = this.joinStiffness; });
+	// console.log("TODO: setJoinStiffness", this.joinStiffness);
+};
+
+Model.prototype.setCreaseStiffness = function (value) {
+	this.creaseStiffness = parseFloat(value);
+	this.creases.forEach(crease => { crease.creaseStiffness = this.creaseStiffness; });
+	// console.log("TODO: setCreaseStiffness", this.creaseStiffness);
+};
+
+Model.prototype.setDampingRatio = function (value) {
+	this.dampingRatio = parseFloat(value);
+	this.creases.forEach(crease => { crease.dampingRatio = this.dampingRatio; });
+	this.edges.forEach(edge => { edge.dampingRatio = this.dampingRatio; });
 };
 
 //  not sure where this function needs to be called

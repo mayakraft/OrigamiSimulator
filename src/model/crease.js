@@ -2,9 +2,9 @@
  * Created by amandaghassaei on 2/25/17.
  */
 
-function Crease(globals, edge, face1Index, face2Index, targetTheta, type, node1, node2, index) {
+function Crease(options, edge, face1Index, face2Index, targetTheta, type, node1, node2, index) {
 	// type = 0 panel, 1 crease
-	this.globals = globals;
+	this.options = options;
 	// face1 corresponds to node1, face2 to node2
 	this.edge = edge;
 	for (let i = 0; i < edge.nodes.length; i += 1) {
@@ -19,57 +19,56 @@ function Crease(globals, edge, face1Index, face2Index, targetTheta, type, node1,
 	this.index = index;
 	node1.addCrease(this);
 	node2.addCrease(this);
+	this.joinStiffness = options.joinStiffness !== undefined
+		? options.joinStiffness
+		: 0.7;
+	this.creaseStiffness = options.creaseStiffness !== undefined
+		? options.creaseStiffness
+		: 0.7;
+	this.dampingRatio = options.dampingRatio !== undefined
+		? options.dampingRatio
+		: 0.45;
 }
 
 Crease.prototype.getLength = function () {
 	return this.edge.getLength();
 };
-
 Crease.prototype.getVector = function (fromNode) {
 	return this.edge.getVector(fromNode);
 };
-
 Crease.prototype.getNormal1Index = function () {
 	return this.face1Index;
 };
-
 Crease.prototype.getNormal2Index = function () {
 	return this.face2Index;
 };
-
 Crease.prototype.getTargetTheta = function () {
 	return this.targetTheta;
 };
-
 Crease.prototype.getK = function () {
 	const length = this.getLength();
-	if (this.type === 0) return this.globals.panelStiffness * length;
-	return this.globals.creaseStiffness * length;
+	return (this.type === 0)
+		? this.joinStiffness * length
+		: this.creaseStiffness * length;
 };
-
 Crease.prototype.getD = function () {
-	return this.globals.percentDamping * 2 * Math.sqrt(this.getK());
+	return this.dampingRatio * 2 * Math.sqrt(this.getK());
 };
-
 Crease.prototype.getIndex = function () {
 	return this.index;
 };
-
 Crease.prototype.getLengthToNode1 = function () {
 	return this.getLengthTo(this.node1);
 };
-
 Crease.prototype.getLengthToNode2 = function () {
 	return this.getLengthTo(this.node2);
 };
-
 Crease.prototype.getCoef1 = function (edgeNode) {
 	return this.getCoef(this.node1, edgeNode);
 };
 Crease.prototype.getCoef2 = function (edgeNode) {
 	return this.getCoef(this.node2, edgeNode);
 };
-
 Crease.prototype.getCoef = function (node, edgeNode) {
 	const vector1 = this.getVector(edgeNode);
 	const creaseLength = vector1.length();
@@ -84,7 +83,6 @@ Crease.prototype.getCoef = function (node, edgeNode) {
 	}
 	return (1 - projLength / creaseLength);
 };
-
 Crease.prototype.getLengthTo = function (node) {
 	const vector1 = this.getVector().normalize();
 	const nodePosition = node.getOriginalPosition();
@@ -97,22 +95,21 @@ Crease.prototype.getLengthTo = function (node) {
 	}
 	return length;
 };
-
 Crease.prototype.getNodeIndex = function (node) {
-	if (node === this.node1) return 1;
-	if (node === this.node2) return 2;
-	if (node === this.edge.nodes[0]) return 3;
-	if (node === this.edge.nodes[1]) return 4;
+	if (node === this.node1) { return 1; }
+	if (node === this.node2) { return 2; }
+	if (node === this.edge.nodes[0]) { return 3; }
+	if (node === this.edge.nodes[1]) { return 4; }
 	console.log("unknown node type");
 	return 0;
 };
 
 Crease.prototype.setVisibility = function () {
 	let vis = false;
-	if (this.type === 0) vis = this.globals.visible.facet;
+	if (this.type === 0) vis = this.options.visible.facet;
 	else {
-		vis = (this.targetTheta > 0 && this.globals.visible.mountain)
-		|| (this.targetTheta < 0 && this.globals.visible.valley);
+		vis = (this.targetTheta > 0 && this.options.visible.mountain)
+		|| (this.targetTheta < 0 && this.options.visible.valley);
 	}
 	this.edge.setVisibility(vis);
 };

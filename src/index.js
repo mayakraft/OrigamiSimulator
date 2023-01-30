@@ -18,38 +18,19 @@ import prepare from "./fold/prepare";
  */
 const OrigamiSimulator = ({ scene, onCompute } = {}) => {
 	// app variables
-	const visible = {
-		B: true,
-		M: true,
-		V: true,
-		F: true,
-		C: false,
-		U: true,
-	};
+	// const visible = {
+	// 	B: true,
+	// 	M: true,
+	// 	V: true,
+	// 	F: true,
+	// 	C: false,
+	// 	U: true,
+	// };
 	const model = new Model({ scene });
-	// the
 	const solver = DynamicSolver();
 	// this is the error in the folding, the deviation
 	// from where it's supposed to be.
 	let error = 0;
-
-	// foldStiffness, 0 to 3  (creaseStiffness) on the model
-	// facetCreaseStiffness, 0 to 3 (panelStiffness) on the model
-	// damping ratio, 0.01 to 0.5 (percentDamping). on the model
-	/**
-	 * @description reset the three.js scene that the model will append to
-	 */
-	// const setScene = (newScene) => {
-	// 	scene = newScene;
-	// 	model.setScene(scene);
-	// };
-	/**
-	 * @description set a function on onCompute which will get called
-	 * once every iteration through the compute loop.
-	 */
-	// const setOnUpdate = (handler) => {
-	// 	onCompute = handler;
-	// };
 	/**
 	 * @description Fold the origami, between 0.0 and 1.0.
 	 */
@@ -83,16 +64,13 @@ const OrigamiSimulator = ({ scene, onCompute } = {}) => {
 	 * relay the information to the solver
 	 */
 	const nodeDidMove = () => solver.nodeDidMove();
-
 	/**
 	 * @description One call to origami simulator's solver
 	 */
 	const compute = () => {
 		// error is the global error in the folding of the model
 		// not a computational error.
-		error = solver.solve(100, {
-			axialStrain: strain,
-		});
+		error = solver.solve(100, { axialStrain: strain });
 		model.needsUpdate({ axialStrain: strain });
 		// reset single loop variables
 	};
@@ -125,20 +103,8 @@ const OrigamiSimulator = ({ scene, onCompute } = {}) => {
 	 */
 	const load = (foldObject) => {
 		const fold = prepare(foldObject);
-		model.load(fold, {
-			axialStiffness: 20,
-			percentDamping: 0.45,
-			panelStiffness: 0.7,
-			creaseStiffness: 0.7,
-			visible,
-			axialStrain: strain,
-		});
-		solver.setModel(model, {
-			creasePercent: foldAmount,
-			// axialStiffness,
-			// faceStiffness,
-			// calcFaceStrain,
-		});
+		model.load(fold, { axialStrain: strain });
+		solver.setModel(model, { creasePercent: foldAmount });
 	};
 	/**
 	 *
@@ -148,12 +114,24 @@ const OrigamiSimulator = ({ scene, onCompute } = {}) => {
 	};
 	const setAxialStiffness = (value) => {
 		solver.setAxialStiffness(value);
+		model.setAxialStiffness(value);
+		solver.update();
 	};
 	const setFaceStiffness = (value) => {
 		solver.setFaceStiffness(value);
+		solver.update();
 	};
 	const setJoinStiffness = (value) => {
 		model.setJoinStiffness(value);
+		solver.update();
+	};
+	const setCreaseStiffness = (value) => {
+		model.setCreaseStiffness(value);
+		solver.update();
+	};
+	const setDampingRatio = (value) => {
+		model.setDampingRatio(value);
+		solver.update();
 	};
 	/**
 	 * @description Reset the vertices of the model to their original position
@@ -176,8 +154,6 @@ const OrigamiSimulator = ({ scene, onCompute } = {}) => {
 		reset,
 		dealloc,
 		nodeDidMove,
-		// setScene,
-		// setOnUpdate,
 		setActive,
 		setFoldAmount,
 		setStrain,
@@ -186,6 +162,8 @@ const OrigamiSimulator = ({ scene, onCompute } = {}) => {
 		setAxialStiffness,
 		setFaceStiffness,
 		setJoinStiffness,
+		setCreaseStiffness,
+		setDampingRatio,
 	};
 	// getters and setters
 	// Object.defineProperty(app, "scene", { get: () => scene, set: setScene });

@@ -28,6 +28,8 @@ function App() {
 	const [axialStiffness, setAxialStiffness] = createSignal(20);
 	const [faceStiffness, setFaceStiffness] = createSignal(0.2);
 	const [joinStiffness, setJoinStiffness] = createSignal(0.7);
+	const [creaseStiffness, setCreaseStiffness] = createSignal(0.7);
+	const [dampingRatio, setDampingRatio] = createSignal(0.45);
 	// information relayed up from the simulator
 	const [error, setError] = createSignal(0);
 
@@ -60,6 +62,10 @@ function App() {
 				setFaceStiffness={setFaceStiffness}
 				joinStiffness={joinStiffness}
 				setJoinStiffness={setJoinStiffness}
+				creaseStiffness={creaseStiffness}
+				setCreaseStiffness={setCreaseStiffness}
+				dampingRatio={dampingRatio}
+				setDampingRatio={setDampingRatio}
 			/>
 			<Simulator
 				origami={origami}
@@ -76,6 +82,8 @@ function App() {
 				axialStiffness={axialStiffness}
 				faceStiffness={faceStiffness}
 				joinStiffness={joinStiffness}
+				creaseStiffness={creaseStiffness}
+				dampingRatio={dampingRatio}
 			/>
 		</div>
 	);

@@ -146,6 +146,8 @@ const Simulator = (props) => {
 		createEffect(() => simulator.setAxialStiffness(props.axialStiffness()));
 		createEffect(() => simulator.setFaceStiffness(props.faceStiffness()));
 		createEffect(() => simulator.setJoinStiffness(props.joinStiffness()));
+		createEffect(() => simulator.setCreaseStiffness(props.creaseStiffness()));
+		createEffect(() => simulator.setDampingRatio(props.dampingRatio()));
 		// deliver the touch data from the raycaster to be highlighted
 		createEffect(() => highlights.highlightTouch(touches()[0]));
 		// nitpicky. upon tool change we need raycasterPullVertex to be undefined

@@ -4,7 +4,11 @@
 import GPUMath from "./GPUMath";
 import modelCenter from "../model/modelCenter";
 import initialize from "./initialize/index";
-import { updateLastPosition } from "./update";
+import {
+	updateMaterials,
+	updateCreasesMeta,
+	updateLastPosition,
+} from "./update";
 import {
 	solveStep,
 	render,
@@ -12,8 +16,6 @@ import {
 // these few options are still remaining to be handled.
 // not sure where the were used exactly
 // - fixedHasChanged: false,
-// - materialHasChanged: false,
-// - creaseMaterialHasChanged: false,
 
 const DynamicSolver = () => {
 	// the GPU instance which will be doing our calculation
@@ -24,6 +26,11 @@ const DynamicSolver = () => {
 	let textureDim;
 	let textureDimCreases;
 	let textureDimFaces;
+	let textureDimEdges;
+	let meta;
+	let beamMeta;
+	let creaseMeta;
+	//
 	let lastPosition;
 	let integrationType = "euler";
 	/**
@@ -58,14 +65,6 @@ const DynamicSolver = () => {
 		// 	updateLastPosition();
 		// 	// nodePositionHasChanged = false;
 		// }
-		// if (props.creaseMaterialHasChanged) {
-		// 	updateCreasesMeta();
-		// 	props.creaseMaterialHasChanged = false;
-		// }
-		// if (props.materialHasChanged) {
-		// 	updateMaterials();
-		// 	props.materialHasChanged = false;
-		// }
 		for (let j = 0; j < numSteps; j += 1) {
 			solveStep(gpuMath, { textureDim, textureDimCreases, textureDimFaces, integrationType });
 		}
@@ -91,6 +90,10 @@ const DynamicSolver = () => {
 			textureDim,
 			textureDimCreases,
 			textureDimFaces,
+			textureDimEdges,
+			meta,
+			beamMeta,
+			creaseMeta,
 			lastPosition,
 		} = initialize(gpuMath, model, options));
 	};
@@ -159,6 +162,14 @@ const DynamicSolver = () => {
 		gpuMath.setProgram("positionCalcVerlet");
 		gpuMath.setUniformForProgram("positionCalcVerlet", "u_calcFaceStrain", number, "1f");
 	};
+	/**
+	 * @description Some properties require rewrite to the shader textures,
+	 * after setting these properties, call this to update the texture data.
+	 */
+	const update = () => {
+		updateCreasesMeta(gpuMath, model, { creaseMeta, textureDimCreases });
+		updateMaterials(gpuMath, model, { meta, beamMeta, textureDimEdges });
+	};
 
 	return {
 		solve,
@@ -171,6 +182,7 @@ const DynamicSolver = () => {
 		setAxialStiffness,
 		setFaceStiffness,
 		setFaceStrain,
+		update,
 	};
 };
 

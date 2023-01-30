@@ -154,6 +154,38 @@ const Settings = (props) => {
 				onInput={e => props.setJoinStiffness(e.target.value)} />
 
 			<h3>
+				crease stiffness
+				<input
+					type="text"
+					class={Style.Short}
+					value={props.creaseStiffness()}
+				/>
+			</h3>
+			<input
+				type="range"
+				min="0"
+				max="3"
+				step="0.01"
+				value={props.creaseStiffness()}
+				onInput={e => props.setCreaseStiffness(e.target.value)} />
+
+			<h3>
+				damping ratio
+				<input
+					type="text"
+					class={Style.Short}
+					value={props.dampingRatio()}
+				/>
+			</h3>
+			<input
+				type="range"
+				min="0.01"
+				max="0.5"
+				step="0.01"
+				value={props.dampingRatio()}
+				onInput={e => props.setDampingRatio(e.target.value)} />
+
+			<h3>
 				error
 				<input
 					type="text"

@@ -12,6 +12,8 @@
   export let axialStiffness;
   export let faceStiffness;
   export let joinStiffness;
+	export let creaseStiffness;
+	export let dampingRatio;
   export let darkMode;
 	// throws error if file is not a valid JSON format
 	// event handler for file dialog <input>
@@ -129,6 +131,30 @@
 		max="3"
 		step="0.01"
 		bind:value={joinStiffness} />
+
+	<h3>
+		crease stiffness
+		<input type="text" class="short" bind:value={creaseStiffness} />
+
+	</h3>
+	<input
+		type="range"
+		min="0"
+		max="3"
+		step="0.01"
+		bind:value={creaseStiffness} />
+
+	<h3>
+		damping ratio
+		<input type="text" class="short" bind:value={dampingRatio} />
+
+	</h3>
+	<input
+		type="range"
+		min="0.01"
+		max="0.5"
+		step="0.01"
+		bind:value={dampingRatio} />
 
 	<h3>
 		error

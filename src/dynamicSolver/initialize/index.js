@@ -31,10 +31,10 @@ const setSolveParams = (gpuMath, model) => {
 
 const initialize = (gpuMath, model, options) => {
 	const arrays = initArrays(gpuMath, model);
-	fillArrays(gpuMath, model, arrays);
+	const moreArrays = fillArrays(gpuMath, model, arrays);
 	initGPU(gpuMath, arrays, options);
 	setSolveParams(gpuMath, model);
-	return arrays;
+	return { ...arrays, ...moreArrays };
 };
 
 export default initialize;

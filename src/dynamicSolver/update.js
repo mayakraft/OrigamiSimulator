@@ -73,7 +73,7 @@ export const updateCreasesMeta = (
 	for (let i = 0; i < model.creases.length; i += 1) {
 		const crease = model.creases[i];
 		creaseMeta[i * 4] = crease.getK();
-		// creaseMeta[i*4+1] = crease.getD();
+		// creaseMeta[i * 4 + 1] = crease.getD();
 	}
 	if (initing) {
 		for (let i = 0; i < model.creases.length; i += 1) {
