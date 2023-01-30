@@ -45,11 +45,20 @@ function Model({ scene, visible }) {
 	// this.backside.castShadow = true;
 	this.backside.receiveShadow = true;
 
-	scene.add(this.frontside);
-	scene.add(this.backside);
-	Object.values(this.lines).forEach(line => scene.add(line));
-	// console.log("+++ initialize: Model()");
+	this.setScene(scene);
 }
+
+Model.prototype.setScene = function (scene) {
+	// remove from previous scene
+	[this.frontside, this.backside].forEach(side => side.removeFromParent());
+	Object.values(this.lines).forEach(line => line.removeFromParent());
+	// add to new scene
+	if (scene) {
+		scene.add(this.frontside);
+		scene.add(this.backside);
+		Object.values(this.lines).forEach(line => scene.add(line));
+	}
+};
 
 Model.prototype.dealloc = function () {
 	// console.log("--- dealloc: Model()");

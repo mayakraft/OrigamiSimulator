@@ -67,8 +67,12 @@ const Simulator = (props) => {
 	 * @description Origami Simulator solver just executed. This is attached
 	 * to the window.requestAnimationFrame and will fire at the end of every loop
 	 */
-	const didUpdate = ({ error }) => {
+	const onCompute = ({ error }) => {
 		props.setError(error);
+		// The raycaster will update on a mousemove event, but if the origami is
+		// in a folding animation, the raycaster will not update and the visuals
+		// will mismatch, hence, the raycaster can fire on a frame update if needed
+		raycasters.animate({ pullEnabled: pullNodesEnabled() });
 	};
 	/**
 	 * @description This is the callback from ThreeView after three.js has
@@ -76,7 +80,7 @@ const Simulator = (props) => {
 	 */
 	const didMount = ({ renderer, scene, camera }) => {
 		// initialize origami simulator
-		simulator = OrigamiSimulator({ scene, didUpdate });
+		simulator = OrigamiSimulator({ scene, onCompute });
 		highlights = Highlights({ scene, simulator });
 		raycasters = Raycasters({
 			renderer, camera, simulator, setTouches,
@@ -166,7 +170,7 @@ const Simulator = (props) => {
 		// The raycaster will update on a mousemove event, but if the origami is
 		// in a folding animation, the raycaster will not update and the visuals
 		// will mismatch, hence, the raycaster can fire on a frame update if needed
-		raycasters.animate({ pullEnabled: pullNodesEnabled() });
+		// raycasters.animate({ pullEnabled: pullNodesEnabled() });
 	};
 	/**
 	 * @description cleanup all memory associated with origami simulator

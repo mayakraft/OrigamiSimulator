@@ -16,7 +16,7 @@ import prepare from "./fold/prepare";
  * bind itself to the ThreeJS instance.
  * @param {object} props provide a pre-initialized three.js scene (THREE.Scene)
  */
-const OrigamiSimulator = ({ scene, didUpdate }) => {
+const OrigamiSimulator = ({ scene, onCompute } = {}) => {
 	// app variables
 	const visible = {
 		B: true,
@@ -36,7 +36,20 @@ const OrigamiSimulator = ({ scene, didUpdate }) => {
 	// foldStiffness, 0 to 3  (creaseStiffness) on the model
 	// facetCreaseStiffness, 0 to 3 (panelStiffness) on the model
 	// damping ratio, 0.01 to 0.5 (percentDamping). on the model
-
+	/**
+	 * @description reset the three.js scene that the model will append to
+	 */
+	// const setScene = (newScene) => {
+	// 	scene = newScene;
+	// 	model.setScene(scene);
+	// };
+	/**
+	 * @description set a function on onCompute which will get called
+	 * once every iteration through the compute loop.
+	 */
+	// const setOnUpdate = (handler) => {
+	// 	onCompute = handler;
+	// };
 	/**
 	 * @description Fold the origami, between 0.0 and 1.0.
 	 */
@@ -58,8 +71,8 @@ const OrigamiSimulator = ({ scene, didUpdate }) => {
 	 * @description Activate three.js shadows on the materials.
 	 */
 	let shadows = false;
-	const setShadows = (value) => {
-		shadows = value;
+	const setShadows = (newShadows) => {
+		shadows = newShadows;
 		model.frontside.castShadow = shadows;
 		model.frontside.receiveShadow = shadows;
 		// model.backside.castShadow = shadows;
@@ -91,20 +104,20 @@ const OrigamiSimulator = ({ scene, didUpdate }) => {
 	const computeLoop = () => {
 		computeLoopID = window.requestAnimationFrame(computeLoop);
 		compute();
-		if (didUpdate) { didUpdate({ error }); }
+		if (onCompute) { onCompute({ error }); }
 	};
 	/**
 	 * @description Activate origami simulator's compute loop.
 	 */
 	let active = false;
 	const setActive = (isActive) => {
-		active = isActive;
-		if (active) {
-			computeLoop();
-		} else {
+		// no matter the new state, ensure that no loop is (already) running
+		if (computeLoopID) {
 			window.cancelAnimationFrame(computeLoopID);
 			computeLoopID = undefined;
 		}
+		active = isActive;
+		if (active) { computeLoop(); }
 	};
 	/**
 	 * @description this load method can throw an error. wrap it in a try catch
@@ -163,6 +176,8 @@ const OrigamiSimulator = ({ scene, didUpdate }) => {
 		reset,
 		dealloc,
 		nodeDidMove,
+		// setScene,
+		// setOnUpdate,
 		setActive,
 		setFoldAmount,
 		setStrain,
@@ -173,6 +188,7 @@ const OrigamiSimulator = ({ scene, didUpdate }) => {
 		setJoinStiffness,
 	};
 	// getters and setters
+	// Object.defineProperty(app, "scene", { get: () => scene, set: setScene });
 	Object.defineProperty(app, "active", { get: () => active, set: setActive });
 	Object.defineProperty(app, "foldAmount", { get: () => foldAmount, set: setFoldAmount });
 	Object.defineProperty(app, "strain", { get: () => strain, set: setStrain });

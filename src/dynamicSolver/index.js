@@ -17,7 +17,7 @@ import {
 
 const DynamicSolver = () => {
 	// the GPU instance which will be doing our calculation
-	let gpuMath;
+	let gpuMath = GPUMath();
 	// store reference to the Origami Simulator model
 	let model;
 	// store these here due to being used the solve loop or nodeDidMove
@@ -72,15 +72,6 @@ const DynamicSolver = () => {
 		return render(gpuMath, model, { textureDim, axialStrain: computeStrain });
 	};
 	/**
-	 * @description deallocate everything involved with the dynamic solver
-	 */
-	const dealloc = () => {
-		if (gpuMath) {
-			gpuMath.dealloc();
-			gpuMath = undefined;
-		}
-	};
-	/**
 	 * @description Call this after a new model has been loaded
 	 * @params {object} model the origami simulator model
 	 * @params {object} options optional initialization params. includes:
@@ -91,8 +82,8 @@ const DynamicSolver = () => {
 	 */
 	const setModel = (newModel, options = {}) => {
 		// these next 2 might be unnecessary
-		dealloc();
-		gpuMath = GPUMath();
+		// dealloc();
+		// gpuMath = GPUMath();
 		// store the model
 		model = newModel;
 		// save these initialization variables
@@ -117,6 +108,15 @@ const DynamicSolver = () => {
 		gpuMath.step("zeroThetaTexture", ["u_lastTheta"], "u_theta");
 		gpuMath.step("zeroThetaTexture", ["u_theta"], "u_lastTheta");
 		return render(gpuMath, model, { textureDim, axialStrain: true });
+	};
+	/**
+	 * @description deallocate everything involved with the dynamic solver
+	 */
+	const dealloc = () => {
+		if (gpuMath) {
+			gpuMath.dealloc();
+			gpuMath = undefined;
+		}
 	};
 
 	const setIntegration = (integration) => {

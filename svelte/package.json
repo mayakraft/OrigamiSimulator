@@ -1,0 +1,21 @@
+{
+  "name": "Origami Simulator Svelte example",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "license": "MIT",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview"
+  },
+  "devDependencies": {
+    "@sveltejs/vite-plugin-svelte": "^2.0.0",
+    "earcut": "^2.2.4",
+    "fold": "^0.11.3",
+    "numeric": "^1.2.6",
+    "svelte": "^3.54.0",
+    "three": "^0.149.0",
+    "vite": "^4.0.0"
+  }
+}

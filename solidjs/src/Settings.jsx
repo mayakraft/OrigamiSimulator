@@ -163,7 +163,9 @@ const Settings = (props) => {
 				/>
 			</h3>
 
-			<button onClick={() => props.reset()()}>reset model</button>
+			<button
+				disabled={!props.active()}
+				onClick={() => props.reset()()}>reset model</button>
 			<br />
 
 		</div>

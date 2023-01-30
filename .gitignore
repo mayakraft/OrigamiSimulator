@@ -1,5 +1,15 @@
 .DS_Store
 node_modules
 
+# svelte
+svelte/node_modules
+svelte/dist
+svelte/dist-ssr
+*.local
+svelte/.vscode
+svelte/package-lock.json
+
+# solidjs
 solidjs/node_modules
 solidjs/dist
+solidjs/package-lock.json
