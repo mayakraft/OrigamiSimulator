@@ -2,7 +2,6 @@
  * ThreeView for Svelte (c) Kraft
  * MIT license
  */
-
 /**
  * This will create a three.js canvas, start an animation loop,
  * and watch for changes to the screen so that the three.js scene can
@@ -19,8 +18,7 @@
  *   renderer draws to the screen.
  */
 import * as THREE from "three";
-import { TrackballControls } from "https://cdn.jsdelivr.net/npm/three-trackballcontrols-es6@0.0.11/+esm";
-
+import { TrackballControls } from "three/addons/controls/TrackballControls.js";
 // these will be initialized and managed by this component
 let renderer;
 let scene;
@@ -31,6 +29,7 @@ const app = {
 	didMount: () => {},
 	didResize: () => {},
 	animate: () => {},
+	setEnabled: (enabled) => { trackball.enabled = enabled; },
 };
 
 // the parent of the <canvas> element
@@ -98,7 +97,7 @@ const initializeAnimationLoop = () => {
 			app.animate();
 		}
 		renderer.render(scene, camera);
-		// trackball.update();
+		trackball.update();
 	};
 	animateLoop();
 };

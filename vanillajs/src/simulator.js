@@ -2,7 +2,6 @@
  * Origami Simulator for Svelte (c) Kraft
  * MIT license
  */
-
 /**
  * @component
  * Svelte component and interface for Origami Simulator by Amanda Ghassaei.
@@ -19,8 +18,7 @@
  * new ones
  * - props.reset (reset the vertices of the origami model)
  */
-
-import * as THREE from "https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.module.js";
+import * as THREE from "three";
 import ThreeView from "./three-view.js";
 import OrigamiSimulator from "../../src/index.js";
 import Highlights from "../../src/highlights.js";
@@ -142,8 +140,6 @@ window.addEventListener("load", () => {
 	simulator.setJoinStiffness(joinStiffness);
 	simulator.setCreaseStiffness(creaseStiffness);
 	simulator.setDampingRatio(dampingRatio);
-	// nitpicky. upon tool change we need raycasterPullVertex to be undefined
-	raycasters.raycasterReleaseHandler(pullNodesEnabled);
 	updateScene();
 	// reset materials depending on dark or light mode
 	updateStyle(darkMode, scene);
@@ -239,3 +235,27 @@ const updateStyle = (darkMode, scene) => {
 fetch("../fold/crane-cp.fold")
 	.then(res => res.json())
 	.then(json => load(json));
+
+document.querySelector("#input-fold-amount")
+	.addEventListener("input", (e) => {
+		foldAmount = parseFloat(e.target.value);
+		simulator.setFoldAmount(foldAmount);
+	});
+
+document.querySelector("#radio-webgl-tool-trackball")
+	.addEventListener("input", (e) => {
+		trackballEnabled = e.target.checked;
+		pullNodesEnabled = !e.target.checked;
+		tool = e.target.value;
+		raycasters.raycasterReleaseHandler(pullNodesEnabled);
+		ThreeView.setEnabled(trackballEnabled);
+	});
+
+document.querySelector("#radio-webgl-tool-pull")
+	.addEventListener("input", (e) => {
+		pullNodesEnabled = e.target.checked;
+		trackballEnabled = !e.target.checked;
+		tool = e.target.value;
+		raycasters.raycasterReleaseHandler(pullNodesEnabled);
+		ThreeView.setEnabled(trackballEnabled);
+	});

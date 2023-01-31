@@ -10,14 +10,37 @@
 <script type="importmap">
 {
 	"imports": {
-		"three": "https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.module.js",
-		"fold": "../fold.module.js",
-		"earcut": "../earcut2.2.4.module.js"
+		"three": "https://unpkg.com/three@0.149.0/build/three.module.js",
+		"three/addons/": "https://unpkg.com/three@0.149.0/examples/jsm/",
+		"fold": "https://robbykraft.github.io/fold-module/fold.module.js",
+		"earcut": "https://robbykraft.github.io/earcut-module/earcut.module.js"
 	}
 }
 </script>
-	<!-- <script type="module" src="./src/three-view.js"></script> -->
-	<!-- <script type="module" src="./src/trackball-view.js"></script> -->
+<div class="settings">
+	<h3>fold amount</h3>
+	<input
+		type="range"
+		min="0"
+		max="1"
+		value="0.25"
+		step="0.01"
+		id="input-fold-amount"
+	/>
+	<br />
+	<input
+		type="radio"
+		id="radio-webgl-tool-trackball"
+		name="radio-webgl-tool"
+		value="trackball" />
+	<label for="radio-webgl-tool-trackball">trackball</label>
+	<input
+		type="radio"
+		id="radio-webgl-tool-pull"
+		name="radio-webgl-tool"
+		value="pull" />
+	<label for="radio-webgl-tool-pull">pull</label>
+</div>
 	<script type="module" src="./src/simulator.js"></script>
 </body>
 </html>

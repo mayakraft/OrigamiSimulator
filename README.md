@@ -10,10 +10,10 @@ This repo contains simple example apps implemented in a few Javascript framework
 
 |   |   |   |
 |---|---|---|
-| ✅ | Svelte | [svelte/](https://github.com/robbykraft/OrigamiSimulator/tree/master/svelte) |
-| ✅ | Solid JS | [solidjs/](https://github.com/robbykraft/OrigamiSimulator/tree/master/solidjs) |
-| ⚠️ | React JS | [reactjs/](https://github.com/robbykraft/OrigamiSimulator/tree/master/react) |
-| ✅ | Vanilla JS | [vanillajs/](https://github.com/robbykraft/OrigamiSimulator/tree/master/vanilla) |
+| ✅ | [Svelte](https://svelte.dev) | svelte/ |
+| ✅ | [Solid JS](https://www.solidjs.com/) | solidjs/ |
+| ⚠️ | [React JS](https://reactjs.org/) | reactjs/ |
+| ✅ | Vanilla JS | vanillajs/ |
 
 To run the examples, clone this repository and run `npm i` **twice, in two directories**:
 
@@ -22,9 +22,9 @@ To run the examples, clone this repository and run `npm i` **twice, in two direc
 
 Everything should be installed. Run the app using the standard command according to whichever framework you chose (`npm run dev` for Svelte/SolidJS).
 
-> **React JS** might be complete, but it is suffering webpack issues (['fs' polyfill](https://stackoverflow.com/questions/70591567/module-not-found-error-cant-resolve-fs-in-react), [outside src dir](https://stackoverflow.com/questions/44114436/the-create-react-app-imports-restriction-outside-of-src-directory), I just don't care enough to fix it. *if anyone else wants to...*)
+> **React JS** might be complete, but it is suffering from webpack issues (['fs' polyfill](https://stackoverflow.com/questions/70591567/module-not-found-error-cant-resolve-fs-in-react), [outside src dir](https://stackoverflow.com/questions/44114436/the-create-react-app-imports-restriction-outside-of-src-directory)) I just don't care enough to fix it. *if anyone else wants to...*
 >
-> **Vanilla JS** example is *extremely* bare bones
+> **Vanilla JS** example is *extremely* bare bones.
 
 # installation
 
@@ -70,19 +70,16 @@ Todo: expose materials as setters and getters too, or perhaps more simply colors
 - [fold](https://www.npmjs.com/package/fold)
 - [earcut](https://www.npmjs.com/package/earcut)
 
-and then one bundler-dependent (webpack/vite/...) detail, we need to load raw text (shaders), currently setup to support vite.
-
 # dev notes
 
 ### shader files
 
-Loading the raw text shader files (`.frag`, `.vert`) has been a persistent source of half-solutions. All shader file references are confined to one file inside the DynamicSolver and currently their path is suffixed with `?raw`. This syntax is specific to the [Vite bundler](https://vitejs.dev/), used by both Svelte and SolidJS.
+Loading the raw text shader files (`.frag`, `.vert`) has been a persistent source of struggle. Because these shader files are rarely modified, a Python script has been added which bundles all shader files into one `.js` file with named exports. If the shader files are ever modified, re-bundle:
 
-```js
-import vertexShader from "../shaders/vertexShader.vert?raw";
+```bash
+cd src/dynamicSolver/shaders
+python bundle.py
 ```
-
-Note that this is a current limitation across all JS frameworks, and this particular work around is currently hard-coded into the source.
 
 # license
 
