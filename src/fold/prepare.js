@@ -2,10 +2,10 @@
  * Created by amandaghassaei on 2/25/17.
  */
 import FOLD from "fold";
-import triangulateFold from "./triangulateFold";
-import splitCuts from "./splitCuts";
-import removeRedundantVertices from "./removeRedundantVertices";
-import boundingBox from "./boundingBox";
+import triangulateFold from "./triangulateFold.js";
+import splitCuts from "./splitCuts.js";
+import removeRedundantVertices from "./removeRedundantVertices.js";
+import boundingBox from "./boundingBox.js";
 
 const assignmentFlatAngles = {
 	M: -180, m: -180, V: 180, v: 180,

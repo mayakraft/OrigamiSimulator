@@ -7,7 +7,7 @@ import {
 	createProgramFromSource,
 	loadVertexData,
 	makeTexture,
-} from "./GLBoilerplate";
+} from "./GLBoilerplate.js";
 
 function initGPUMath() {
 	// const glBoilerplate = GLBoilerPlate();
@@ -109,6 +109,7 @@ function initGPUMath() {
 
 	GPUMath.prototype.setUniformForProgram = function (programName, name, val, type) {
 		if (!this.programs[programName]) {
+			console.log(programName, this.programs, this.programs[programName]);
 			console.warn(`no program with name ${programName}`);
 			return;
 		}

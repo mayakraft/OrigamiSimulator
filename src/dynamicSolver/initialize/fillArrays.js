@@ -1,4 +1,4 @@
-import verticesFaces from "../../model/verticesFaces";
+import verticesFaces from "../../model/verticesFaces.js";
 import {
 	updateMaterials,
 	updateExternalForces,
@@ -6,7 +6,7 @@ import {
 	updateOriginalPosition,
 	updateCreaseVectors,
 	updateCreasesMeta,
-} from "../update";
+} from "../update.js";
 /**
  * @description todo
  */

@@ -1,6 +1,6 @@
 import { createSignal } from "solid-js";
 import styles from "./App.module.css";
-import Simulator from "./Simulator/Simulator";
+import Simulator from "./Simulator";
 import Settings from "./Settings";
 // example file
 import craneCP from "../../fold/crane-cp.fold?raw";

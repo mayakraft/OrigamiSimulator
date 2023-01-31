@@ -1,5 +1,5 @@
 import * as THREE from "three";
-import makeTouches from "./makeTouches";
+import makeTouches from "./makeTouches.js";
 /**
  * @description For each instance of the Simulator component, initialize
  * one Raycaster to manage all event handling/highlighting/interacting

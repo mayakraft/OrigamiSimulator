@@ -1,7 +1,6 @@
 /**
  * Created by amandaghassaei on 2/25/17.
  */
-
 import FOLD from "fold";
 
 function mergeEdge(fold, v1, v2, v3) { // v2 is center vertex

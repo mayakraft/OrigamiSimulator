@@ -5,12 +5,12 @@
 import { createSignal, createEffect, onCleanup } from "solid-js";
 import * as THREE from "three";
 import Style from "./Simulator.module.css";
-import TrackballView from "../WebGL/TrackballView.jsx";
-import OrigamiSimulator from "../../../src/index";
-import Highlights from "../../../src/highlights";
-import Raycasters from "../../../src/raycasters";
-import * as Materials from "../../../src/materials";
-import boundingBox from "../../../src/fold/boundingBox";
+import TrackballView from "./WebGL/TrackballView.jsx";
+import OrigamiSimulator from "../../src/index";
+import Highlights from "../../src/highlights";
+import Raycasters from "../../src/raycasters";
+import * as Materials from "../../src/materials";
+import boundingBox from "../../src/fold/boundingBox";
 
 // intensity of point lights for light and dark mode
 const lightIntensityLightMode = 0.45;

@@ -1,4 +1,4 @@
-import { float_type } from "./constants";
+import { float_type } from "./constants.js";
 
 export const updateMaterials = (
 	gpuMath,

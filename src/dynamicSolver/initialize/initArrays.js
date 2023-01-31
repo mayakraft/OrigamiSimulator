@@ -1,4 +1,4 @@
-import verticesFaces from "../../model/verticesFaces";
+import verticesFaces from "../../model/verticesFaces.js";
 
 const calcTextureSize = (numNodes) => {
 	if (numNodes === 1) return 2;

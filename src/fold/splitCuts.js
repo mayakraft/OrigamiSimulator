@@ -1,7 +1,6 @@
 /**
  * Created by amandaghassaei on 2/25/17.
  */
-
 function facesVerticesToVerticesFaces(fold) {
 	const verticesFaces = [];
 	for (let i = 0; i < fold.vertices_coords.length; i += 1) {

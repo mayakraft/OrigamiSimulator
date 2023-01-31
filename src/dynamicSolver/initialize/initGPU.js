@@ -1,18 +1,20 @@
-import DEFAULTS from "./defaults";
-import { float_type } from "../constants";
-import vertexShader from "../shaders/vertexShader.vert?raw";
-import positionCalcShader from "../shaders/positionCalcShader.frag?raw";
-import velocityCalcVerletShader from "../shaders/velocityCalcVerletShader.frag?raw";
-import velocityCalcShader from "../shaders/velocityCalcShader.frag?raw";
-import positionCalcVerletShader from "../shaders/positionCalcVerletShader.frag?raw";
-import thetaCalcShader from "../shaders/thetaCalcShader.frag?raw";
-import normalCalc from "../shaders/normalCalc.frag?raw";
-import packToBytesShader from "../shaders/packToBytesShader.frag?raw";
-import zeroTexture from "../shaders/zeroTexture.frag?raw";
-import zeroThetaTexture from "../shaders/zeroThetaTexture.frag?raw";
-import centerTexture from "../shaders/centerTexture.frag?raw";
-import copyTexture from "../shaders/copyTexture.frag?raw";
-import updateCreaseGeo from "../shaders/updateCreaseGeo.frag?raw";
+import DEFAULTS from "./defaults.js";
+import { float_type } from "../constants.js";
+import {
+	vertexShader,
+	positionCalcShader,
+	velocityCalcVerletShader,
+	velocityCalcShader,
+	positionCalcVerletShader,
+	thetaCalcShader,
+	normalCalc,
+	packToBytesShader,
+	zeroTexture,
+	zeroThetaTexture,
+	centerTexture,
+	copyTexture,
+	updateCreaseGeo,
+} from "../shaders/shaders.js";
 /**
  * @description This method is called when a new model is loaded.
  * This allocates all space needed for communication back and forth

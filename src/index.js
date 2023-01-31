@@ -1,9 +1,9 @@
 /**
  * Created by ghassaei on 2/22/17.
  */
-import Model from "./model/index";
-import DynamicSolver from "./dynamicSolver/index";
-import prepare from "./fold/prepare";
+import Model from "./model/index.js";
+import DynamicSolver from "./dynamicSolver/index.js";
+import prepare from "./fold/prepare.js";
 /**
  * @description Origami Simulator by Amanda Ghassaei.
  * refactored so that:

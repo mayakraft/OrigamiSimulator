@@ -1,6 +1,6 @@
-import initArrays from "./initArrays";
-import fillArrays from "./fillArrays";
-import initGPU from "./initGPU";
+import initArrays from "./initArrays.js";
+import fillArrays from "./fillArrays.js";
+import initGPU from "./initGPU.js";
 
 const calcDt = (model) => {
 	let maxFreqNat = 0;

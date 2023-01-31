@@ -1,18 +1,18 @@
 /**
  * Created by ghassaei on 10/7/16.
  */
-import GPUMath from "./GPUMath";
-import modelCenter from "../model/modelCenter";
-import initialize from "./initialize/index";
+import GPUMath from "./GPUMath.js";
+import modelCenter from "../model/modelCenter.js";
+import initialize from "./initialize/index.js";
 import {
 	updateMaterials,
 	updateCreasesMeta,
 	updateLastPosition,
-} from "./update";
+} from "./update.js";
 import {
 	solveStep,
 	render,
-} from "./solve";
+} from "./solve.js";
 // these few options are still remaining to be handled.
 // not sure where the were used exactly
 // - fixedHasChanged: false,
@@ -38,6 +38,7 @@ const DynamicSolver = () => {
 	 * vertex, this conveys to the solver that a node is being manually moved.
 	 */
 	const nodeDidMove = () => {
+		if (!gpuMath || !model) { return; }
 		updateLastPosition(gpuMath, model, { lastPosition, textureDim });
 		const avgPosition = modelCenter(model);
 		gpuMath.setProgram("centerTexture");
@@ -57,6 +58,7 @@ const DynamicSolver = () => {
 	 * include "axialStrain" set to a boolean.
 	 */
 	const solve = (numSteps = 100, computeStrain = false) => {
+		if (!gpuMath || !model) { return 0; }
 		// if (props.fixedHasChanged) {
 		// 	updateFixed();
 		// 	props.fixedHasChanged = false;
@@ -102,7 +104,7 @@ const DynamicSolver = () => {
 	 * @returns {number} the global error as a percent
 	 */
 	const reset = () => {
-		if (!gpuMath) { return 0; }
+		if (!gpuMath || !model) { return 0; }
 		gpuMath.step("zeroTexture", [], "u_position");
 		gpuMath.step("zeroTexture", [], "u_lastPosition");
 		gpuMath.step("zeroTexture", [], "u_lastLastPosition");
@@ -128,7 +130,7 @@ const DynamicSolver = () => {
 	};
 
 	const setCreasePercent = (percent) => {
-		if (!gpuMath) { return; }
+		if (!gpuMath || !model) { return; }
 		const number = parseFloat(percent);
 		gpuMath.setProgram("velocityCalc");
 		gpuMath.setUniformForProgram("velocityCalc", "u_creasePercent", number, "1f");
@@ -137,7 +139,7 @@ const DynamicSolver = () => {
 	};
 
 	const setAxialStiffness = (value) => {
-		if (!gpuMath) { return; }
+		if (!gpuMath || !model) { return; }
 		const number = parseFloat(value);
 		gpuMath.setProgram("velocityCalc");
 		gpuMath.setUniformForProgram("velocityCalc", "u_axialStiffness", number, "1f");
@@ -146,7 +148,7 @@ const DynamicSolver = () => {
 	};
 
 	const setFaceStiffness = (value) => {
-		if (!gpuMath) { return; }
+		if (!gpuMath || !model) { return; }
 		const number = parseFloat(value);
 		gpuMath.setProgram("velocityCalc");
 		gpuMath.setUniformForProgram("velocityCalc", "u_faceStiffness", number, "1f");
@@ -155,7 +157,7 @@ const DynamicSolver = () => {
 	};
 
 	const setFaceStrain = (value) => {
-		if (!gpuMath) { return; }
+		if (!gpuMath || !model) { return; }
 		const number = parseFloat(value);
 		gpuMath.setProgram("velocityCalc");
 		gpuMath.setUniformForProgram("velocityCalc", "u_calcFaceStrain", number, "1f");
@@ -167,6 +169,7 @@ const DynamicSolver = () => {
 	 * after setting these properties, call this to update the texture data.
 	 */
 	const update = () => {
+		if (!gpuMath || !model) { return; }
 		updateCreasesMeta(gpuMath, model, { creaseMeta, textureDimCreases });
 		updateMaterials(gpuMath, model, { meta, beamMeta, textureDimEdges });
 	};

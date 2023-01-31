@@ -2,11 +2,11 @@
  * Created by amandaghassaei on 2/24/17.
  */
 import * as THREE from "three";
-import Node from "./node";
-import Beam from "./beam";
-import Crease from "./crease";
-import * as defaultMaterials from "./materials";
-import getFacesAndVerticesForEdges from "../fold/creaseParams";
+import Node from "./node.js";
+import Beam from "./beam.js";
+import Crease from "./crease.js";
+import * as defaultMaterials from "./materials.js";
+import getFacesAndVerticesForEdges from "../fold/creaseParams.js";
 
 // buffer geometry has materialIndex property. use this for front/back colors
 
@@ -54,8 +54,12 @@ function Model({ scene, axialStiffness, joinStiffness, creaseStiffness, dampingR
 
 Model.prototype.setScene = function (scene) {
 	// remove from previous scene
-	[this.frontside, this.backside].forEach(side => side.removeFromParent());
-	Object.values(this.lines).forEach(line => line.removeFromParent());
+	[this.frontside, this.backside]
+		.filter(el => el.removeFromParent)
+		.forEach(side => side.removeFromParent());
+	Object.values(this.lines)
+		.filter(el => el.removeFromParent)
+		.forEach(line => line.removeFromParent());
 	// add to new scene
 	if (scene) {
 		scene.add(this.frontside);
@@ -132,6 +136,7 @@ Model.prototype.updateEdgeVisibility = function (options) {
 Model.prototype.getMesh = function () { return [this.frontside, this.backside]; };
 
 Model.prototype.needsUpdate = function ({ axialStrain, vrEnabled }) {
+	if (!this.positions) { return; }
 	this.geometry.attributes.position.needsUpdate = true;
 	if (axialStrain) this.geometry.attributes.color.needsUpdate = true;
 	// if (vrEnabled) this.geometry.computeBoundingBox();

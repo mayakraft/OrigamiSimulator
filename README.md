@@ -6,6 +6,15 @@ The primary purpose of the rewrite is to uncouple the codebase from its frontend
 
 # examples
 
+This repo contains simple example apps implemented in a few Javascript frameworks.
+
+|   |   |   |
+|---|---|---|
+| ✅ | Svelte | [svelte/](https://github.com/robbykraft/OrigamiSimulator/tree/master/svelte) |
+| ✅ | Solid JS | [solidjs/](https://github.com/robbykraft/OrigamiSimulator/tree/master/solidjs) |
+| ⚠️ | React JS | [reactjs/](https://github.com/robbykraft/OrigamiSimulator/tree/master/react) |
+| ✅ | Vanilla JS | [vanillajs/](https://github.com/robbykraft/OrigamiSimulator/tree/master/vanilla) |
+
 To run the examples, clone this repository and run `npm i` **twice, in two directories**:
 
 - in the root of this project (this installs Origami Simulator's dependencies)
@@ -13,12 +22,16 @@ To run the examples, clone this repository and run `npm i` **twice, in two direc
 
 Everything should be installed. Run the app using the standard command according to whichever framework you chose (`npm run dev` for Svelte/SolidJS).
 
+> **React JS** might be complete, but it is suffering webpack issues (['fs' polyfill](https://stackoverflow.com/questions/70591567/module-not-found-error-cant-resolve-fs-in-react), [outside src dir](https://stackoverflow.com/questions/44114436/the-create-react-app-imports-restriction-outside-of-src-directory), I just don't care enough to fix it. *if anyone else wants to...*)
+>
+> **Vanilla JS** example is *extremely* bare bones
+
 # installation
 
 To incorporate Origami Simulator into your existing project, copy the `src/` directory in the root of this repository, and install Origami Simulator's dependencies:
 
 ```
-npm i three fold earcut numeric
+npm i three fold earcut
 ```
 
 Now you can create an instance of OrigamiSimulator. Getting an instance up and running is simple, if you want some of the more advanced features like the vertex-grab UI, maybe check the framework examples for an implementation example.
@@ -31,7 +44,7 @@ You are in charge of setting up and managing three.js, you get to decorate the s
 
 1. initialize a three.js renderer, scene, camera, and animation loop. (there are hundreds of tutorials for this)
 2. initialize origami simulator by passing in the three.js scene.
-3. you are in charge of setting up any lighting or UI controls like trackball.
+3. setup up any lighting or UI controls like trackball.
 
 ```js
 import OrigamiSimulator from "./src/index";
@@ -56,9 +69,20 @@ Todo: expose materials as setters and getters too, or perhaps more simply colors
 - [three](https://www.npmjs.com/package/three)
 - [fold](https://www.npmjs.com/package/fold)
 - [earcut](https://www.npmjs.com/package/earcut)
-- [numeric](https://www.npmjs.com/package/numeric)
 
 and then one bundler-dependent (webpack/vite/...) detail, we need to load raw text (shaders), currently setup to support vite.
+
+# dev notes
+
+### shader files
+
+Loading the raw text shader files (`.frag`, `.vert`) has been a persistent source of half-solutions. All shader file references are confined to one file inside the DynamicSolver and currently their path is suffixed with `?raw`. This syntax is specific to the [Vite bundler](https://vitejs.dev/), used by both Svelte and SolidJS.
+
+```js
+import vertexShader from "../shaders/vertexShader.vert?raw";
+```
+
+Note that this is a current limitation across all JS frameworks, and this particular work around is currently hard-coded into the source.
 
 # license
 

@@ -16,7 +16,6 @@
   "dependencies": {
     "earcut": "^2.2.4",
     "fold": "^0.11.3",
-    "numeric": "^1.2.6",
     "solid-js": "^1.6.6",
     "three": "^0.148.0"
   }
