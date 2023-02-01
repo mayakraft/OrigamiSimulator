@@ -48,7 +48,6 @@
 	export let error;
 	export let reset;
 	export let exportModel;
-
 	// intensity of point lights for light and dark mode
 	const lightIntensityLightMode = 0.45;
 	const lightIntensityDarkMode = 0.707;
@@ -88,7 +87,7 @@
 	let lights = lightVertices.map(pos => {
 		const light = new THREE.PointLight();
 		light.position.set(...pos);
-		light.intensity = 0.45;
+		light.intensity = 0.5;
 		light.distance = 0;
 		light.decay = 2;
 		light.castShadow = false;
@@ -197,7 +196,7 @@
 		// simulator.shadows = showShadows;
 		simulator.setShadows(showShadows);
 		[0, 3, 4, 7].forEach(i => {
-			lights[i].castShadow = showShadows;
+			lights[i % lights.length].castShadow = showShadows;
 		});
 	}
 	// upstream
@@ -209,29 +208,6 @@
 		if (raycasters) { raycasters.dealloc(); }
 		if (simulator) { simulator.dealloc(); }
 	});
-	/**
-	 * @description Initialize/reset all mesh materials including those
-	 * associated with the hover face/vertex selection.
-	 */
-	const updateStyle = (darkMode, scene) => {
-		scene.background = new THREE.Color("#eee");
-		// scene.background = new THREE.Color(darkMode ? "#0F0F10" : "#eee")
-
-		// simulator.setFrontColor(darkMode ? 0x2D39C0 : 0xEE5533);
-		// simulator.setBackColor(darkMode ? 0x28292B : 0xFFFFFF);
-		// simulator.materials.line.opacity = darkMode ? 0.5 : 1.0;
-		// highlights.point.material.color.set(darkMode ? 0xFFFFFF : 0x000000);
-		// highlights.vertex.material.color.set(darkMode ? 0xF2C87A : 0x000000);
-		// highlights.face.material[0].color.set(darkMode ? 0x999999 : 0xFFBB44);
-		// highlights.face.material[1].color.set(darkMode ? 0xE150E3 : 0xFFBB44);
-		// const lightIntensity = darkMode
-		// 	? lightIntensityDarkMode
-		// 	: lightIntensityLightMode;
-		// lights.forEach(light => { light.intensity = lightIntensity; });
-
-		// // simulator.materials.front.color.set(darkMode ? 0x2D39C0 : 0xEE5533);
-		// // simulator.materials.back.color.set(darkMode ? 0x28292B : 0xFFFFFF);
-	};
 </script>
 
 <div class="simulator">

@@ -5,10 +5,10 @@ import * as THREE from "three";
 import Node from "./node.js";
 import Beam from "./beam.js";
 import Crease from "./crease.js";
-import * as defaultMaterials from "./materials.js";
+import * as Materials from "./materials.js";
 import getFacesAndVerticesForEdges from "../fold/creaseParams.js";
 import prepare from "../fold/prepare.js";
-import exportFold from "./exportFold";
+import exportFold from "./exportFold.js";
 
 // buffer geometry has materialIndex property. use this for front/back colors
 
@@ -26,7 +26,7 @@ function Model({ scene }) {
 	assignments.forEach(key => {
 		this.lines[key] = new THREE.LineSegments(
 			new THREE.BufferGeometry(),
-			defaultMaterials.line,
+			Materials.line,
 		);
 	});
 	this.strain = false;
@@ -44,10 +44,10 @@ function Model({ scene }) {
 	this.faces_vertices = [];
 
 	this.materials = {};
-	this.materials.front = defaultMaterials.front;
-	this.materials.back = defaultMaterials.back;
-	this.materials.strain = defaultMaterials.strain;
-	this.materials.line = defaultMaterials.line;
+	this.materials.front = Materials.front;
+	this.materials.back = Materials.back;
+	this.materials.strain = Materials.strain;
+	this.materials.line = Materials.line;
 
 	this.frontMesh.castShadow = true;
 	this.frontMesh.receiveShadow = true;

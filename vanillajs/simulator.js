@@ -4,10 +4,10 @@
  */
 import * as THREE from "three";
 import ThreeView from "./three-view.js";
-import OrigamiSimulator from "../../src/index.js";
-import Highlights from "../../src/touches/highlights.js";
-import Raycasters from "../../src/touches/raycasters.js";
-import boundingBox from "../../src/fold/boundingBox.js";
+import OrigamiSimulator from "../src/index.js";
+import Highlights from "../src/touches/highlights.js";
+import Raycasters from "../src/touches/raycasters.js";
+import boundingBox from "../src/fold/boundingBox.js";
 // tool is either ["trackball", "pull"]
 let tool = "trackball";
 // override the material to show the model's strain forces
@@ -40,7 +40,7 @@ let camera;
 const lights = lightVertices.map(pos => {
 	const light = new THREE.PointLight();
 	light.position.set(...pos);
-	light.intensity = 0.707;
+	light.intensity = 0.5;
 	return light;
 });
 /**

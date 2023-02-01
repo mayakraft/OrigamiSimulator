@@ -14,7 +14,7 @@
 	// override the material to show the model's strain forces
 	let strain = false;
 	// fold the origami model, float (0.0-1.0)
-	let foldAmount = 0;
+	let foldAmount = 0.15;
 	// highlight vertices/faces under the cursor
 	let showTouches = true;
 	// turn on three.js shadows

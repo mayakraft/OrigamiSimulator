@@ -24,7 +24,7 @@ Everything should be installed. Run the app using the standard command according
 
 > **React JS** might be complete, but it is suffering from webpack issues (['fs' polyfill](https://stackoverflow.com/questions/70591567/module-not-found-error-cant-resolve-fs-in-react), [outside src dir](https://stackoverflow.com/questions/44114436/the-create-react-app-imports-restriction-outside-of-src-directory)) I just don't care enough to fix it. *if anyone else wants to...*
 >
-> **Vanilla JS** example is *extremely* bare bones.
+> **Vanilla JS** only requires you run a local server. Also, this example is *much* more simple compared to the others.
 
 # installation
 
@@ -109,6 +109,10 @@ Loading the raw text shader files (`.frag`, `.vert`) has been a persistent sourc
 cd src/dynamicSolver/shaders
 python bundle.py
 ```
+
+### vanilla js
+
+ES6 modules are finally supported natively on the browser (yay!) so the Origami Simulator source code can run directly without any bundling. However the technology is still very new, for example `index.html` makes use of an [importmap](https://developer.mozilla.org/en-US/docs/Web/HTML/Element/script/type/importmap) which is [only recently supported](https://caniuse.com/?search=importmap) on all major browsers. So, there may be some hiccups with this example (I always have to refresh one time after the initial page load).
 
 # license
 

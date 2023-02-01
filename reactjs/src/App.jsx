@@ -15,7 +15,7 @@ function App() {
 	// override the material to show the model's strain forces
 	const [strain, setStrain] = useState(false);
 	// fold the origami model, float (0.0-1.0)
-	const [foldAmount, setFoldAmount] = useState(0);
+	const [foldAmount, setFoldAmount] = useState(0.15);
 	// highlight vertices/faces under the cursor
 	const [showTouches, setShowTouches] = useState(true);
 	// turn on three.js shadows

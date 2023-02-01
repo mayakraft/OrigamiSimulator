@@ -22,7 +22,7 @@
 -->
 <script>
 	import { onDestroy } from "svelte";
-	import { TrackballControls } from "three/examples/jsm/controls/TrackballControls";
+	import { TrackballControls } from "three/addons/controls/TrackballControls.js";
 	import ThreeView from "./ThreeView.svelte";
 	// ThreeView component
 	export let didMount = () => {};

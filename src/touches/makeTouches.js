@@ -8,9 +8,7 @@ const makeTouches = (model, raycaster) => {
 	// simulator must have a model loaded
 	if (!model) { return []; }
 	const timeStamp = Date.now();
-	// todo: any way we can use only one mesh here? both sides of triangles.
-	const intersections = raycaster
-		.intersectObjects([model.frontMesh, model.backMesh]);
+	const intersections = raycaster.intersectObjects(model.getMesh());
 	// for every intersection point, calculate a few more properties
 	intersections.forEach(touch => {
 		touch.timeStamp = timeStamp;

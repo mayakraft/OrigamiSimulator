@@ -3,7 +3,7 @@
  * MIT license
  */
 import { createEffect, onCleanup } from "solid-js";
-import { TrackballControls } from "three/examples/jsm/controls/TrackballControls";
+import { TrackballControls } from "three/addons/controls/TrackballControls.js";
 import ThreeView from "./ThreeView.jsx";
 /**
  * @description Extends the ThreeView component to include a three.js
