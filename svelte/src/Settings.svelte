@@ -19,6 +19,7 @@
   export let joinStiffness;
 	export let creaseStiffness;
 	export let dampingRatio;
+	export let exportModel;
 	// throws error if file is not a valid JSON format
 	// event handler for file dialog <input>
 	let files;
@@ -35,6 +36,18 @@
 			reader.readAsText(files[0]);
 		}
 	}
+
+	const saveFoldFile = () => {
+		const a = document.createElement("a");
+		a.style = "display: none";
+		document.body.appendChild(a);
+		const blob = new Blob([JSON.stringify(exportModel())], { type: "octet/stream" });
+		const url = window.URL.createObjectURL(blob);
+		a.href = url;
+		a.download = "origami.fold";
+		a.click();
+		window.URL.revokeObjectURL(url);
+	};
 </script>
 
 <div class={"container"}>
@@ -191,6 +204,9 @@
 	<button
 		disabled={!active}
 		on:click={reset}>reset model</button>
+	<br />
+
+	<button on:click={saveFoldFile}>export model as FOLD</button>
 	<br />
 
 </div>

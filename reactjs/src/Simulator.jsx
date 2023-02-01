@@ -7,14 +7,9 @@ import * as THREE from "three";
 import "./Simulator.css";
 import TrackballView from "./WebGL/TrackballView.jsx";
 import OrigamiSimulator from "../../src/index";
-import Highlights from "../../src/highlights";
-import Raycasters from "../../src/raycasters";
-import * as Materials from "../../src/materials";
+import Highlights from "../../src/touches/highlights";
+import Raycasters from "../../src/touches/raycasters";
 import boundingBox from "../../src/fold/boundingBox";
-
-// intensity of point lights for light and dark mode
-const lightIntensityLightMode = 0.45;
-const lightIntensityDarkMode = 0.707;
 // octahedron
 // const lightVertices = [[1,0,0], [0,1,0], [0,0,1], [-1,0,0], [0,-1,0], [0,0,-1]];
 // cube
@@ -40,8 +35,6 @@ const lightVertices = [
  * - props.tool (the UI tool, currently there are two: "trackball", "pull")
  * - props.showTouches (highlight the vertex/face underneath the cursor)
  * - props.showShadows (turn on three.js shadows)
- * - props.darkMode (swap materials based on light/dark mode)
- * new ones
  * - props.reset (reset the vertices of the origami model)
  */
 const Simulator = (props) => {
@@ -95,6 +88,7 @@ const Simulator = (props) => {
 		lights = lightVertices.map(pos => {
 			const light = new THREE.PointLight();
 			light.position.set(...pos);
+			light.intensity = 0.45;
 			light.distance = 0;
 			light.decay = 2;
 			light.castShadow = false;
@@ -142,7 +136,7 @@ const Simulator = (props) => {
 			light.shadow.camera.near = radius / 10; // 0.5 default
 			light.shadow.camera.far = radius * 10; // 500 default
 		});
-	}, [modelSize]);
+	}, [lights, modelSize]);
 	// tool -> what happens when cursor is pressed
 	useEffect(() => {
 		setTrackballEnabled(props.tool !== "pull");
@@ -180,15 +174,13 @@ const Simulator = (props) => {
 	useEffect(() => highlights.highlightTouch(touches[0]), [highlights, touches]);
 	// nitpicky. upon tool change we need raycasterPullVertex to be undefined
 	useEffect(() => raycasters.raycasterReleaseHandler(pullNodesEnabled), [raycasters, pullNodesEnabled]);
-	// reset materials depending on dark or light mode
-	useEffect(() => updateStyle(props.darkMode, scene), [props.darkMode, scene]);
 	// shadows
 	useEffect(() => {
 		simulator.shadows = props.showShadows;
 		[0, 3, 4, 7].forEach(i => {
 			lights[i].castShadow = props.showShadows;
 		});
-	}, [simulator, props.showShadows]);
+	}, [lights, simulator, props.showShadows]);
 
 	/**
 	 * @description This is tied to the animation loop event managed by
@@ -207,43 +199,6 @@ const Simulator = (props) => {
 	// 	if (raycasters) { raycasters.dealloc(); }
 	// 	if (simulator) { simulator.dealloc(); }
 	// });
-	/**
-	 * @description Initialize/reset all mesh materials including those
-	 * associated with the hover face/vertex selection.
-	 */
-	const updateStyle = (darkMode, scene) => {
-		scene.background = darkMode
-			? new THREE.Color("#0F0F10")
-			: new THREE.Color("#eee");
-		simulator.model.materials.front = darkMode
-			? Materials.materialDarkFront
-			: Materials.materialLightFront;
-		simulator.model.materials.back = darkMode
-			? Materials.materialDarkBack
-			: Materials.materialLightBack;
-		highlights.face.material = darkMode
-			? [Materials.materialHighlightFrontDark, Materials.materialHighlightBackDark]
-			: [Materials.materialHighlightFrontLight, Materials.materialHighlightBackLight];
-		highlights.point.material = darkMode
-			? Materials.materialRaycastPointDark
-			: Materials.materialRaycastPointLight;
-		highlights.vertex.material = darkMode
-			? Materials.materialHighlightVertexDark
-			: Materials.materialHighlightVertexLight;
-		const lineMaterial = darkMode
-			? Materials.materialDarkLine
-			: Materials.materialLightLine;
-		Object.keys(simulator.model.lines)
-			.forEach(key => { simulator.model.lines[key].material = lineMaterial; });
-		const lightIntensity = darkMode
-			? lightIntensityDarkMode
-			: lightIntensityLightMode;
-		lights.forEach(light => { light.intensity = lightIntensity; });
-		// i see why this was here. material won't update on the model.
-		// we need a better setter that propagates through the correct model data.
-		simulator.setStrain(props.strain);
-	};
-
 	return (
 		<div className="Simulator">
 			<TrackballView

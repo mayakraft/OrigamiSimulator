@@ -7,12 +7,18 @@ import Beam from "./beam.js";
 import Crease from "./crease.js";
 import * as defaultMaterials from "./materials.js";
 import getFacesAndVerticesForEdges from "../fold/creaseParams.js";
+import prepare from "../fold/prepare.js";
+import exportFold from "./exportFold";
 
 // buffer geometry has materialIndex property. use this for front/back colors
 
 const assignments = Array.from("BMVFCU");
 
 function Model({ scene }) {
+	// if the user chooses to export the 3D model, we need to reference
+	// the original FOLD data. "this.fold" contains triangulated faces.
+	this.fold = {};
+	this.foldUnmodified = {};
 	this.geometry = null;
 	this.frontMesh = new THREE.Mesh(); // front face of mesh
 	this.backMesh = new THREE.Mesh(); // back face of mesh (different color)
@@ -260,10 +266,13 @@ Model.prototype.dealloc = function () {
  * @description Load a new FOLD object into origami simulator.
  * Immediately following this method the solver should call .setModel()
  */
-Model.prototype.load = function (fold) {
+Model.prototype.load = function (foldObject) {
 	this.dealloc();
 	this.makeNewGeometries();
 	// this.updateEdgeVisibility(options.visible);
+	const fold = prepare(foldObject);
+	this.foldUnmodified = foldObject;
+	this.fold = fold;
 	this.makeObjects(fold);
 	const { positions, colors, indices, lineIndices } = this.makeTypedArrays(fold);
 	this.setGeometryBuffers({ positions, colors, indices, lineIndices });
@@ -277,6 +286,12 @@ Model.prototype.load = function (fold) {
 	// save these for the solver to modify
 	this.positions = positions;
 	this.colors = colors;
+};
+/**
+ *
+ */
+Model.prototype.export = function () {
+	return exportFold(this, this.foldUnmodified, this.fold);
 };
 /**
  *

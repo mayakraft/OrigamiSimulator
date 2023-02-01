@@ -17,6 +17,18 @@ const Settings = (props) => {
 		}
 	};
 
+	const saveFoldFile = () => {
+		const a = document.createElement("a");
+		a.style = "display: none";
+		document.body.appendChild(a);
+		const blob = new Blob([JSON.stringify(props.exportModel()())], { type: "octet/stream" });
+		const url = window.URL.createObjectURL(blob);
+		a.href = url;
+		a.download = "origami.fold";
+		a.click();
+		window.URL.revokeObjectURL(url);
+	};
+
 	return (
 		<div class={Style.Container}>
 			<input type="file" onInput={fileDialogOnInput} />
@@ -238,6 +250,9 @@ const Settings = (props) => {
 			<button
 				disabled={!props.active()}
 				onClick={() => props.reset()()}>reset model</button>
+			<br />
+
+			<button onClick={saveFoldFile}>export model as FOLD</button>
 			<br />
 
 		</div>

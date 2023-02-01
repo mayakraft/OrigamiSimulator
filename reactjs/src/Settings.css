@@ -20,11 +20,3 @@
 
 .Long { width: 8rem; }
 .Short { width: 2.5rem; }
-
-.Dark {
-	color: #ddd;
-}
-
-.Light {
-	color: black;
-}

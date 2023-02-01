@@ -173,6 +173,7 @@ const Simulator = (props) => {
 		});
 		// upstream
 		props.setReset(() => simulator.reset);
+		props.setExportModel(() => simulator.export);
 	};
 	/**
 	 * @description cleanup all memory associated with origami simulator

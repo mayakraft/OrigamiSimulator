@@ -36,6 +36,7 @@
 	let dampingRatio = 0.45;
 	// vertex displacement error relayed back from the simulator
 	let error = 0;
+	let exportModel;
 </script>
 
 <div class="App">
@@ -60,6 +61,7 @@
 		bind:dampingRatio={dampingRatio}
 		{error}
 		{reset}
+		{exportModel}
 	/>
 	<Simulator
 		{origami}
@@ -82,6 +84,7 @@
 		{dampingRatio}
 		bind:error={error}
 		bind:reset={reset}
+		bind:exportModel={exportModel}
 	/>
 </div>
 

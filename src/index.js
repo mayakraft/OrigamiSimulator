@@ -3,7 +3,6 @@
  */
 import Model from "./model/index.js";
 import DynamicSolver from "./dynamicSolver/index.js";
-import prepare from "./fold/prepare.js";
 /**
  * @description Origami Simulator by Amanda Ghassaei.
  * refactored so that:
@@ -91,8 +90,7 @@ const OrigamiSimulator = ({ scene, onCompute } = {}) => {
 	 * @description this load method can throw an error. wrap it in a try catch
 	 * and deliver the error to the end user.
 	 */
-	const load = (foldObject) => {
-		const fold = prepare(foldObject);
+	const load = (fold) => {
 		model.load(fold);
 		solver.setModel(model, { creasePercent: foldAmount });
 	};
@@ -140,6 +138,7 @@ const OrigamiSimulator = ({ scene, onCompute } = {}) => {
 	 */
 	const app = {
 		load,
+		export: () => model.export(),
 		model,
 		reset,
 		dealloc,

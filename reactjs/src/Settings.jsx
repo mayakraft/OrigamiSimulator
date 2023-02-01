@@ -18,7 +18,7 @@ const Settings = (props) => {
 	};
 
 	return (
-		<div className={props.darkMode ? "Container Dark" : "Container Light"}>
+		<div className="Container">
 			<input type="file" onInput={fileDialogOnInput} />
 
 			<h3>

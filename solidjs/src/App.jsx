@@ -37,6 +37,7 @@ function App() {
 	const [dampingRatio, setDampingRatio] = createSignal(0.45);
 	// vertex displacement error relayed back from the simulator
 	const [error, setError] = createSignal(0);
+	const [exportModel, setExportModel] = createSignal();
 
 	return (
 		<div class={styles.App}>
@@ -67,6 +68,7 @@ function App() {
 				setLineOpacity={setLineOpacity}
 				error={error}
 				reset={reset}
+				exportModel={exportModel}
 				integration={integration}
 				setIntegration={setIntegration}
 				axialStiffness={axialStiffness}
@@ -95,6 +97,7 @@ function App() {
 				lineOpacity={lineOpacity}
 				setError={setError}
 				setReset={setReset}
+				setExportModel={setExportModel}
 				integration={integration}
 				axialStiffness={axialStiffness}
 				faceStiffness={faceStiffness}

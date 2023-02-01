@@ -47,6 +47,7 @@
 	export let dampingRatio;
 	export let error;
 	export let reset;
+	export let exportModel;
 
 	// intensity of point lights for light and dark mode
 	const lightIntensityLightMode = 0.45;
@@ -123,6 +124,7 @@
 			setTouches: t => { touches = t; },
 		});
 		lights.forEach(light => scene.add(light));
+		exportModel = simulator.export;
 	};
 
 	// load a new origami model. thrown errors are because of a bad file format

@@ -20,9 +20,6 @@ function App() {
 	const [showTouches, setShowTouches] = useState(true);
 	// turn on three.js shadows
 	const [showShadows, setShowShadows] = useState(false);
-	// swap materials based on the app color theme
-	const [darkMode, setDarkMode] = useState(true);
-
 	const [reset, setReset] = useState();
 	const [integration, setIntegration] = useState("euler");
 	const [axialStiffness, setAxialStiffness] = useState(20);
@@ -50,8 +47,6 @@ function App() {
 				setShowTouches={setShowTouches}
 				showShadows={showShadows}
 				setShowShadows={setShowShadows}
-				darkMode={darkMode}
-				setDarkMode={setDarkMode}
 				error={error}
 				reset={reset}
 				integration={integration}
@@ -75,7 +70,6 @@ function App() {
 				tool={tool}
 				showTouches={showTouches}
 				showShadows={showShadows}
-				darkMode={darkMode}
 				setError={setError}
 				setReset={setReset}
 				integration={integration}

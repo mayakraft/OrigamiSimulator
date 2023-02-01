@@ -1,7 +1,3 @@
-/**
- * Origami Simulator for SolidJS (c) Kraft
- * MIT license
- */
 import * as THREE from "three";
 /**
  * @description Given a 3D model and a raycaster, gather helpful information
