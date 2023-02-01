@@ -1,5 +1,5 @@
 import * as THREE from "three";
-import * as Materials from "./materials";
+import * as Materials from "./materials.js";
 // todo: idea- duplicate highlighted vertex, one obeys depthTest with full
 // opacity, the other is always visible with half opacity.
 const Highlights = ({ scene, simulator }) => {

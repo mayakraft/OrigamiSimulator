@@ -20,8 +20,12 @@ function App() {
 	const [showTouches, setShowTouches] = createSignal(true);
 	// turn on three.js shadows
 	const [showShadows, setShowShadows] = createSignal(false);
-	// swap materials based on the app color theme
-	const [darkMode, setDarkMode] = createSignal(true);
+	// style
+	const [backgroundColor, setBackgroundColor] = createSignal("#1b1b1b");
+	const [frontColor, setFrontColor] = createSignal("#ec008b");
+	const [backColor, setBackColor] = createSignal("white");
+	const [lineColor, setLineColor] = createSignal("black");
+	const [lineOpacity, setLineOpacity] = createSignal(0.5);
 	// reset the vertices back to their starting location
 	const [reset, setReset] = createSignal();
 	// settings for the simulator's solver
@@ -51,8 +55,16 @@ function App() {
 				setShowTouches={setShowTouches}
 				showShadows={showShadows}
 				setShowShadows={setShowShadows}
-				darkMode={darkMode}
-				setDarkMode={setDarkMode}
+				backgroundColor={backgroundColor}
+				setBackgroundColor={setBackgroundColor}
+				frontColor={frontColor}
+				setFrontColor={setFrontColor}
+				backColor={backColor}
+				setBackColor={setBackColor}
+				lineColor={lineColor}
+				setLineColor={setLineColor}
+				lineOpacity={lineOpacity}
+				setLineOpacity={setLineOpacity}
 				error={error}
 				reset={reset}
 				integration={integration}
@@ -76,7 +88,11 @@ function App() {
 				tool={tool}
 				showTouches={showTouches}
 				showShadows={showShadows}
-				darkMode={darkMode}
+				backgroundColor={backgroundColor}
+				frontColor={frontColor}
+				backColor={backColor}
+				lineColor={lineColor}
+				lineOpacity={lineOpacity}
 				setError={setError}
 				setReset={setReset}
 				integration={integration}

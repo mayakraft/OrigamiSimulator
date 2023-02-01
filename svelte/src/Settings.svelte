@@ -197,7 +197,7 @@
 
 <style>
 	.container {
-		background-color: #0009;
+		background-color: #fff1;
 		z-index: 2;
 		position: absolute;
 		top: 0;
@@ -205,6 +205,7 @@
 		padding: 0.5rem;
 		overflow-y: auto;
 		max-height: 100vh;
+		text-shadow: -1px -1px 0 #0008, 1px -1px 0 #0008, -1px 1px 0 #0008, 1px 1px 0 #0008;
 	}
 	.container > * {
 		margin: 0.33rem 0;

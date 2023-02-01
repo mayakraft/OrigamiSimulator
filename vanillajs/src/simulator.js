@@ -5,9 +5,8 @@
 import * as THREE from "three";
 import ThreeView from "./three-view.js";
 import OrigamiSimulator from "../../src/index.js";
-import Highlights from "../../src/highlights.js";
-import Raycasters from "../../src/raycasters.js";
-import * as Materials from "../../src/materials.js";
+import Highlights from "../../src/touches/highlights.js";
+import Raycasters from "../../src/touches/raycasters.js";
 import boundingBox from "../../src/fold/boundingBox.js";
 // tool is either ["trackball", "pull"]
 let tool = "trackball";
@@ -41,6 +40,7 @@ let camera;
 const lights = lightVertices.map(pos => {
 	const light = new THREE.PointLight();
 	light.position.set(...pos);
+	light.intensity = 0.707;
 	return light;
 });
 /**
@@ -72,28 +72,6 @@ const updateScene = () => {
 	});
 };
 /**
- * @description Initialize/reset all mesh materials including those
- * associated with the hover face/vertex selection.
- */
-const updateStyle = () => {
-	scene.background = new THREE.Color("#0F0F10");
-	simulator.model.materials.front = Materials.materialDarkFront;
-	simulator.model.materials.back = Materials.materialDarkBack;
-	highlights.face.material = [
-		Materials.materialHighlightFrontDark,
-		Materials.materialHighlightBackDark,
-	];
-	highlights.point.material = Materials.materialRaycastPointDark;
-	highlights.vertex.material = Materials.materialHighlightVertexDark;
-	const lineMaterial = Materials.materialDarkLine;
-	Object.keys(simulator.model.lines)
-		.forEach(key => { simulator.model.lines[key].material = lineMaterial; });
-	lights.forEach(light => { light.intensity = 0.707; });
-	// i see why this was here. material won't update on the model.
-	// we need a better setter that propagates through the correct model data.
-	simulator.setStrain(strain);
-};
-/**
  * @description Origami Simulator solver just executed. This is attached
  * to the window.requestAnimationFrame and will fire at the end of every loop
  */
@@ -121,11 +99,11 @@ window.addEventListener("load", () => {
 		setTouches: touches => { highlights.highlightTouch(touches[0]); },
 	});
 	lights.forEach(light => scene.add(light));
+	scene.background = new THREE.Color("#0F0F10");
 	simulator.setActive(true);
 	simulator.setStrain(strain);
 	simulator.setFoldAmount(foldAmount);
 	updateScene();
-	updateStyle();
 });
 /**
  * @description cleanup all memory associated with origami simulator.

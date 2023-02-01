@@ -20,7 +20,7 @@
 	// turn on three.js shadows
 	let showShadows = false;
 	// style
-	let backgroundColor = "#ddd";
+	let backgroundColor = "#1b1b1b";
 	let frontColor = "#ec008b";
 	let backColor = "white";
 	let lineColor = "black";

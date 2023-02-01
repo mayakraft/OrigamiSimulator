@@ -17,12 +17,8 @@ const Settings = (props) => {
 		}
 	};
 
-	const containerClasses = props.darkMode()
-		? [Style.Container, Style.Dark]
-		: [Style.Container, Style.Light];
-
 	return (
-		<div class={containerClasses.join(" ")}>
+		<div class={Style.Container}>
 			<input type="file" onInput={fileDialogOnInput} />
 
 			<h3>
@@ -86,6 +82,50 @@ const Settings = (props) => {
 					disabled={props.strain()}
 					checked={props.showShadows()}
 					onClick={() => props.setShowShadows(!props.showShadows())}
+				/>
+			</h3>
+
+			<h3>
+				front
+				<input
+					type="text"
+					class={Style.Medium}
+					value={props.frontColor()}
+					onInput={e => props.setFrontColor(e.target.value)}
+				/>
+			</h3>
+			<h3>
+				back
+				<input
+					type="text"
+					class={Style.Medium}
+					value={props.backColor()}
+					onInput={e => props.setBackColor(e.target.value)}
+				/>
+			</h3>
+			<h3>
+				line
+				<input
+					type="text"
+					class={Style.Medium}
+					value={props.lineColor()}
+					onInput={e => props.setLineColor(e.target.value)}
+				/>
+			</h3>
+			<input
+				type="range"
+				min="0"
+				max="1"
+				step="0.02"
+				value={props.lineOpacity()}
+				onInput={e => props.setLineOpacity(e.target.value)} />
+			<h3>
+				background
+				<input
+					type="text"
+					class={Style.Medium}
+					value={props.backgroundColor()}
+					onInput={e => props.setBackgroundColor(e.target.value)}
 				/>
 			</h3>
 

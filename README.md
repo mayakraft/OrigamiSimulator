@@ -63,6 +63,20 @@ now the app should run. Interface with your `origamiSimulator` instance with the
 - `reset()` reset the vertices back to their initial position
 - `dealloc()` deallocate origami simulator when done
 - `nodeDidMove()` if you implement a UI for grabbing vertices, call this when a vertex is pulled
+
+style
+
+- `getMaterials()` get the three.js materials in an object sorted by type
+- `setFrontColor(color)` color hex (0xFF00FF) or string "#FF00FF"
+- `setBackColor(color)` color hex (0xFF00FF) or string "#FF00FF"
+- `setLineColor(color)` color hex (0xFF00FF) or string "#FF00FF"
+- `setMaterialFront(material)` three.js material
+- `setMaterialBack(material)` three.js material
+- `setMaterialLine(material)` three.js material
+- `setMaterialStrain(material)` three.js material
+
+solver settings
+
 - `setIntegration(string)` "euler" or "verlet"
 - `setAxialStiffness(number)` default 20
 - `setFaceStiffness(number)` default 0.2

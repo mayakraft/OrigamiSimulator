@@ -7,9 +7,8 @@ import * as THREE from "three";
 import Style from "./Simulator.module.css";
 import TrackballView from "./WebGL/TrackballView.jsx";
 import OrigamiSimulator from "../../src/index";
-import Highlights from "../../src/highlights";
-import Raycasters from "../../src/raycasters";
-import * as Materials from "../../src/materials";
+import Highlights from "../../src/touches/highlights";
+import Raycasters from "../../src/touches/raycasters";
 import boundingBox from "../../src/fold/boundingBox";
 
 // intensity of point lights for light and dark mode
@@ -142,6 +141,12 @@ const Simulator = (props) => {
 		createEffect(() => simulator.setActive(props.active()));
 		createEffect(() => simulator.setStrain(props.strain()));
 		createEffect(() => simulator.setFoldAmount(props.foldAmount()));
+		createEffect(() => { scene.background = new THREE.Color(props.backgroundColor()); });
+		createEffect(() => simulator.setFrontColor(props.frontColor()));
+		createEffect(() => simulator.setBackColor(props.backColor()));
+		createEffect(() => simulator.setLineColor(props.lineColor()));
+		createEffect(() => { simulator.materials.line.opacity = props.lineOpacity(); });
+		createEffect(() => { simulator.getMaterials().line.opacity = props.lineOpacity(); });
 		createEffect(() => simulator.setIntegration(props.integration()));
 		createEffect(() => simulator.setAxialStiffness(props.axialStiffness()));
 		createEffect(() => simulator.setFaceStiffness(props.faceStiffness()));
@@ -158,7 +163,7 @@ const Simulator = (props) => {
 		// nitpicky. upon tool change we need raycasterPullVertex to be undefined
 		createEffect(() => raycasters.raycasterReleaseHandler(pullNodesEnabled()));
 		// reset materials depending on dark or light mode
-		createEffect(() => updateStyle(props.darkMode(), scene));
+		// createEffect(() => updateStyle(props.darkMode(), scene));
 		// shadows
 		createEffect(() => {
 			simulator.shadows = props.showShadows();
@@ -180,38 +185,38 @@ const Simulator = (props) => {
 	 * @description Initialize/reset all mesh materials including those
 	 * associated with the hover face/vertex selection.
 	 */
-	const updateStyle = (darkMode, scene) => {
-		scene.background = darkMode
-			? new THREE.Color("#0F0F10")
-			: new THREE.Color("#eee");
-		simulator.model.materials.front = darkMode
-			? Materials.materialDarkFront
-			: Materials.materialLightFront;
-		simulator.model.materials.back = darkMode
-			? Materials.materialDarkBack
-			: Materials.materialLightBack;
-		highlights.face.material = darkMode
-			? [Materials.materialHighlightFrontDark, Materials.materialHighlightBackDark]
-			: [Materials.materialHighlightFrontLight, Materials.materialHighlightBackLight];
-		highlights.point.material = darkMode
-			? Materials.materialRaycastPointDark
-			: Materials.materialRaycastPointLight;
-		highlights.vertex.material = darkMode
-			? Materials.materialHighlightVertexDark
-			: Materials.materialHighlightVertexLight;
-		const lineMaterial = darkMode
-			? Materials.materialDarkLine
-			: Materials.materialLightLine;
-		Object.keys(simulator.model.lines)
-			.forEach(key => { simulator.model.lines[key].material = lineMaterial; });
-		const lightIntensity = darkMode
-			? lightIntensityDarkMode
-			: lightIntensityLightMode;
-		lights.forEach(light => { light.intensity = lightIntensity; });
-		// i see why this was here. material won't update on the model.
-		// we need a better setter that propagates through the correct model data.
-		simulator.setStrain(props.strain());
-	};
+	// const updateStyle = (darkMode, scene) => {
+	// 	scene.background = darkMode
+	// 		? new THREE.Color("#0F0F10")
+	// 		: new THREE.Color("#eee");
+	// 	simulator.model.materials.front = darkMode
+	// 		? Materials.materialDarkFront
+	// 		: Materials.materialLightFront;
+	// 	simulator.model.materials.back = darkMode
+	// 		? Materials.materialDarkBack
+	// 		: Materials.materialLightBack;
+	// 	highlights.face.material = darkMode
+	// 		? [Materials.materialHighlightFrontDark, Materials.materialHighlightBackDark]
+	// 		: [Materials.materialHighlightFrontLight, Materials.materialHighlightBackLight];
+	// 	highlights.point.material = darkMode
+	// 		? Materials.materialRaycastPointDark
+	// 		: Materials.materialRaycastPointLight;
+	// 	highlights.vertex.material = darkMode
+	// 		? Materials.materialHighlightVertexDark
+	// 		: Materials.materialHighlightVertexLight;
+	// 	const lineMaterial = darkMode
+	// 		? Materials.materialDarkLine
+	// 		: Materials.materialLightLine;
+	// 	Object.keys(simulator.model.lines)
+	// 		.forEach(key => { simulator.model.lines[key].material = lineMaterial; });
+	// 	const lightIntensity = darkMode
+	// 		? lightIntensityDarkMode
+	// 		: lightIntensityLightMode;
+	// 	lights.forEach(light => { light.intensity = lightIntensity; });
+	// 	// i see why this was here. material won't update on the model.
+	// 	// we need a better setter that propagates through the correct model data.
+	// 	simulator.setStrain(props.strain());
+	// };
 
 	return (
 		<div class={Style.Simulator}>
