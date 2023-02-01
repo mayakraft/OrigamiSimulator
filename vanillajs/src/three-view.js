@@ -1,5 +1,5 @@
 /**
- * ThreeView for Svelte (c) Kraft
+ * ThreeView (c) Kraft
  * MIT license
  */
 /**
@@ -8,35 +8,25 @@
  * refresh its aspect ratio and projection matrix. The camera's view matrix
  * is not automatically refreshed- if you would like to do so, listen to the
  * didResize method and didMount where you are given a pointer to camera.
- *
- * this component does not require any props. However,
- * it does offer these optional prop bindings, all are event handlers.
- * - didMount({ renderer, scene, camera }), will be called just after three.js
- *   has finished initialization, but before the animation loop has started.
- * - didResize(event), will be called following a window "resize" event.
- * - animate(), will be called inside the animation loop, right before the
- *   renderer draws to the screen.
  */
 import * as THREE from "three";
 import { TrackballControls } from "three/addons/controls/TrackballControls.js";
-// these will be initialized and managed by this component
-let renderer;
-let scene;
-let camera;
-let trackball;
-// exported
+// the default export
 const app = {
-	didMount: () => {},
-	didResize: () => {},
-	animate: () => {},
-	setEnabled: (enabled) => { trackball.enabled = enabled; },
+	// member variables
+	renderer: undefined,
+	scene: undefined,
+	camera: undefined,
+	trackball: undefined,
+	// event handlers
+	didMount: undefined,
+	didResize: undefined,
+	animate: undefined,
 };
-
 // the parent of the <canvas> element
 const parentNode = document.body;
 // the value returned from window.requestAnimationFrame
 let animationID;
-// trackball settings
 /**
  * @description Update the projection matrix, aspect ratio, and size
  * of the renderer.
@@ -44,9 +34,9 @@ let animationID;
 const updateProjection = () => {
 	const width = parentNode.clientWidth;
 	const height = parentNode.clientHeight;
-	renderer.setSize(width, height);
-	camera.aspect = width / height;
-	camera.updateProjectionMatrix();
+	app.renderer.setSize(width, height);
+	app.camera.aspect = width / height;
+	app.camera.updateProjectionMatrix();
 };
 /**
  * @description Update the camera's view matrix. The camera will look
@@ -57,32 +47,29 @@ const updateProjection = () => {
  */
 const updateView = (modelSize = 1.0) => {
 	const scale = 1.25;
-	const fitLength = camera.aspect > 1
+	const fitLength = app.camera.aspect > 1
 		? modelSize * scale
-		: modelSize * scale * (1 / camera.aspect);
-	camera.position.set(0, 0, fitLength);
-	camera.up = new THREE.Vector3(0, 1, 0);
-	camera.lookAt(0, 0, 0);
-	camera.far = modelSize * 100;
-	camera.near = modelSize / 100;
+		: modelSize * scale * (1 / app.camera.aspect);
+	app.camera.position.set(0, 0, fitLength);
+	app.camera.up = new THREE.Vector3(0, 1, 0);
+	app.camera.lookAt(0, 0, 0);
+	app.camera.far = modelSize * 100;
+	app.camera.near = modelSize / 100;
 };
 /**
  * @description Setup one three.js canvas with a renderer, scene, and camera
  */
 const initializeThreeJS = () => {
-	renderer = new THREE.WebGLRenderer({ antialias: true });
-	scene = new THREE.Scene();
-	camera = new THREE.PerspectiveCamera(45, 1 / 1, 0.1, 1000);
-	app.renderer = renderer;
-	app.scene = scene;
-	app.camera = camera;
-	renderer.setPixelRatio(window.devicePixelRatio);
-	renderer.shadowMap.enabled = true;
+	app.renderer = new THREE.WebGLRenderer({ antialias: true });
+	app.scene = new THREE.Scene();
+	app.camera = new THREE.PerspectiveCamera(45, 1 / 1, 0.1, 1000);
+	app.renderer.setPixelRatio(window.devicePixelRatio);
+	app.renderer.shadowMap.enabled = true;
 	// THREE.BasicShadowMap, THREE.PCFShadowMap, THREE.PCFSoftShadowMap, THREE.VSMShadowMap
-	renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+	app.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 	updateProjection();
 	updateView();
-	parentNode.appendChild(renderer.domElement);
+	parentNode.appendChild(app.renderer.domElement);
 };
 /**
  * @description Begin the animation loop, maintain a reference to the
@@ -96,8 +83,8 @@ const initializeAnimationLoop = () => {
 		if (app.animate) {
 			app.animate();
 		}
-		renderer.render(scene, camera);
-		trackball.update();
+		app.renderer.render(app.scene, app.camera);
+		app.trackball.update();
 	};
 	animateLoop();
 };
@@ -105,10 +92,10 @@ const initializeAnimationLoop = () => {
  * @description The method attached to the window's "resize" event.
  */
 const onResize = (event) => {
-	parentNode.removeChild(renderer.domElement);
+	parentNode.removeChild(app.renderer.domElement);
 	updateProjection();
-	parentNode.appendChild(renderer.domElement);
-	trackball.handleResize();
+	parentNode.appendChild(app.renderer.domElement);
+	app.trackball.handleResize();
 	if (app.didResize) {
 		app.didResize(event);
 	}
@@ -120,41 +107,38 @@ const onResize = (event) => {
  */
 window.addEventListener("load", () => {
 	initializeThreeJS();
-
-	camera.position.z = 2;
-	camera.lookAt(0, 0, 0);
-	camera.far = 100;
-	camera.near = 1 / 100;
-
-	trackball = new TrackballControls(camera, renderer.domElement);
-	trackball.maxDistance = 10;
-	trackball.minDistance = 0.5;
-	trackball.distance = 2;
-	trackball.panSpeed = 1;
-	trackball.rotateSpeed = 4;
-	trackball.zoomSpeed = 16;
-	trackball.enabled = true;
-
+	app.camera.position.z = 2;
+	app.camera.lookAt(0, 0, 0);
+	app.camera.far = 100;
+	app.camera.near = 1 / 100;
+	app.trackball = new TrackballControls(app.camera, app.renderer.domElement);
+	app.trackball.maxDistance = 10;
+	app.trackball.minDistance = 0.5;
+	app.trackball.distance = 2;
+	app.trackball.panSpeed = 1;
+	app.trackball.rotateSpeed = 4;
+	app.trackball.zoomSpeed = 16;
+	app.trackball.enabled = true;
 	window.addEventListener("resize", onResize);
 	if (app.didMount) {
-		app.didMount({ renderer, scene, camera });
+		app.didMount(app);
 	}
 	initializeAnimationLoop();
 });
-
 /**
  * @description Free all memory associated with this three.js instance.
  * This allows you to destroy and re-instance this component many times
  * throughout the lifecycle of the app.
+ * note: window "unload" event does not reliably fire, especially on mobile.
  */
-// onDestroy(() => {
-// 	window.removeEventListener("resize", onResize);
-// 	window.cancelAnimationFrame(animationID);
-// 	scene.clear();
-// 	renderer.renderLists.dispose();
-// 	renderer.dispose();
-// 	camera = null;
-// 	parentNode.removeChild(renderer.domElement);
-// });
+window.addEventListener("unload", () => {
+	window.removeEventListener("resize", onResize);
+	window.cancelAnimationFrame(animationID);
+	app.scene.clear();
+	app.renderer.renderLists.dispose();
+	app.renderer.dispose();
+	app.camera = null;
+	parentNode.removeChild(app.renderer.domElement);
+});
 
 export default app;

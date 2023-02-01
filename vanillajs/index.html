@@ -17,7 +17,12 @@
 	}
 }
 </script>
+
 <div class="settings">
+	<input type="file" id="file-dialog" />
+	<br />
+	<input type="checkbox" id="checkbox-active" checked />
+	<label for="checkbox-active">active</label>
 	<h3>fold amount</h3>
 	<input
 		type="range"
@@ -30,17 +35,23 @@
 	<br />
 	<input
 		type="radio"
-		id="radio-webgl-tool-trackball"
-		name="radio-webgl-tool"
-		value="trackball" />
-	<label for="radio-webgl-tool-trackball">trackball</label>
+		id="radio-tool-trackball"
+		name="radio-tool"
+		value="trackball"
+		checked />
+	<label for="radio-tool-trackball">trackball</label>
 	<input
 		type="radio"
-		id="radio-webgl-tool-pull"
-		name="radio-webgl-tool"
+		id="radio-tool-pull"
+		name="radio-tool"
 		value="pull" />
-	<label for="radio-webgl-tool-pull">pull</label>
+	<label for="radio-tool-pull">pull</label>
+	<br />
+	<input type="checkbox" id="checkbox-strain" />
+	<label for="checkbox-strain">strain</label>
 </div>
-	<script type="module" src="./src/simulator.js"></script>
+
+<script type="module" src="./src/simulator.js" defer></script>
+
 </body>
 </html>
