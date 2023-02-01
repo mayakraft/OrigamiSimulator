@@ -6,6 +6,11 @@
   export let foldAmount;
   export let showTouches;
   export let showShadows;
+  export let backgroundColor;
+	export let frontColor;
+	export let backColor;
+	export let lineColor;
+	export let lineOpacity;
   export let error;
   export let reset;
   export let integration;
@@ -14,7 +19,6 @@
   export let joinStiffness;
 	export let creaseStiffness;
 	export let dampingRatio;
-  export let darkMode;
 	// throws error if file is not a valid JSON format
 	// event handler for file dialog <input>
 	let files;
@@ -33,7 +37,7 @@
 	}
 </script>
 
-<div class={darkMode ? "container dark" : "container light"}>
+<div class={"container"}>
 	<input type="file" bind:files>
 
 	<h3>
@@ -80,6 +84,29 @@
 	<h3>
 		show shadows
 		<input type="checkbox" disabled={strain} bind:checked={showShadows} />
+	</h3>
+
+	<h3>
+		front
+		<input type="text" class="medium" bind:value={frontColor} />
+	</h3>
+	<h3>
+		back
+		<input type="text" class="medium" bind:value={backColor} />
+	</h3>
+	<h3>
+		lines
+		<input type="text" class="medium" bind:value={lineColor} />
+	</h3>
+	<input
+		type="range"
+		min="0"
+		max="1"
+		step="0.02"
+		bind:value={lineOpacity} />
+	<h3>
+		background
+		<input type="text" class="medium" bind:value={backgroundColor} />
 	</h3>
 
 	<h3>integration</h3>
@@ -170,7 +197,7 @@
 
 <style>
 	.container {
-		background-color: #0002;
+		background-color: #0009;
 		z-index: 2;
 		position: absolute;
 		top: 0;
@@ -180,14 +207,13 @@
 		max-height: 100vh;
 	}
 	.container > * {
-		margin: 0.5rem 0;
+		margin: 0.33rem 0;
 	}
 	/*.container input[type=radio] + * {*/
 	.container input {
 		margin: 0rem 0.25rem;
 	}
 	.long { width: 8rem; }
+	.medium { width: 5.5rem; }
 	.short { width: 2.5rem; }
-	.dark { color: #ddd;}
-	.light { color: black;}
 </style>

@@ -149,7 +149,12 @@ const Simulator = (props) => {
 		createEffect(() => simulator.setCreaseStiffness(props.creaseStiffness()));
 		createEffect(() => simulator.setDampingRatio(props.dampingRatio()));
 		// deliver the touch data from the raycaster to be highlighted
-		createEffect(() => highlights.highlightTouch(touches()[0]));
+		createEffect(() => {
+			if (props.showTouches()) { highlights.highlightTouch(touches()[0]); }
+		});
+		createEffect(() => {
+			if (!props.showTouches()) { highlights.clear(); }
+		});
 		// nitpicky. upon tool change we need raycasterPullVertex to be undefined
 		createEffect(() => raycasters.raycasterReleaseHandler(pullNodesEnabled()));
 		// reset materials depending on dark or light mode
@@ -163,16 +168,6 @@ const Simulator = (props) => {
 		});
 		// upstream
 		props.setReset(() => simulator.reset);
-	};
-	/**
-	 * @description This is tied to the animation loop event managed by
-	 * the ThreeView, attached to window.requestAnimationFrame.
-	 */
-	const animate = () => {
-		// The raycaster will update on a mousemove event, but if the origami is
-		// in a folding animation, the raycaster will not update and the visuals
-		// will mismatch, hence, the raycaster can fire on a frame update if needed
-		// raycasters.animate({ pullEnabled: pullNodesEnabled() });
 	};
 	/**
 	 * @description cleanup all memory associated with origami simulator
@@ -221,7 +216,6 @@ const Simulator = (props) => {
 	return (
 		<div class={Style.Simulator}>
 			<TrackballView
-				// props for the TrackballView
 				enabled={trackballEnabled()}
 				maxDistance={modelSize() * 30}
 				minDistance={modelSize() * 0.1}
@@ -229,10 +223,7 @@ const Simulator = (props) => {
 				rotateSpeed={4}
 				zoomSpeed={16}
 				dynamicDampingFactor={1}
-				// props for the ThreeView child component
 				didMount={didMount}
-				didResize={() => {}}
-				animate={animate}
 			/>
 		</div>
 	);

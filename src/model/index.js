@@ -12,10 +12,10 @@ import getFacesAndVerticesForEdges from "../fold/creaseParams.js";
 
 const assignments = Array.from("BMVFCU");
 
-function Model({ scene, axialStiffness, joinStiffness, creaseStiffness, dampingRatio }) {
+function Model({ scene }) {
 	this.geometry = null;
-	this.frontside = new THREE.Mesh(); // front face of mesh
-	this.backside = new THREE.Mesh(); // back face of mesh (different color)
+	this.frontMesh = new THREE.Mesh(); // front face of mesh
+	this.backMesh = new THREE.Mesh(); // back face of mesh (different color)
 	this.lines = {};
 	assignments.forEach(key => {
 		this.lines[key] = new THREE.LineSegments(
@@ -23,14 +23,15 @@ function Model({ scene, axialStiffness, joinStiffness, creaseStiffness, dampingR
 			defaultMaterials.line,
 		);
 	});
-	this.axialStiffness = axialStiffness !== undefined ? axialStiffness : 20;
-	this.joinStiffness = joinStiffness !== undefined ? joinStiffness : 0.7;
-	this.creaseStiffness = creaseStiffness !== undefined ? creaseStiffness : 0.7;
-	this.dampingRatio = dampingRatio !== undefined ? dampingRatio : 0.45;
+	this.strain = false;
+	this.axialStiffness = 20;
+	this.joinStiffness = 0.7;
+	this.creaseStiffness = 0.7;
+	this.dampingRatio = 0.45;
 	// vertex / color buffer arrays for GPU
 	this.positions = null;
 	this.colors = null;
-	// these are custom objects that contain a bunch of information for the solver.
+	// these contain a bunch of information for the solver.
 	this.nodes = [];
 	this.edges = [];
 	this.creases = [];
@@ -42,19 +43,19 @@ function Model({ scene, axialStiffness, joinStiffness, creaseStiffness, dampingR
 	this.materials.strain = defaultMaterials.strain;
 	this.materials.line = defaultMaterials.line;
 
-	this.makeNewGeometries();
-	this.setAxialStrain(false);
-	this.frontside.castShadow = true;
-	this.frontside.receiveShadow = true;
-	// this.backside.castShadow = true;
-	this.backside.receiveShadow = true;
+	this.frontMesh.castShadow = true;
+	this.frontMesh.receiveShadow = true;
+	// this.backMesh.castShadow = true;
+	this.backMesh.receiveShadow = true;
 
+	this.makeNewGeometries();
+	this.materialDidUpdate();
 	this.setScene(scene);
 }
 
 Model.prototype.setScene = function (scene) {
 	// remove from previous scene
-	[this.frontside, this.backside]
+	[this.frontMesh, this.backMesh]
 		.filter(el => el.removeFromParent)
 		.forEach(side => side.removeFromParent());
 	Object.values(this.lines)
@@ -62,45 +63,17 @@ Model.prototype.setScene = function (scene) {
 		.forEach(line => line.removeFromParent());
 	// add to new scene
 	if (scene) {
-		scene.add(this.frontside);
-		scene.add(this.backside);
+		scene.add(this.frontMesh);
+		scene.add(this.backMesh);
 		Object.values(this.lines).forEach(line => scene.add(line));
 	}
-};
-
-Model.prototype.dealloc = function () {
-	// console.log("--- dealloc: Model()");
-	// dispose geometries
-	[this.geometry, this.frontside.geometry, this.backside.geometry]
-		.filter(geo => geo)
-		.forEach(geo => geo.dispose());
-	this.geometry = null;
-	this.frontside.geometry = null;
-	this.backside.geometry = null;
-	Object.values(this.lines)
-		.filter(line => line.geometry)
-		.forEach((line) => line.geometry.dispose());
-	// dispose materials
-	[this.frontside.material, this.backside.material]
-		.filter(material => material)
-		.forEach(material => material.dispose());
-	Object.values(this.lines)
-		.filter(line => line.material)
-		.forEach(line => line.material.dispose());
-	// dispose class objects
-	this.nodes.forEach(node => node.destroy());
-	this.edges.forEach(edge => edge.destroy());
-	this.creases.forEach(crease => crease.destroy());
-	this.nodes = [];
-	this.edges = [];
-	this.creases = [];
 };
 
 Model.prototype.makeNewGeometries = function () {
 	this.geometry = new THREE.BufferGeometry();
 	this.geometry.dynamic = true;
-	this.frontside.geometry = this.geometry;
-	this.backside.geometry = this.geometry;
+	this.frontMesh.geometry = this.geometry;
+	this.backMesh.geometry = this.geometry;
 	// todo: do we need to set frontside/backside dynamic?
 	// this.geometry.verticesNeedUpdate = true;
 	Object.values(this.lines).forEach((line) => {
@@ -110,21 +83,34 @@ Model.prototype.makeNewGeometries = function () {
 	});
 };
 
-Model.prototype.setAxialStrain = function (axialStrain) {
-	this.frontside.material = axialStrain
+Model.prototype.faceMaterialDidUpdate = function () {
+	this.frontMesh.material = this.strain
 		? this.materials.strain
 		: this.materials.front;
-	this.backside.material = this.materials.back;
-	this.backside.visible = !axialStrain;
-	// frontside.material.depthWrite = false;
-	// backside.material.depthWrite = false;
-	this.frontside.material.needsUpdate = true;
-	this.backside.material.needsUpdate = true;
-	// todo: if the animation is not currently running,
-	// this looks like we need to force an update. maybe?
-	// if (!globals.threeView.simulationRunning) {
-	//   reset()
-	// }
+	this.backMesh.material = this.materials.back;
+	// hide the back mesh if strain is currently enabled
+	this.backMesh.visible = !this.strain;
+	// this.frontMesh.material.depthWrite = false;
+	// this.backMesh.material.depthWrite = false;
+	this.frontMesh.material.needsUpdate = true;
+	this.backMesh.material.needsUpdate = true;
+};
+
+Model.prototype.lineMaterialDidUpdate = function () {
+	Object.values(this.lines).forEach(line => {
+		line.material = this.materials.line;
+		line.material.needsUpdate = true;
+	});
+};
+
+Model.prototype.materialDidUpdate = function () {
+	this.faceMaterialDidUpdate();
+	this.lineMaterialDidUpdate();
+};
+
+Model.prototype.setStrain = function (strain) {
+	this.strain = strain;
+	this.faceMaterialDidUpdate();
 };
 
 // in this case, options is an object where each key is B, M, V, F...
@@ -133,12 +119,12 @@ Model.prototype.updateEdgeVisibility = function (options) {
 	assignments.forEach(a => { this.lines[a].visible = options[a]; });
 };
 
-Model.prototype.getMesh = function () { return [this.frontside, this.backside]; };
+Model.prototype.getMesh = function () { return [this.frontMesh, this.backMesh]; };
 
-Model.prototype.needsUpdate = function ({ axialStrain, vrEnabled }) {
+Model.prototype.needsUpdate = function () {
 	if (!this.positions) { return; }
 	this.geometry.attributes.position.needsUpdate = true;
-	if (axialStrain) this.geometry.attributes.color.needsUpdate = true;
+	if (this.strain) { this.geometry.attributes.color.needsUpdate = true; }
 	// if (vrEnabled) this.geometry.computeBoundingBox();
 	// this is needed for the raycaster. even if VR is not enabled.
 	this.geometry.computeBoundingBox();
@@ -240,71 +226,120 @@ Model.prototype.setGeometryBuffers = function ({
 	this.geometry.computeBoundingSphere();
 	this.geometry.center();
 };
-
-Model.prototype.makeModelScale = function ({ scale, positions }) {
-	// const factor = scale / this.geometry.boundingSphere.radius;
-	// for (let i = 0; i < positions.length; i += 1) {
-	//   positions[i] *= factor;
-	// }
-	// positions.forEach(p => p *= factor);
-	for (let i = 0; i < this.nodes.length; i += 1) {
-		this.nodes[i].setOriginalPosition(
-			positions[3 * i],
-			positions[3 * i + 1],
-			positions[3 * i + 2],
-		);
-	}
-	this.edges.forEach(edge => edge.recalcOriginalLength());
+/**
+ *
+ */
+Model.prototype.dealloc = function () {
+	// console.log("--- dealloc: Model()");
+	// dispose geometries
+	[this.geometry, this.frontMesh.geometry, this.backMesh.geometry]
+		.filter(geo => geo)
+		.forEach(geo => geo.dispose());
+	this.geometry = null;
+	this.frontMesh.geometry = null;
+	this.backMesh.geometry = null;
+	Object.values(this.lines)
+		.filter(line => line.geometry)
+		.forEach((line) => line.geometry.dispose());
+	// dispose materials
+	[this.frontMesh.material, this.backMesh.material]
+		.filter(material => material)
+		.forEach(material => material.dispose());
+	Object.values(this.lines)
+		.filter(line => line.material)
+		.forEach(line => line.material.dispose());
+	// dispose class objects
+	this.nodes.forEach(node => node.destroy());
+	this.edges.forEach(edge => edge.destroy());
+	this.creases.forEach(crease => crease.destroy());
+	this.nodes = [];
+	this.edges = [];
+	this.creases = [];
 };
-
-// options: { axialStiffness, dampingRatio, joinStiffness, creaseStiffness, visible }
-Model.prototype.load = function (fold, options) {
-	const scale = 1; // the intended width of the buffer geometry
-
+/**
+ * @description Load a new FOLD object into origami simulator.
+ * Immediately following this method the solver should call .setModel()
+ */
+Model.prototype.load = function (fold) {
 	this.dealloc();
 	this.makeNewGeometries();
 	// this.updateEdgeVisibility(options.visible);
-	this.setAxialStrain(options.axialStrain);
 	this.makeObjects(fold);
 	const { positions, colors, indices, lineIndices } = this.makeTypedArrays(fold);
 	this.setGeometryBuffers({ positions, colors, indices, lineIndices });
-	this.makeModelScale({ scale, positions });
+	// initialize original state data
+	this.nodes.forEach((node, i) => node.setOriginalPosition(
+		positions[3 * i + 0],
+		positions[3 * i + 1],
+		positions[3 * i + 2],
+	));
+	this.edges.forEach(edge => edge.recalcOriginalLength());
 	// save these for the solver to modify
 	this.positions = positions;
 	this.colors = colors;
-	// getSolver().setModel();
-	// todo: if the animation is not currently running,
-	// this looks like we need to force an update. maybe?
-	// if (!globals.simulationRunning) reset();
 };
-
+/**
+ *
+ */
 Model.prototype.setAxialStiffness = function (value) {
 	this.axialStiffness = parseFloat(value);
 	this.edges.forEach(edge => { edge.axialStiffness = this.axialStiffness; });
 };
-
+/**
+ *
+ */
 Model.prototype.setJoinStiffness = function (value) {
 	this.joinStiffness = parseFloat(value);
 	this.creases.forEach(crease => { crease.joinStiffness = this.joinStiffness; });
-	// console.log("TODO: setJoinStiffness", this.joinStiffness);
 };
-
+/**
+ *
+ */
 Model.prototype.setCreaseStiffness = function (value) {
 	this.creaseStiffness = parseFloat(value);
 	this.creases.forEach(crease => { crease.creaseStiffness = this.creaseStiffness; });
-	// console.log("TODO: setCreaseStiffness", this.creaseStiffness);
 };
-
+/**
+ *
+ */
 Model.prototype.setDampingRatio = function (value) {
 	this.dampingRatio = parseFloat(value);
 	this.creases.forEach(crease => { crease.dampingRatio = this.dampingRatio; });
 	this.edges.forEach(edge => { edge.dampingRatio = this.dampingRatio; });
 };
-
-//  not sure where this function needs to be called
-// function reset(solver) {
-//   solver.reset();
-//   needsUpdate({});
-// }
+/**
+ *
+ */
+Model.prototype.setFrontColor = function (color) {
+	this.materials.front.color.set(color);
+};
+Model.prototype.setBackColor = function (color) {
+	this.materials.back.color.set(color);
+};
+Model.prototype.setLineColor = function (color) {
+	this.materials.line.color.set(color);
+};
+/**
+ *
+ */
+const setNewFaceMaterial = (model, material, key) => {
+	if (model.materials[key]) { model.materials[key].dispose(); }
+	model.materials[key] = material;
+	model.faceMaterialDidUpdate();
+};
+Model.prototype.setMaterialFront = function (material) {
+	setNewFaceMaterial(this, material, "front");
+};
+Model.prototype.setMaterialBack = function (material) {
+	setNewFaceMaterial(this, material, "back");
+};
+Model.prototype.setMaterialStrain = function (material) {
+	setNewFaceMaterial(this, material, "strain");
+};
+Model.prototype.setMaterialLine = function (material) {
+	if (this.materials.line) { this.materials.line.dispose(); }
+	this.materials.line = material;
+	this.lineMaterialDidUpdate();
+};
 
 export default Model;

@@ -63,10 +63,6 @@ const DynamicSolver = () => {
 		// 	updateFixed();
 		// 	props.fixedHasChanged = false;
 		// }
-		// if (props.nodePositionHasChanged) {
-		// 	updateLastPosition();
-		// 	// nodePositionHasChanged = false;
-		// }
 		for (let j = 0; j < numSteps; j += 1) {
 			solveStep(gpuMath, { textureDim, textureDimCreases, textureDimFaces, integrationType });
 		}
@@ -98,6 +94,9 @@ const DynamicSolver = () => {
 			creaseMeta,
 			lastPosition,
 		} = initialize(gpuMath, model, options));
+		// previous version reset the solver when a model loads.
+		// do we need to? seems to work fine without.
+		// solver.reset();
 	};
 	/**
 	 * @description Reset the vertices of the model back to their original state.

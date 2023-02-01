@@ -17,19 +17,9 @@ import prepare from "./fold/prepare.js";
  * @param {object} props provide a pre-initialized three.js scene (THREE.Scene)
  */
 const OrigamiSimulator = ({ scene, onCompute } = {}) => {
-	// app variables
-	// const visible = {
-	// 	B: true,
-	// 	M: true,
-	// 	V: true,
-	// 	F: true,
-	// 	C: false,
-	// 	U: true,
-	// };
 	const model = new Model({ scene });
 	const solver = DynamicSolver();
-	// this is the error in the folding, the deviation
-	// from where it's supposed to be.
+	// the error from strain in the folding
 	let error = 0;
 	/**
 	 * @description Fold the origami, between 0.0 and 1.0.
@@ -46,7 +36,7 @@ const OrigamiSimulator = ({ scene, onCompute } = {}) => {
 	let strain = false;
 	const setStrain = (value) => {
 		strain = !!value;
-		model.setAxialStrain(strain);
+		model.setStrain(strain);
 	};
 	/**
 	 * @description Activate three.js shadows on the materials.
@@ -54,10 +44,10 @@ const OrigamiSimulator = ({ scene, onCompute } = {}) => {
 	let shadows = false;
 	const setShadows = (newShadows) => {
 		shadows = newShadows;
-		model.frontside.castShadow = shadows;
-		model.frontside.receiveShadow = shadows;
-		// model.backside.castShadow = shadows;
-		model.backside.receiveShadow = shadows;
+		model.frontMesh.castShadow = shadows;
+		model.frontMesh.receiveShadow = shadows;
+		// model.backMesh.castShadow = shadows;
+		model.backMesh.receiveShadow = shadows;
 	};
 	/**
 	 * @description When the user pulls on a node, call this method, it will
@@ -71,7 +61,7 @@ const OrigamiSimulator = ({ scene, onCompute } = {}) => {
 		// error is the global error in the folding of the model
 		// not a computational error.
 		error = solver.solve(100, { axialStrain: strain });
-		model.needsUpdate({ axialStrain: strain });
+		model.needsUpdate();
 		// reset single loop variables
 	};
 	/**
@@ -103,11 +93,11 @@ const OrigamiSimulator = ({ scene, onCompute } = {}) => {
 	 */
 	const load = (foldObject) => {
 		const fold = prepare(foldObject);
-		model.load(fold, { axialStrain: strain });
+		model.load(fold);
 		solver.setModel(model, { creasePercent: foldAmount });
 	};
 	/**
-	 *
+	 * @description various solver settings
 	 */
 	const setIntegration = (value) => {
 		solver.setIntegration(value);
@@ -164,13 +154,21 @@ const OrigamiSimulator = ({ scene, onCompute } = {}) => {
 		setJoinStiffness,
 		setCreaseStiffness,
 		setDampingRatio,
+		getMaterials: () => model.materials,
+		setFrontColor: (color) => model.materials.front.color.set(color),
+		setBackColor: (color) => model.materials.back.color.set(color),
+		setLineColor: (color) => model.materials.line.color.set(color),
+		setMaterialFront: (...args) => model.setMaterialFront(...args),
+		setMaterialBack: (...args) => model.setMaterialBack(...args),
+		setMaterialLine: (...args) => model.setMaterialLine(...args),
+		setMaterialStrain: (...args) => model.setMaterialStrain(...args),
 	};
 	// getters and setters
-	// Object.defineProperty(app, "scene", { get: () => scene, set: setScene });
 	Object.defineProperty(app, "active", { get: () => active, set: setActive });
 	Object.defineProperty(app, "foldAmount", { get: () => foldAmount, set: setFoldAmount });
 	Object.defineProperty(app, "strain", { get: () => strain, set: setStrain });
 	Object.defineProperty(app, "shadows", { get: () => shadows, set: setShadows });
+	Object.defineProperty(app, "materials", { get: () => model.materials });
 	return app;
 };
 

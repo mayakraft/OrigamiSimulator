@@ -3,16 +3,51 @@ import * as THREE from "three";
 // positive value pushes polygon further away
 const polygonOffsetFactor = 0.5;
 
-const node = new THREE.MeshBasicMaterial({
-	color: 0x000000,
-	side: THREE.DoubleSide,
+const front = new THREE.MeshStandardMaterial({
+	flatShading: true,
+	side: THREE.FrontSide,
+	polygonOffset: true,
+	polygonOffsetFactor,
+	polygonOffsetUnits: 1,
+	color: 0xec008b,
+	emissive: 0x000000,
+	roughness: 1,
 });
 
-const nodeTransparent = new THREE.MeshBasicMaterial({
-	color: 0xffffff,
-	opacity: 0.5,
-	transparent: true,
+const back = new THREE.MeshStandardMaterial({
+	flatShading: true,
+	side: THREE.BackSide,
+	polygonOffset: true,
+	polygonOffsetFactor,
+	polygonOffsetUnits: 1,
+	color: 0xFFFFFF,
+	emissive: 0x000000,
+	roughness: 1,
 });
+
+// const front = new THREE.MeshPhongMaterial({
+// 	flatShading: true,
+// 	side: THREE.FrontSide,
+// 	polygonOffset: true,
+// 	polygonOffsetFactor,
+// 	polygonOffsetUnits: 1,
+// 	color: 0xec008b,
+// 	shininess: 1,
+// 	specular: 0xffffff,
+// 	reflectivity: 0,
+// });
+
+// const back = new THREE.MeshPhongMaterial({
+// 	flatShading: true,
+// 	side: THREE.BackSide,
+// 	polygonOffset: true,
+// 	polygonOffsetFactor,
+// 	polygonOffsetUnits: 1,
+// 	color: 0xffffff,
+// 	shininess: 1,
+// 	specular: 0xffffff,
+// 	reflectivity: 0,
+// });
 
 const line = new THREE.LineBasicMaterial({
 	color: 0x000000,
@@ -28,69 +63,9 @@ const strain = new THREE.MeshBasicMaterial({
 	polygonOffsetUnits: 1,
 });
 
-// default style front and back for faces
-const front = new THREE.MeshPhongMaterial({
-	flatShading: true,
-	side: THREE.FrontSide,
-	polygonOffset: true,
-	polygonOffsetFactor,
-	polygonOffsetUnits: 1,
-	// dithering:true,
-	color: 0xec008b,
-	shininess: 1,
-	specular: 0xffffff,
-	reflectivity: 0,
-});
-
-const back = new THREE.MeshPhongMaterial({
-	flatShading: true,
-	side: THREE.BackSide,
-	polygonOffset: true,
-	polygonOffsetFactor,
-	polygonOffsetUnits: 1,
-	// dithering:true,
-	// color: 0xffffff,
-	color: 0x115588,
-	shininess: 1,
-	specular: 0xffffff,
-	reflectivity: 0,
-});
-
-// const transparentVRMaterial = new THREE.MeshBasicMaterial({
-//   color: 0xffffff,
-//   opacity: 0.8,
-//   transparent: true
-// });
-
-// material = new THREE.MeshPhysicalMaterial( {
-//     map: null,
-//     color: 0x0000ff,
-//     metalness: 0.2,
-//     roughness: 0.6,
-//     side: THREE.FrontSide,
-//     transparent: false,
-//     envMapIntensity: 5,
-//     premultipliedAlpha: true
-//     // TODO: Add custom blend mode that modulates background color by this materials color.
-// } );
-
-// material2 = new THREE.MeshPhysicalMaterial( {
-//     map: null,
-//     color: 0xffffff,
-//     metalness: 0.2,
-//     roughness: 0.6,
-//     side: THREE.BackSide,
-//     transparent: false,
-//     envMapIntensity: 5,
-//     premultipliedAlpha: true
-//     // TODO: Add custom blend mode that modulates background color by this materials color.
-// } );
-
 export {
-	node,
-	nodeTransparent,
-	line,
-	strain,
 	front,
 	back,
+	line,
+	strain,
 };

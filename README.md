@@ -30,17 +30,17 @@ Everything should be installed. Run the app using the standard command according
 
 To incorporate Origami Simulator into your existing project, copy the `src/` directory in the root of this repository, and install Origami Simulator's dependencies:
 
-```
+```bash
 npm i three fold earcut
 ```
 
-Now you can create an instance of OrigamiSimulator. Getting an instance up and running is simple, if you want some of the more advanced features like the vertex-grab UI, maybe check the framework examples for an implementation example.
+Now you can create an instance of Origami Simulator. Getting an instance up and running is simple, if you want some of the more advanced features like the vertex-grab UI, maybe check the framework examples for an implementation example.
 
 # usage
 
 The workflow goes something like this.
 
-You are in charge of setting up and managing three.js, you get to decorate the scene as you like, including lighting, but OrigamiSimulator will add and manage the origami model.
+You are in charge of setting up and managing three.js, you get to decorate the scene as you like, including lighting, but Origami Simulator will add and manage the origami model.
 
 1. initialize a three.js renderer, scene, camera, and animation loop. (there are hundreds of tutorials for this)
 2. initialize origami simulator by passing in the three.js scene.
@@ -48,21 +48,36 @@ You are in charge of setting up and managing three.js, you get to decorate the s
 
 ```js
 import OrigamiSimulator from "./src/index";
-
 const origamiSimulator = OrigamiSimulator({ scene });
 ```
 
-now the app should run. Interface with your `origamiSimulator` instance:
+now the app should run. Interface with your `origamiSimulator` instance with these object methods:
 
-- `load()` load in an origami model in FOLD format
+### api
+
+- `load(object)` load in an origami model in FOLD format
 - `setActive(boolean)` turn on/off origami simulator's compute loop
 - `setFoldAmount(float)` set the current fold angle between 0 and 1
 - `setStrain(boolean)` override the material to visualize strain forces
 - `setShadows(boolean)` turn on three.js shadows
-- `dealloc()` deallocate origami simulator when done,
+- `reset()` reset the vertices back to their initial position
+- `dealloc()` deallocate origami simulator when done
 - `nodeDidMove()` if you implement a UI for grabbing vertices, call this when a vertex is pulled
+- `setIntegration(string)` "euler" or "verlet"
+- `setAxialStiffness(number)` default 20
+- `setFaceStiffness(number)` default 0.2
+- `setJoinStiffness(number)` default 0.7
+- `setCreaseStiffness(number)` default 0.7
+- `setDampingRatio(number)` default 0.45
 
-Todo: expose materials as setters and getters too, or perhaps more simply colors of the material. currently you need to modify the source code for this.
+for example,
+
+```js
+const sim = OrigamiSimulator({ scene });
+sim.load(FOLD);
+sim.setActive(true);
+sim.setFoldAmount(0.5);
+```
 
 # dependencies
 
@@ -74,7 +89,7 @@ Todo: expose materials as setters and getters too, or perhaps more simply colors
 
 ### shader files
 
-Loading the raw text shader files (`.frag`, `.vert`) has been a persistent source of struggle. Because these shader files are rarely modified, a Python script has been added which bundles all shader files into one `.js` file with named exports. If the shader files are ever modified, re-bundle:
+Loading the raw text shader files (`.frag`, `.vert`) has been a persistent source of pain. Because these shader files are rarely modified, a Python script has been added which bundles all shader files into one `.js` file with named exports. If you ever modify the shader files, re-bundle them:
 
 ```bash
 cd src/dynamicSolver/shaders

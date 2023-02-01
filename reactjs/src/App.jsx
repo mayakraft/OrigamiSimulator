@@ -11,7 +11,7 @@ function App() {
 	// tool is either ["trackball", "pull"]
 	const [tool, setTool] = useState("trackball");
 	// turn on/off Origami Simulator's folding engine
-	const [active, setActive] = useState(false);
+	const [active, setActive] = useState(true);
 	// override the material to show the model's strain forces
 	const [strain, setStrain] = useState(false);
 	// fold the origami model, float (0.0-1.0)

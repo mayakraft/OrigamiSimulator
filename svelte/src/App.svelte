@@ -2,7 +2,7 @@
 	import Simulator from "./Simulator.svelte";
 	import TrackballView from "./WebGL/TrackballView.svelte";
 	import Settings from "./Settings.svelte";
-	// example file
+	// example model
 	import craneCP from "../../fold/crane-cp.fold?raw";
 
 	// the origami model, in FOLD format
@@ -10,7 +10,7 @@
 	// tool is either ["trackball", "pull"]
 	let tool = "trackball";
 	// turn on/off Origami Simulator's folding engine
-	let active = false;
+	let active = true;
 	// override the material to show the model's strain forces
 	let strain = false;
 	// fold the origami model, float (0.0-1.0)
@@ -19,19 +19,23 @@
 	let showTouches = true;
 	// turn on three.js shadows
 	let showShadows = false;
-	// swap materials based on the app color theme
-	let darkMode = true;
-
+	// style
+	let backgroundColor = "#ddd";
+	let frontColor = "#ec008b";
+	let backColor = "white";
+	let lineColor = "black";
+	let lineOpacity = 0.5;
+	// reset the vertices back to their starting location
 	let reset = () => {};
+	// settings for the simulator's solver
 	let integration = "euler";
 	let axialStiffness = 20;
 	let faceStiffness = 0.2;
 	let joinStiffness = 0.7;
 	let creaseStiffness = 0.7;
 	let dampingRatio = 0.45;
-	// information relayed up from the simulator
+	// vertex displacement error relayed back from the simulator
 	let error = 0;
-
 </script>
 
 <div class="App">
@@ -43,13 +47,17 @@
 		bind:foldAmount={foldAmount}
 		bind:showTouches={showTouches}
 		bind:showShadows={showShadows}
+		bind:backgroundColor={backgroundColor}
+		bind:frontColor={frontColor}
+		bind:backColor={backColor}
+		bind:lineColor={lineColor}
+		bind:lineOpacity={lineOpacity}
 		bind:integration={integration}
 		bind:axialStiffness={axialStiffness}
 		bind:faceStiffness={faceStiffness}
 		bind:joinStiffness={joinStiffness}
 		bind:creaseStiffness={creaseStiffness}
 		bind:dampingRatio={dampingRatio}
-		{darkMode}
 		{error}
 		{reset}
 	/>
@@ -61,7 +69,11 @@
 		{tool}
 		{showTouches}
 		{showShadows}
-		{darkMode}
+		{backgroundColor}
+		{frontColor}
+		{backColor}
+		{lineColor}
+		{lineOpacity}
 		{integration}
 		{axialStiffness}
 		{faceStiffness}

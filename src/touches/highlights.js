@@ -1,4 +1,5 @@
 import * as THREE from "three";
+import * as Materials from "./materials";
 // todo: idea- duplicate highlighted vertex, one obeys depthTest with full
 // opacity, the other is always visible with half opacity.
 const Highlights = ({ scene, simulator }) => {
@@ -38,10 +39,14 @@ const Highlights = ({ scene, simulator }) => {
 		face.geometry.attributes.position.needsUpdate = true;
 	};
 
-	const highlightTouch = (nearest) => {
+	const clear = () => {
 		point.visible = false;
 		vertex.visible = false;
 		face.visible = false;
+	};
+
+	const highlightTouch = (nearest) => {
+		clear();
 		// if (nearest === undefined || !props.simulatorShowTouches()) {
 		if (nearest === undefined) {
 			return;
@@ -56,7 +61,7 @@ const Highlights = ({ scene, simulator }) => {
 	raycasterPointPositionAttr.setUsage(THREE.DynamicDrawUsage);
 	const raycasterPointBuffer = new THREE.BufferGeometry();
 	raycasterPointBuffer.setAttribute("position", raycasterPointPositionAttr);
-	point = new THREE.Points(raycasterPointBuffer);
+	point = new THREE.Points(raycasterPointBuffer, Materials.point);
 	point.renderOrder = 1000;
 	scene.add(point);
 
@@ -65,7 +70,7 @@ const Highlights = ({ scene, simulator }) => {
 	raycasterVertexPositionAttr.setUsage(THREE.DynamicDrawUsage);
 	const raycasterVertexBuffer = new THREE.BufferGeometry();
 	raycasterVertexBuffer.setAttribute("position", raycasterVertexPositionAttr);
-	vertex = new THREE.Points(raycasterVertexBuffer);
+	vertex = new THREE.Points(raycasterVertexBuffer, Materials.vertex);
 	vertex.renderOrder = 1001;
 	scene.add(vertex);
 
@@ -79,7 +84,7 @@ const Highlights = ({ scene, simulator }) => {
 	raycasterFaceBuffer.addGroup(3, 3, 0);
 	face = new THREE.Mesh(
 		raycasterFaceBuffer,
-		[new THREE.MeshBasicMaterial(), new THREE.MeshBasicMaterial()],
+		[Materials.frontFace, Materials.backFace],
 	);
 	scene.add(face);
 
@@ -91,6 +96,7 @@ const Highlights = ({ scene, simulator }) => {
 		highlightPoint,
 		highlightVertex,
 		highlightFace,
+		clear,
 	};
 };
 

@@ -2,7 +2,7 @@ import { createSignal } from "solid-js";
 import styles from "./App.module.css";
 import Simulator from "./Simulator";
 import Settings from "./Settings";
-// example file
+// example model
 import craneCP from "../../fold/crane-cp.fold?raw";
 
 function App() {
@@ -11,7 +11,7 @@ function App() {
 	// tool is either ["trackball", "pull"]
 	const [tool, setTool] = createSignal("trackball");
 	// turn on/off Origami Simulator's folding engine
-	const [active, setActive] = createSignal(false);
+	const [active, setActive] = createSignal(true);
 	// override the material to show the model's strain forces
 	const [strain, setStrain] = createSignal(false);
 	// fold the origami model, float (0.0-1.0)
@@ -22,15 +22,16 @@ function App() {
 	const [showShadows, setShowShadows] = createSignal(false);
 	// swap materials based on the app color theme
 	const [darkMode, setDarkMode] = createSignal(true);
-
+	// reset the vertices back to their starting location
 	const [reset, setReset] = createSignal();
+	// settings for the simulator's solver
 	const [integration, setIntegration] = createSignal("euler");
 	const [axialStiffness, setAxialStiffness] = createSignal(20);
 	const [faceStiffness, setFaceStiffness] = createSignal(0.2);
 	const [joinStiffness, setJoinStiffness] = createSignal(0.7);
 	const [creaseStiffness, setCreaseStiffness] = createSignal(0.7);
 	const [dampingRatio, setDampingRatio] = createSignal(0.45);
-	// information relayed up from the simulator
+	// vertex displacement error relayed back from the simulator
 	const [error, setError] = createSignal(0);
 
 	return (

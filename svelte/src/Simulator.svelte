@@ -15,7 +15,6 @@
 	- props.tool (the UI tool, currently there are two: "trackball", "pull")
 	- props.showTouches (highlight the vertex/face underneath the cursor)
 	- props.showShadows (turn on three.js shadows)
-	- props.darkMode (swap materials based on light/dark mode)
 	new ones
 	- props.reset (reset the vertices of the origami model)
  -->
@@ -24,9 +23,8 @@
 	import * as THREE from "three";
 	import TrackballView from "./WebGL/TrackballView.svelte";
 	import OrigamiSimulator from "../../src/index";
-	import Highlights from "../../src/highlights";
-	import Raycasters from "../../src/raycasters";
-	import * as Materials from "../../src/materials";
+	import Highlights from "../../src/touches/highlights";
+	import Raycasters from "../../src/touches/raycasters";
 	import boundingBox from "../../src/fold/boundingBox";
 
 	export let origami;
@@ -36,7 +34,11 @@
 	export let tool;
 	export let showTouches;
 	export let showShadows;
-	export let darkMode;
+	export let backgroundColor;
+	export let frontColor;
+	export let backColor;
+	export let lineColor;
+	export let lineOpacity;
 	export let integration;
 	export let axialStiffness;
 	export let faceStiffness;
@@ -85,6 +87,7 @@
 	let lights = lightVertices.map(pos => {
 		const light = new THREE.PointLight();
 		light.position.set(...pos);
+		light.intensity = 0.45;
 		light.distance = 0;
 		light.decay = 2;
 		light.castShadow = false;
@@ -168,6 +171,12 @@
 	$: if (simulator) { simulator.setActive(active); }
 	$: if (simulator) { simulator.setStrain(strain); }
 	$: if (simulator) { simulator.setFoldAmount(foldAmount); }
+	$: if (scene) { scene.background = new THREE.Color(backgroundColor); }
+	$: if (simulator) { simulator.setFrontColor(frontColor); }
+	$: if (simulator) { simulator.setBackColor(backColor); }
+	$: if (simulator) { simulator.setLineColor(lineColor); }
+	// $: if (simulator) { simulator.materials.line.opacity = lineOpacity; }
+	$: if (simulator) { simulator.getMaterials().line.opacity = lineOpacity; }
 	$: if (simulator) { simulator.setIntegration(integration); }
 	$: if (simulator) { simulator.setAxialStiffness(axialStiffness); }
 	$: if (simulator) { simulator.setFaceStiffness(faceStiffness); }
@@ -177,12 +186,12 @@
 	// nitpicky. upon tool change we need raycasterPullVertex to be undefined
 	$: if (raycasters) { raycasters.raycasterReleaseHandler(pullNodesEnabled); }
 	// deliver the touch data from the raycaster to be highlighted
-	$: if (highlights) { highlights.highlightTouch(touches[0]); }
-	// reset materials depending on dark or light mode
-	$: if (simulator && scene) { updateStyle(darkMode, scene); }
+	$: if (highlights && showTouches) { highlights.highlightTouch(touches[0]); }
+	$: if (!showTouches) { highlights.clear(); }
 	// shadows
 	$: if (simulator) {
-		// todo: why does this cause simulator.active to refresh???
+		// todo: why does Svelte have an issue with the simulator getters defined
+		// properties? querying simulator.active or simulator.materials causes reload
 		// simulator.shadows = showShadows;
 		simulator.setShadows(showShadows);
 		[0, 3, 4, 7].forEach(i => {
@@ -191,14 +200,6 @@
 	}
 	// upstream
 	$: if (simulator) { reset = simulator.reset; }
-
-	/**
-	 * @description This is tied to the animation loop event managed by
-	 * the ThreeView, attached to window.requestAnimationFrame.
-	 */
-	// const animate = () => {
-	// 	raycasters.animate({ pullEnabled: pullNodesEnabled });
-	// };
 	/**
 	 * @description cleanup all memory associated with origami simulator
 	 */
@@ -211,36 +212,23 @@
 	 * associated with the hover face/vertex selection.
 	 */
 	const updateStyle = (darkMode, scene) => {
-		scene.background = darkMode
-			? new THREE.Color("#0F0F10")
-			: new THREE.Color("#eee");
-		simulator.model.materials.front = darkMode
-			? Materials.materialDarkFront
-			: Materials.materialLightFront;
-		simulator.model.materials.back = darkMode
-			? Materials.materialDarkBack
-			: Materials.materialLightBack;
-		highlights.face.material = darkMode
-			? [Materials.materialHighlightFrontDark, Materials.materialHighlightBackDark]
-			: [Materials.materialHighlightFrontLight, Materials.materialHighlightBackLight];
-		highlights.point.material = darkMode
-			? Materials.materialRaycastPointDark
-			: Materials.materialRaycastPointLight;
-		highlights.vertex.material = darkMode
-			? Materials.materialHighlightVertexDark
-			: Materials.materialHighlightVertexLight;
-		const lineMaterial = darkMode
-			? Materials.materialDarkLine
-			: Materials.materialLightLine;
-		Object.keys(simulator.model.lines)
-			.forEach(key => { simulator.model.lines[key].material = lineMaterial; });
-		const lightIntensity = darkMode
-			? lightIntensityDarkMode
-			: lightIntensityLightMode;
-		lights.forEach(light => { light.intensity = lightIntensity; });
-		// i see why this was here. material won't update on the model.
-		// we need a better setter that propagates through the correct model data.
-		simulator.setStrain(strain);
+		scene.background = new THREE.Color("#eee");
+		// scene.background = new THREE.Color(darkMode ? "#0F0F10" : "#eee")
+
+		// simulator.setFrontColor(darkMode ? 0x2D39C0 : 0xEE5533);
+		// simulator.setBackColor(darkMode ? 0x28292B : 0xFFFFFF);
+		// simulator.materials.line.opacity = darkMode ? 0.5 : 1.0;
+		// highlights.point.material.color.set(darkMode ? 0xFFFFFF : 0x000000);
+		// highlights.vertex.material.color.set(darkMode ? 0xF2C87A : 0x000000);
+		// highlights.face.material[0].color.set(darkMode ? 0x999999 : 0xFFBB44);
+		// highlights.face.material[1].color.set(darkMode ? 0xE150E3 : 0xFFBB44);
+		// const lightIntensity = darkMode
+		// 	? lightIntensityDarkMode
+		// 	: lightIntensityLightMode;
+		// lights.forEach(light => { light.intensity = lightIntensity; });
+
+		// // simulator.materials.front.color.set(darkMode ? 0x2D39C0 : 0xEE5533);
+		// // simulator.materials.back.color.set(darkMode ? 0x28292B : 0xFFFFFF);
 	};
 </script>
 
@@ -253,7 +241,6 @@
 		rotateSpeed={4}
 		zoomSpeed={16}
 		dynamicDampingFactor={1}
-
 		didMount={didMount}
 	/>
 </div>
