@@ -1,7 +1,7 @@
 /**
  * Created by amandaghassaei on 2/25/17.
  */
-import FOLD from "fold";
+import remapField from "./remapField.js";
 
 function mergeEdge(fold, v1, v2, v3) { // v2 is center vertex
 	let angleAvg = 0;
@@ -14,7 +14,6 @@ function mergeEdge(fold, v1, v2, v3) { // v2 is center vertex
 		if (edge.indexOf(v2) >= 0 && (edge.indexOf(v1) >= 0 || edge.indexOf(v3) >= 0)) {
 			if (edgeAssignment === null) edgeAssignment = fold.edges_assignment[i];
 			else if (edgeAssignment !== fold.edges_assignment[i]) {
-				console.log(edgeAssignment, fold.edges_assignment[i]);
 				console.warn("different edge assignments");
 				return false;
 			}
@@ -90,7 +89,7 @@ function removeRedundantVertices(fold, epsilon) {
 	}
 	if (numRedundant === 0) { return fold; }
 	console.warn(`${numRedundant} redundant vertices found`);
-	fold = FOLD.filter.remapField(fold, "vertices", old2new);
+	fold = remapField(fold, "vertices", old2new);
 	if (fold.faces_vertices) {
 		for (let i = 0; i < fold.faces_vertices.length; i += 1) {
 			const face = fold.faces_vertices[i];

@@ -31,7 +31,7 @@ Everything should be installed. Run the app using the standard command according
 To incorporate Origami Simulator into your existing project, copy the `src/` directory in the root of this repository, and install Origami Simulator's dependencies:
 
 ```bash
-npm i three fold earcut
+npm i three earcut
 ```
 
 Now you can create an instance of Origami Simulator. Getting an instance up and running is simple, if you want some of the more advanced features like the vertex-grab UI, maybe check the framework examples for an implementation example.
@@ -96,7 +96,6 @@ sim.setFoldAmount(0.5);
 # dependencies
 
 - [three](https://www.npmjs.com/package/three)
-- [fold](https://www.npmjs.com/package/fold)
 - [earcut](https://www.npmjs.com/package/earcut)
 
 # dev notes

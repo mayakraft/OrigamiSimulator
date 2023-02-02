@@ -1,11 +1,14 @@
 /**
  * Created by amandaghassaei on 2/25/17.
  */
-import FOLD from "fold";
 import triangulateFold from "./triangulateFold.js";
 import splitCuts from "./splitCuts.js";
 import removeRedundantVertices from "./removeRedundantVertices.js";
 import boundingBox from "./boundingBox.js";
+import {
+	makeVerticesEdges,
+	makeVerticesVertices,
+} from "./adjacentVertices.js";
 
 const assignmentFlatAngles = {
 	M: -180, m: -180, V: 180, v: 180,
@@ -59,17 +62,17 @@ const prepare = (inputFOLD, epsilon) => {
 	const cut_edge_indices = fold.edges_assignment
 		.map((assign, i) => (assign === "C" || assign === "c" ? i : undefined))
 		.filter(a => a !== undefined);
-	// turn cut edges into two boundary edges
-	if (cut_edge_indices.length) {
-		// todo this is untested
-		FOLD.filter.cutEdges(fold, cut_edge_indices);
+	// if cut creases exist, convert them into boundaries
+	if (cut_edge_indices.length > 0) {
+		fold.vertices_vertices = makeVerticesVertices(fold);
+		fold.vertices_edges = makeVerticesEdges(fold);
 		fold = splitCuts(fold);
-		fold = FOLD.convert.edges_vertices_to_vertices_vertices_unsorted(fold);
-		fold = removeRedundantVertices(fold, epsilon); // remove vertices that split edge
+		fold.vertices_vertices = makeVerticesVertices(fold);
+		// remove vertices that split edge
+		fold = removeRedundantVertices(fold, 0.01);
 	}
 	delete fold.vertices_vertices;
 	delete fold.vertices_edges;
-
 	const foldData = triangulateFold(fold, true);
 	return foldData;
 };

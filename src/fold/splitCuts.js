@@ -103,7 +103,7 @@ const splitCuts = (fold) => {
 				}
 			}
 		}
-		if (groups.length <= 1) continue;
+		if (groups.length <= 1) { continue; }
 		for (let k = groups[groupIndex].length - 1; k >= 0; k -= 1) {
 			// put remainder of last group in first group
 			groups[0].unshift(groups[groupIndex][k]);
@@ -157,6 +157,6 @@ const splitCuts = (fold) => {
 	delete fold.vertices_edges;
 	delete fold.vertices_vertices;
 	return fold;
-}
+};
 
 export default splitCuts;
