@@ -22,12 +22,13 @@
  * @param {object} model the OrigamiSimulator Model object
  */
 const exportFold = (model, foldUnmodified, foldTriangulated, { triangulated, angles } = {}) => {
+	const verticesMatch = foldUnmodified.length === model.positions.length / 3;
+	if (!verticesMatch) {
+		triangulated = true;
+		console.warn("vertex count mismatch. reverting to triangulated model");
+	}
 	// shallow copy is good enough for this purpose
 	const FOLD = triangulated ? { ...foldTriangulated } : { ...foldUnmodified };
-	if (FOLD.vertices_coords.length !== model.positions.length / 3) {
-		console.warn("vertex count mismatch");
-		return {};
-	}
 	FOLD.file_creator = "Origami Simulator: http://git.amandaghassaei.com/OrigamiSimulator/";
 	FOLD.file_classes = ["singleModel"];
 	FOLD.frame_classes = ["foldedForm"];
