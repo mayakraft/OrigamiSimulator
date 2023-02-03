@@ -64,9 +64,12 @@ const prepare = (inputFOLD, epsilon) => {
 		.filter(a => a !== undefined);
 	// if cut creases exist, convert them into boundaries
 	if (cut_edge_indices.length > 0) {
-		fold.vertices_vertices = makeVerticesVertices(fold);
+		if (!fold.vertices_vertices) {
+			fold.vertices_vertices = makeVerticesVertices(fold);
+		}
 		fold.vertices_edges = makeVerticesEdges(fold);
 		fold = splitCuts(fold);
+		// removeRedundantVertices requires vertices_vertices. rebuild.
 		fold.vertices_vertices = makeVerticesVertices(fold);
 		// remove vertices that split edge
 		fold = removeRedundantVertices(fold, 0.01);
