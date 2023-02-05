@@ -31,9 +31,7 @@ const TrackballView = (props) => {
 	};
 
 	// trackball dealloc ?
-	useEffect(() => {
-		return () => { if (trackball) { trackball.dispose(); }};
-	})
+	useEffect(() => () => { if (trackball) { trackball.dispose(); } });
 
 	useEffect(() => {
 		if (trackball) { trackball.enabled = props.enabled; }

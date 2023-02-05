@@ -1,7 +1,7 @@
 import { useState } from "react";
 import "./App.css";
-import Simulator from "./Simulator";
-import Settings from "./Settings";
+import Simulator from "./Simulator.jsx";
+import Settings from "./Settings.jsx";
 // example file
 import craneCP from "../../fold/crane-cp.fold?raw";
 
@@ -20,7 +20,15 @@ function App() {
 	const [showTouches, setShowTouches] = useState(true);
 	// turn on three.js shadows
 	const [showShadows, setShowShadows] = useState(false);
+	// style
+	const [backgroundColor, setBackgroundColor] = useState("#1b1b1b");
+	const [frontColor, setFrontColor] = useState("#ec008b");
+	const [backColor, setBackColor] = useState("white");
+	const [lineColor, setLineColor] = useState("black");
+	const [lineOpacity, setLineOpacity] = useState(0.5);
+	// reset the vertices back to their starting location
 	const [reset, setReset] = useState();
+	// settings for the simulator's solver
 	const [integration, setIntegration] = useState("euler");
 	const [axialStiffness, setAxialStiffness] = useState(20);
 	const [faceStiffness, setFaceStiffness] = useState(0.2);
@@ -29,6 +37,7 @@ function App() {
 	const [dampingRatio, setDampingRatio] = useState(0.45);
 	// information relayed up from the simulator
 	const [error, setError] = useState(0);
+	const [exportModel, setExportModel] = useState();
 
 	return (
 		<div className="App">
@@ -47,8 +56,19 @@ function App() {
 				setShowTouches={setShowTouches}
 				showShadows={showShadows}
 				setShowShadows={setShowShadows}
+				backgroundColor={backgroundColor}
+				setBackgroundColor={setBackgroundColor}
+				frontColor={frontColor}
+				setFrontColor={setFrontColor}
+				backColor={backColor}
+				setBackColor={setBackColor}
+				lineColor={lineColor}
+				setLineColor={setLineColor}
+				lineOpacity={lineOpacity}
+				setLineOpacity={setLineOpacity}
 				error={error}
 				reset={reset}
+				exportModel={exportModel}
 				integration={integration}
 				setIntegration={setIntegration}
 				axialStiffness={axialStiffness}
@@ -70,8 +90,14 @@ function App() {
 				tool={tool}
 				showTouches={showTouches}
 				showShadows={showShadows}
+				backgroundColor={backgroundColor}
+				frontColor={frontColor}
+				backColor={backColor}
+				lineColor={lineColor}
+				lineOpacity={lineOpacity}
 				setError={setError}
 				setReset={setReset}
+				setExportModel={setExportModel}
 				integration={integration}
 				axialStiffness={axialStiffness}
 				faceStiffness={faceStiffness}

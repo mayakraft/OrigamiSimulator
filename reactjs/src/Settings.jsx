@@ -17,16 +17,28 @@ const Settings = (props) => {
 		}
 	};
 
+	const saveFoldFile = () => {
+		const a = document.createElement("a");
+		a.style = "display: none";
+		document.body.appendChild(a);
+		const blob = new Blob([JSON.stringify(props.exportModel()())], { type: "octet/stream" });
+		const url = window.URL.createObjectURL(blob);
+		a.href = url;
+		a.download = "origami.fold";
+		a.click();
+		window.URL.revokeObjectURL(url);
+	};
+
 	return (
 		<div className="Container">
-			<input type="file" onInput={fileDialogOnInput} />
+			<input type="file" onChange={fileDialogOnInput} />
 
 			<h3>
 				simulator active
 				<input
 					type="checkbox"
-					checked={props.active}
-					onClick={() => props.setActive(!props.active)}
+					defaultChecked={props.active}
+					onChange={() => props.setActive(!props.active)}
 				/>
 			</h3>
 
@@ -38,31 +50,31 @@ const Settings = (props) => {
 				step="0.01"
 				disabled={!props.active}
 				value={props.foldAmount}
-				onInput={e => props.setFoldAmount(e.target.value)} />
+				onChange={e => props.setFoldAmount(e.target.value)} />
 
 			<h3>pointer tool</h3>
 			<input
 				type="radio"
 				name="radio-webgl-tool"
-				value="radio-webgl-tool-trackball"
-				onClick={() => props.setTool("trackball")}
-				checked={props.tool === "trackball"} />
-			<label for="radio-webgl-tool-trackball">trackball</label>
+				// value="radio-webgl-tool-trackball"
+				onChange={() => props.setTool("trackball")}
+				defaultChecked={props.tool === "trackball"} />
+			<label htmlFor="radio-webgl-tool-trackball">trackball</label>
 			<input
 				type="radio"
 				name="radio-webgl-tool"
-				value="radio-webgl-tool-pull"
-				onClick={() => props.setTool("pull")}
-				checked={props.tool === "pull"} />
-			<label for="radio-webgl-tool-pull">pull</label>
+				// value="radio-webgl-tool-pull"
+				onChange={() => props.setTool("pull")}
+				defaultChecked={props.tool === "pull"} />
+			<label htmlFor="radio-webgl-tool-pull">pull</label>
 
 			<h3>
 				show strain
 				<input
 					type="checkbox"
 					disabled={!props.active}
-					checked={props.strain}
-					onClick={() => props.setStrain(!props.strain)}
+					defaultChecked={props.strain}
+					onChange={() => props.setStrain(!props.strain)}
 				/>
 			</h3>
 
@@ -70,8 +82,8 @@ const Settings = (props) => {
 				show touches
 				<input
 					type="checkbox"
-					checked={props.showTouches}
-					onClick={() => props.setShowTouches(!props.showTouches)}
+					defaultChecked={props.showTouches}
+					onChange={() => props.setShowTouches(!props.showTouches)}
 				/>
 			</h3>
 
@@ -80,8 +92,52 @@ const Settings = (props) => {
 				<input
 					type="checkbox"
 					disabled={props.strain}
-					checked={props.showShadows}
-					onClick={() => props.setShowShadows(!props.showShadows)}
+					defaultChecked={props.showShadows}
+					onChange={() => props.setShowShadows(!props.showShadows)}
+				/>
+			</h3>
+
+			<h3>
+				front
+				<input
+					type="text"
+					className="Medium"
+					value={props.frontColor}
+					onChange={e => props.setFrontColor(e.target.value)}
+				/>
+			</h3>
+			<h3>
+				back
+				<input
+					type="text"
+					className="Medium"
+					value={props.backColor}
+					onChange={e => props.setBackColor(e.target.value)}
+				/>
+			</h3>
+			<h3>
+				line
+				<input
+					type="text"
+					className="Medium"
+					value={props.lineColor}
+					onChange={e => props.setLineColor(e.target.value)}
+				/>
+			</h3>
+			<input
+				type="range"
+				min="0"
+				max="1"
+				step="0.02"
+				value={props.lineOpacity}
+				onChange={e => props.setLineOpacity(e.target.value)} />
+			<h3>
+				background
+				<input
+					type="text"
+					className="Medium"
+					value={props.backgroundColor}
+					onChange={e => props.setBackgroundColor(e.target.value)}
 				/>
 			</h3>
 
@@ -90,16 +146,16 @@ const Settings = (props) => {
 				type="radio"
 				name="radio-integration"
 				value="radio-integration-euler"
-				onClick={() => props.setIntegration("euler")}
-				checked={props.integration === "euler"} />
-			<label for="radio-integration-euler">euler</label>
+				onChange={() => props.setIntegration("euler")}
+				defaultChecked={props.integration === "euler"} />
+			<label htmlFor="radio-integration-euler">euler</label>
 			<input
 				type="radio"
 				name="radio-integration"
 				value="radio-integration-verlet"
-				onClick={() => props.setIntegration("verlet")}
-				checked={props.integration === "verlet"} />
-			<label for="radio-integration-verlet">verlet</label>
+				onChange={() => props.setIntegration("verlet")}
+				defaultChecked={props.integration === "verlet"} />
+			<label htmlFor="radio-integration-verlet">verlet</label>
 
 			<h3>
 				axial stiffness
@@ -107,6 +163,7 @@ const Settings = (props) => {
 					type="text"
 					className="Short"
 					value={props.axialStiffness}
+					readOnly
 				/>
 			</h3>
 			<input
@@ -115,7 +172,7 @@ const Settings = (props) => {
 				max="100"
 				step="1"
 				value={props.axialStiffness}
-				onInput={e => props.setAxialStiffness(e.target.value)} />
+				onChange={e => props.setAxialStiffness(e.target.value)} />
 
 			<h3>
 				face stiffness
@@ -123,6 +180,7 @@ const Settings = (props) => {
 					type="text"
 					className="Short"
 					value={props.faceStiffness}
+					readOnly
 				/>
 			</h3>
 			<input
@@ -131,7 +189,7 @@ const Settings = (props) => {
 				max="5"
 				step="0.02"
 				value={props.faceStiffness}
-				onInput={e => props.setFaceStiffness(e.target.value)} />
+				onChange={e => props.setFaceStiffness(e.target.value)} />
 
 			<h3>
 				join stiffness
@@ -139,6 +197,7 @@ const Settings = (props) => {
 					type="text"
 					className="Short"
 					value={props.joinStiffness}
+					readOnly
 				/>
 			</h3>
 			<input
@@ -147,7 +206,7 @@ const Settings = (props) => {
 				max="3"
 				step="0.01"
 				value={props.joinStiffness}
-				onInput={e => props.setJoinStiffness(e.target.value)} />
+				onChange={e => props.setJoinStiffness(e.target.value)} />
 
 			<h3>
 				crease stiffness
@@ -155,6 +214,7 @@ const Settings = (props) => {
 					type="text"
 					className="Short"
 					value={props.creaseStiffness}
+					readOnly
 				/>
 			</h3>
 			<input
@@ -163,7 +223,7 @@ const Settings = (props) => {
 				max="3"
 				step="0.01"
 				value={props.creaseStiffness}
-				onInput={e => props.setCreaseStiffness(e.target.value)} />
+				onChange={e => props.setCreaseStiffness(e.target.value)} />
 
 			<h3>
 				damping ratio
@@ -171,6 +231,7 @@ const Settings = (props) => {
 					type="text"
 					className="Short"
 					value={props.dampingRatio}
+					readOnly
 				/>
 			</h3>
 			<input
@@ -179,7 +240,7 @@ const Settings = (props) => {
 				max="0.5"
 				step="0.01"
 				value={props.dampingRatio}
-				onInput={e => props.setDampingRatio(e.target.value)} />
+				onChange={e => props.setDampingRatio(e.target.value)} />
 
 			<h3>
 				error
@@ -188,12 +249,18 @@ const Settings = (props) => {
 					className="Long"
 					disabled={!props.active}
 					value={props.error}
+					readOnly
 				/>
 			</h3>
 
 			<button
 				disabled={!props.active}
 				onClick={() => props.reset()}>reset model</button>
+
+			<br />
+
+			<button onClick={saveFoldFile}>export model as FOLD</button>
+
 			<br />
 
 		</div>

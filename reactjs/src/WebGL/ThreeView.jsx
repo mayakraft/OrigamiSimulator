@@ -118,7 +118,6 @@ const ThreeView = (props) => {
 			props.didMount({ renderer, scene, camera });
 		}
 		initializeAnimationLoop();
-
 		/**
 		 * @description Free all memory associated with this three.js instance.
 		 * This allows you to destroy and re-instance this component many times

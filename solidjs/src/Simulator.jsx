@@ -35,8 +35,6 @@ const lightVertices = [
  * - props.tool (the UI tool, currently there are two: "trackball", "pull")
  * - props.showTouches (highlight the vertex/face underneath the cursor)
  * - props.showShadows (turn on three.js shadows)
- * - props.darkMode (swap materials based on light/dark mode)
- * new ones
  * - props.reset (reset the vertices of the origami model)
  */
 const Simulator = (props) => {
@@ -143,7 +141,7 @@ const Simulator = (props) => {
 		createEffect(() => simulator.setBackColor(props.backColor()));
 		createEffect(() => simulator.setLineColor(props.lineColor()));
 		createEffect(() => { simulator.materials.line.opacity = props.lineOpacity(); });
-		createEffect(() => { simulator.getMaterials().line.opacity = props.lineOpacity(); });
+		// createEffect(() => { simulator.getMaterials().line.opacity = props.lineOpacity(); });
 		createEffect(() => simulator.setIntegration(props.integration()));
 		createEffect(() => simulator.setAxialStiffness(props.axialStiffness()));
 		createEffect(() => simulator.setFaceStiffness(props.faceStiffness()));
