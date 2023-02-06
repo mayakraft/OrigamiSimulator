@@ -22,7 +22,7 @@ To run the examples, clone this repository and run `npm i` **twice, in two direc
 
 Everything should be installed. Run the app using the standard command according to whichever framework you chose (`npm run dev` for Svelte/SolidJS).
 
-> **React JS** in progress. Needs [React Three Fiber](https://www.npmjs.com/package/@react-three/fiber) to silence React's hyperactive DOM re-rendering, or another analogous solution.
+> **React JS** 95% complete, missing a couple features: "pull node tool" and "folding error". This is due to React's desire to refresh the DOM often and the particular chosen work around.
 >
 > **Vanilla JS** only requires you run a local server. Also, this example is *much* more simple compared to the others.
 

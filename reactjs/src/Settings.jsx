@@ -21,7 +21,7 @@ const Settings = (props) => {
 		const a = document.createElement("a");
 		a.style = "display: none";
 		document.body.appendChild(a);
-		const blob = new Blob([JSON.stringify(props.exportModel()())], { type: "octet/stream" });
+		const blob = new Blob([JSON.stringify(props.exportModel())], { type: "octet/stream" });
 		const url = window.URL.createObjectURL(blob);
 		a.href = url;
 		a.download = "origami.fold";
@@ -54,6 +54,7 @@ const Settings = (props) => {
 
 			<h3>pointer tool</h3>
 			<input
+				disabled
 				type="radio"
 				name="radio-webgl-tool"
 				// value="radio-webgl-tool-trackball"
@@ -61,6 +62,7 @@ const Settings = (props) => {
 				defaultChecked={props.tool === "trackball"} />
 			<label htmlFor="radio-webgl-tool-trackball">trackball</label>
 			<input
+				disabled
 				type="radio"
 				name="radio-webgl-tool"
 				// value="radio-webgl-tool-pull"

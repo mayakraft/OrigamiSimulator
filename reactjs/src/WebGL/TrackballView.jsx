@@ -2,7 +2,7 @@
  * TrackballView for React (c) Kraft
  * MIT license
  */
-import { useEffect } from "react";
+import { Component, useEffect } from "react";
 import { TrackballControls } from "three/addons/controls/TrackballControls.js";
 import ThreeView from "./ThreeView.jsx";
 /**
@@ -19,71 +19,65 @@ import ThreeView from "./ThreeView.jsx";
  * - zoomSpeed (number)
  * - dynamicDampingFactor (number)
  */
-const TrackballView = (props) => {
-	let trackball;
+class TrackballView extends Component {
 
-	const didMount = ({ renderer, scene, camera }) => {
-		trackball = new TrackballControls(camera, renderer.domElement.parentNode);
+	didMount({ renderer, scene, camera }) {
+		const trackball = new TrackballControls(camera, renderer.domElement.parentNode);
+		this.trackball = trackball;
 		// bubble up event handler
-		if (props.didMount) {
-			props.didMount({ renderer, scene, camera });
+		if (this.props.didMount) {
+			this.props.didMount({ renderer, scene, camera, trackball });
+		}
+		this.quietUpdate(this.props);
+	};
+
+	shouldComponentUpdate(nextProps, nextState) {
+		if (!this.simulator) { return true; }
+		this.quietUpdate(nextProps);
+		return false;
+	}
+
+	componentWillUnmount() {
+		if (this.trackball) { this.trackball.dispose(); }
+	}
+
+	quietUpdate(props) {
+		if (!this.trackball) { return; }
+		// forward these props to the trackball controls
+		this.trackball.enabled = props.enabled;
+		this.trackball.maxDistance = props.maxDistance;
+		this.trackball.minDistance = props.minDistance;
+		this.trackball.panSpeed = props.panSpeed;
+		this.trackball.rotateSpeed = props.rotateSpeed;
+		this.trackball.zoomSpeed = props.zoomSpeed;
+		this.trackball.dynamicDampingFactor = props.dynamicDampingFactor;
+	}
+
+	didResize = (event) => {
+		if (this.trackball) { this.trackball.handleResize(); }
+		// bubble up event handler
+		if (this.props.didResize) {
+			this.props.didResize(event);
 		}
 	};
 
-	// trackball dealloc ?
-	useEffect(() => () => { if (trackball) { trackball.dispose(); } });
-
-	useEffect(() => {
-		if (trackball) { trackball.enabled = props.enabled; }
-	}, [props.enabled, trackball]);
-
-	useEffect(() => {
-		if (trackball) { trackball.maxDistance = props.maxDistance; }
-	}, [props.maxDistance, trackball]);
-
-	useEffect(() => {
-		if (trackball) { trackball.minDistance = props.minDistance; }
-	}, [props.minDistance, trackball]);
-
-	useEffect(() => {
-		if (trackball) { trackball.panSpeed = props.panSpeed; }
-	}, [props.panSpeed, trackball]);
-
-	useEffect(() => {
-		if (trackball) { trackball.rotateSpeed = props.rotateSpeed; }
-	}, [props.rotateSpeed, trackball]);
-
-	useEffect(() => {
-		if (trackball) { trackball.zoomSpeed = props.zoomSpeed; }
-	}, [props.zoomSpeed, trackball]);
-
-	useEffect(() => {
-		if (trackball) { trackball.dynamicDampingFactor = props.dynamicDampingFactor; }
-	}, [props.dynamicDampingFactor, trackball]);
-
-	const didResize = (event) => {
-		if (trackball) { trackball.handleResize(); }
+	animate = () => {
+		if (this.trackball) { this.trackball.update(); }
 		// bubble up event handler
-		if (props.didResize) {
-			props.didResize(event);
+		if (this.props.animate) {
+			this.props.animate();
 		}
 	};
 
-	const animate = () => {
-		if (trackball) { trackball.update(); }
-		// bubble up event handler
-		if (props.animate) {
-			props.animate();
-		}
-	};
-
-	return (
-		<ThreeView
-			didMount={didMount}
-			didResize={didResize}
-			animate={animate}
-		/>
-	);
-};
+	render() {
+		return (
+			<ThreeView
+				didMount={(...args) => this.didMount(...args)}
+				didResize={(...args) => this.didResize(...args)}
+				animate={(...args) => this.animate(...args)}
+			/>
+		);
+	}
+}
 
 export default TrackballView;

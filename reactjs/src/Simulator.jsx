@@ -2,7 +2,7 @@
  * Origami Simulator for React (c) Kraft
  * MIT license
  */
-import { useState, useEffect } from "react";
+import { Component } from "react";
 import * as THREE from "three";
 import "./Simulator.css";
 import TrackballView from "./WebGL/TrackballView.jsx";
@@ -37,203 +37,231 @@ const lightVertices = [
  * - props.showShadows (turn on three.js shadows)
  * - props.reset (reset the vertices of the origami model)
  */
-const Simulator = (props) => {
-	// model size will update the position of the lights, camera, and
-	// trackball controlls, allowing for models to be of vastly different scales
-	const [modelSize, setModelSize] = useState(1);
+class Simulator extends Component {
+
+	// three js
+	renderer = undefined;
+	scene = undefined;
+	camera = undefined;
+	trackball = undefined;
+
 	// the following are mutually exclusive, and activated/deactivated
 	// based on which UI tool is currently selected.
-	const [trackballEnabled, setTrackballEnabled] = useState(true);
-	const [pullNodesEnabled, setPullNodesEnabled] = useState(false);
-	// "touches" are the current position of the cursor and where the raycaster
-	// has intersected the origami mesh, nearest vertex/face, etc..
-	const [touches, setTouches] = useState([]);
-	// origami simulator
-	let simulator;
-	// all raycaster methods for the user interface
-	let raycasters;
-	// highlighted geometry indicating the selected vertex/face
-	let highlights;
-	// three.js lights for this scene
-	const lights = lightVertices.map(pos => {
-		const light = new THREE.PointLight();
-		light.position.set(...pos);
-		light.intensity = 0.5;
-		light.distance = 0;
-		light.decay = 2;
-		light.castShadow = false;
-		light.shadow.mapSize.width = 512; // default
-		light.shadow.mapSize.height = 512; // default
-		return light;
-	});
-	// three js
-	let renderer;
-	let scene;
-	let camera;
+	trackballEnabled = true;
+	// const [trackballEnabled, setTrackballEnabled] = useState(true);
+	// const [pullNodesEnabled, setPullNodesEnabled] = useState(false);
+
+	touches = [];
+	setTouches(newTouches) {
+		this.touches = newTouches;
+		// deliver the touch data from the raycaster to be highlighted
+		if (this.highlights) { this.highlights.highlightTouch(this.touches[0]); }
+	}
+
+	modelSize = 1.0;
+	setModelSize(newModelSize) {
+		this.modelSize = newModelSize;
+		const radius = this.modelSize * Math.SQRT1_2;
+		// on model change, update camera position
+		if (this.camera) {
+			const vmax = this.modelSize;
+			// scale is due to the camera's FOV
+			const scale = 1.25;
+			// the distance the camera should be to nicely fit the object
+			const fitLength = this.camera.aspect > 1
+				? vmax * scale
+				: vmax * scale * (1 / this.camera.aspect);
+			const length = fitLength / this.camera.position.length();
+			this.camera.position.multiplyScalar(length);
+			this.camera.lookAt(0, 0, 0);
+			this.camera.far = vmax * 100;
+			this.camera.near = vmax / 100;
+		}
+		// on model change, update the position of the lights
+		if (this.lights) {
+			this.lights.forEach((light, i) => {
+				light.position.set(...lightVertices[i % lightVertices.length]);
+				light.position.setLength(radius);
+				light.shadow.camera.near = radius / 10; // 0.5 default
+				light.shadow.camera.far = radius * 10; // 500 default
+			});
+		}
+	}
+
+	// load a new origami model. thrown errors are because of a bad file format
+	loadModel(FOLD) {
+		if (!this.simulator) { return; }
+		try {
+			this.simulator.load(FOLD);
+			const box = boundingBox(FOLD);
+			const vmax = box ? Math.max(...box.span) : 1;
+			this.setModelSize(vmax);
+		} catch (error) {
+			window.alert(error);
+		}
+	}
+
+	constructor(props) {
+		super(props);
+		// three.js lights for this scene
+		this.lights = lightVertices.map(pos => {
+			const light = new THREE.PointLight();
+			light.position.set(...pos);
+			light.intensity = 0.5;
+			light.distance = 0;
+			light.decay = 2;
+			light.castShadow = false;
+			light.shadow.mapSize.width = 512; // default
+			light.shadow.mapSize.height = 512; // default
+			return light;
+		});
+	}
+	shouldComponentUpdate(nextProps, nextState) {
+		if (!this.simulator) { return true; }
+		this.quietUpdate(nextProps);
+		return false;
+	}
+	/**
+	 * @description cleanup all memory associated with origami simulator
+	 */
+	componentWillUnmount() {
+		if (this.raycasters) { this.raycasters.dealloc(); }
+		if (this.simulator) { this.simulator.dealloc(); }
+	}
 	/**
 	 * @description Origami Simulator solver just executed. This is attached
 	 * to the window.requestAnimationFrame and will fire at the end of every loop
 	 */
-	const onCompute = ({ error }) => {
-		props.setError(error);
+	onCompute({ error }) {
+		// this has been disabled because it is causing the component to
+		// refresh every frame
+		// this.props.setError(error);
+
 		// The raycaster will update on a mousemove event, but if the origami is
 		// in a folding animation, the raycaster will not update and the visuals
 		// will mismatch, hence, the raycaster can fire on a frame update if needed
-		// raycasters.animate({ pullEnabled: pullNodesEnabled });
+		this.raycasters.animate({ pullEnabled: this.props.tool === "pull" });
 	};
 	/**
 	 * @description This is the callback from ThreeView after three.js has
 	 * finished initializing. This is not the JS framework's builtin function.
 	 */
-	const didMount = ({ renderer: r, scene: s, camera: c }) => {
-		console.log("Simulator.jsx didMount()");
-		renderer = r;
-		scene = s;
-		camera = c;
-		lights.forEach(light => scene.add(light));
-		if (raycasters) { raycasters.dealloc(); }
-		if (simulator) { simulator.dealloc(); }
+	didMount({ renderer, scene, camera, trackball }) {
+		this.renderer = renderer;
+		this.scene = scene;
+		this.camera = camera;
+		this.trackball = trackball;
+		this.lights.forEach(light => scene.add(light));
+		if (this.raycasters) { this.raycasters.dealloc(); }
+		if (this.simulator) { this.simulator.dealloc(); }
 		// initialize origami simulator
-		simulator = OrigamiSimulator({ scene, onCompute });
-		highlights = Highlights({ scene, simulator });
-		// raycasters = Raycasters({
-		// 	renderer, camera, simulator, setTouches,
-		// });
-		// props.setReset(() => simulator.reset);
-		// props.setExportModel(() => simulator.export);
-	};
-	// load a new origami model. thrown errors are because of a bad file format
-	useEffect(() => {
-		if (!simulator) { return; }
-		try {
-			simulator.load(props.origami);
-			const box = boundingBox(props.origami);
-			const vmax = box ? Math.max(...box.span) : 1;
-			setModelSize(vmax);
-		} catch (error) {
-			window.alert(error);
+		const simulator = OrigamiSimulator({
+			scene,
+			onCompute: (...args) => this.onCompute(...args),
+		});
+		const highlights = Highlights({ scene, simulator });
+		this.simulator = simulator;
+		this.highlights = highlights;
+		this.raycasters = Raycasters({
+			renderer,
+			camera,
+			simulator,
+			setTouches: (...args) => this.setTouches(...args),
+		});
+		this.props.setReset(() => simulator.reset);
+		this.props.setExportModel(() => simulator.export);
+		if (this.props.origami) {
+			this.loadModel(this.props.origami);
 		}
-	}, [simulator, props.origami]);
-	// // on model change, update camera position
-	// useEffect(() => {
-	// 	if (!camera) { return; }
-	// 	const vmax = modelSize;
-	// 	// scale is due to the camera's FOV
-	// 	const scale = 1.25;
-	// 	// the distance the camera should be to nicely fit the object
-	// 	const fitLength = camera.aspect > 1
-	// 		? vmax * scale
-	// 		: vmax * scale * (1 / camera.aspect);
-	// 	const length = fitLength / camera.position.length();
-	// 	camera.position.multiplyScalar(length);
-	// 	camera.lookAt(0, 0, 0);
-	// 	camera.far = vmax * 100;
-	// 	camera.near = vmax / 100;
-	// }, [modelSize, camera]);
-	// // on model change, update the position of the lights
-	// useEffect(() => {
-	// 	const radius = modelSize * Math.SQRT1_2;
-	// 	// todo, might need these inside the initialize method
-	// 	lights.forEach((light, i) => {
-	// 		light.position.set(...lightVertices[i % lightVertices.length]);
-	// 		light.position.setLength(radius);
-	// 		light.shadow.camera.near = radius / 10; // 0.5 default
-	// 		light.shadow.camera.far = radius * 10; // 500 default
-	// 	});
-	// }, [lights, modelSize]);
-	// // tool -> what happens when cursor is pressed
-	// useEffect(() => {
-	// 	setTrackballEnabled(props.tool !== "pull");
-	// 	setPullNodesEnabled(props.tool === "pull");
-	// }, [props.tool]);
-	// forward these props to settings of origami simulator
-	// useEffect(() => {
-	// 	if (simulator) { simulator.setActive(props.active); }
-	// }, [simulator, props.active]);
-	// useEffect(() => {
-	// 	if (simulator) { simulator.setStrain(props.strain); }
-	// }, [simulator, props.strain]);
-	// useEffect(() => {
-	// 	if (simulator) { simulator.setFoldAmount(props.foldAmount); }
-	// }, [simulator, props.foldAmount]);
-	// useEffect(() => {
-	// 	if (scene) { scene.background = new THREE.Color(props.backgroundColor); }
-	// }, [scene, props.backgroundColor]);
+		this.quietUpdate(this.props, true);
+	};
 
-	// useEffect(() => {
-	// 	if (simulator) { simulator.setFrontColor(props.frontColor); }
-	// }, [simulator, props.frontColor]);
-	// useEffect(() => {
-	// 	if (simulator) { simulator.setBackColor(props.backColor); }
-	// }, [simulator, props.backColor]);
-	// useEffect(() => {
-	// 	if (simulator) { simulator.setLineColor(props.lineColor); }
-	// }, [simulator, props.lineColor]);
-	// useEffect(() => {
-	// 	if (simulator) { simulator.materials.line.opacity = props.lineOpacity; }
-	// }, [simulator, props.lineOpacity]);
-	// useEffect(() => {
-	// 	if (simulator) { simulator.setFrontColor(props.frontColor); }
-	// }, [simulator, props.frontColor]);
+	quietUpdate(props, setAll = false) {
+		// forward these props to settings of origami simulator
+		// only set if necessary
+		if (setAll || this.active !== props.active) {
+			this.active = props.active;
+			this.simulator.setActive(this.active);
+		}
+		if (setAll || this.strain !== props.strain) {
+			this.strain = props.strain;
+			this.simulator.setStrain(this.strain);
+		}
+		if (setAll || this.integration !== props.integration) {
+			this.integration = props.integration;
+			this.simulator.setIntegration(this.integration);
+		}
+		if (setAll || this.axialStiffness !== props.axialStiffness) {
+			this.axialStiffness = props.axialStiffness;
+			this.simulator.setAxialStiffness(this.axialStiffness);
+		}
+		if (setAll || this.faceStiffness !== props.faceStiffness) {
+			this.faceStiffness = props.faceStiffness;
+			this.simulator.setFaceStiffness(this.faceStiffness);
+		}
+		if (setAll || this.joinStiffness !== props.joinStiffness) {
+			this.joinStiffness = props.joinStiffness;
+			this.simulator.setJoinStiffness(this.joinStiffness);
+		}
+		if (setAll || this.creaseStiffness !== props.creaseStiffness) {
+			this.creaseStiffness = props.creaseStiffness;
+			this.simulator.setCreaseStiffness(this.creaseStiffness);
+		}
+		if (setAll || this.dampingRatio !== props.dampingRatio) {
+			this.dampingRatio = props.dampingRatio;
+			this.simulator.setDampingRatio(this.dampingRatio);
+		}
+		if (setAll || this.showShadows !== props.showShadows) {
+			this.showShadows = props.showShadows;
+			if (this.lights) {
+				this.simulator.setShadows(props.showShadows);
+				[0, 3, 4, 7].forEach(i => {
+					this.lights[i].castShadow = props.showShadows;
+				});
+			}
+		}
+		// set as many times as you like
+		this.simulator.setFoldAmount(props.foldAmount);
+		this.simulator.setFrontColor(props.frontColor);
+		this.simulator.setBackColor(props.backColor);
+		this.simulator.setLineColor(props.lineColor);
+		this.simulator.materials.line.opacity = props.lineOpacity;
+		if (this.scene) {
+			this.scene.background = new THREE.Color(props.backgroundColor);
+		}
+		if (this.highlights && !this.props.showTouches) {
+			this.highlights.clear();
+		}
+		// tool -> what happens when cursor is pressed
+		this.trackballEnabled = props.tool !== "pull";
+		if (this.trackball) {
+			this.trackball.enabled = this.trackballEnabled;
+		}
+		// setTrackballEnabled(props.tool !== "pull");
+		// setPullNodesEnabled(props.tool === "pull");
 
-	// useEffect(() => {
-	// 	if (simulator) { simulator.setIntegration(props.integration); }
-	// }, [simulator, props.integration]);
-	// useEffect(() => {
-	// 	if (simulator) { simulator.setAxialStiffness(props.axialStiffness); }
-	// }, [simulator, props.axialStiffness]);
-	// useEffect(() => {
-	// 	if (simulator) { simulator.setFaceStiffness(props.faceStiffness); }
-	// }, [simulator, props.faceStiffness]);
-	// useEffect(() => {
-	// 	if (simulator) { simulator.setJoinStiffness(props.joinStiffness); }
-	// }, [simulator, props.joinStiffness]);
-	// useEffect(() => {
-	// 	if (simulator) { simulator.setCreaseStiffness(props.creaseStiffness); }
-	// }, [simulator, props.creaseStiffness]);
-	// useEffect(() => {
-	// 	if (simulator) { simulator.setDampingRatio(props.dampingRatio); }
-	// }, [simulator, props.dampingRatio]);
-	// // deliver the touch data from the raycaster to be highlighted
-	// useEffect(() => {
-	// 	if (highlights) { highlights.highlightTouch(touches[0]); }
-	// }, [highlights, touches]);
-	// useEffect(() => { if (!props.showTouches) { highlights.clear(); } });
+		// nitpicky. upon tool change we need raycasterPullVertex to be undefined
+		if (setAll || this.tool !== props.tool) {
+			if (this.raycasters) { this.raycasters.raycasterReleaseHandler(); }
+		}
+	}
 
-	// // nitpicky. upon tool change we need raycasterPullVertex to be undefined
-	// useEffect(
-	// 	() => { if (raycasters) { raycasters.raycasterReleaseHandler(pullNodesEnabled); } },
-	// 	[raycasters, pullNodesEnabled],
-	// );
-	// // shadows
-	// useEffect(() => {
-	// 	if (!simulator || !lights) { return; }
-	// 	simulator.shadows = props.showShadows;
-	// 	[0, 3, 4, 7].forEach(i => {
-	// 		lights[i].castShadow = props.showShadows;
-	// 	});
-	// }, [lights, simulator, props.showShadows]);
-	/**
-	 * @description cleanup all memory associated with origami simulator
-	 */
-	// onCleanup(() => {
-	// 	if (raycasters) { raycasters.dealloc(); }
-	// 	if (simulator) { simulator.dealloc(); }
-	// });
-	return (
-		<div className="Simulator">
-			<TrackballView
-				enabled={trackballEnabled}
-				maxDistance={modelSize * 30}
-				minDistance={modelSize * 0.1}
-				panSpeed={1}
-				rotateSpeed={4}
-				zoomSpeed={16}
-				dynamicDampingFactor={1}
-				didMount={didMount}
-			/>
-		</div>
-	);
-};
+	render() {
+		return (
+			<div className="Simulator">
+				<TrackballView
+					enabled={this.trackballEnabled}
+					maxDistance={this.modelSize * 30}
+					minDistance={this.modelSize * 0.1}
+					panSpeed={1}
+					rotateSpeed={4}
+					zoomSpeed={16}
+					dynamicDampingFactor={1}
+					didMount={(...args) => this.didMount(...args)}
+				/>
+			</div>
+		);
+	}
+}
 
 export default Simulator;
