@@ -4,8 +4,9 @@
  */
 import { Component } from "react";
 import * as THREE from "three";
+import { TrackballControls } from "three/addons/controls/TrackballControls.js";
 import "./Simulator.css";
-import TrackballView from "./WebGL/TrackballView.jsx";
+import ThreeView from "./WebGL/ThreeView.jsx";
 import OrigamiSimulator from "../../src/index";
 import Highlights from "../../src/touches/highlights";
 import Raycasters from "../../src/touches/raycasters";
@@ -38,13 +39,6 @@ const lightVertices = [
  * - props.reset (reset the vertices of the origami model)
  */
 class Simulator extends Component {
-
-	// three js
-	renderer = undefined;
-	scene = undefined;
-	camera = undefined;
-	trackball = undefined;
-
 	// the following are mutually exclusive, and activated/deactivated
 	// based on which UI tool is currently selected.
 	trackballEnabled = true;
@@ -52,6 +46,7 @@ class Simulator extends Component {
 	// const [pullNodesEnabled, setPullNodesEnabled] = useState(false);
 
 	touches = [];
+
 	setTouches(newTouches) {
 		this.touches = newTouches;
 		// deliver the touch data from the raycaster to be highlighted
@@ -59,6 +54,7 @@ class Simulator extends Component {
 	}
 
 	modelSize = 1.0;
+
 	setModelSize(newModelSize) {
 		this.modelSize = newModelSize;
 		const radius = this.modelSize * Math.SQRT1_2;
@@ -116,44 +112,48 @@ class Simulator extends Component {
 			return light;
 		});
 	}
-	shouldComponentUpdate(nextProps, nextState) {
+
+	shouldComponentUpdate(nextProps) {
 		if (!this.simulator) { return true; }
 		this.quietUpdate(nextProps);
 		return false;
 	}
+
 	/**
 	 * @description cleanup all memory associated with origami simulator
 	 */
 	componentWillUnmount() {
 		if (this.raycasters) { this.raycasters.dealloc(); }
 		if (this.simulator) { this.simulator.dealloc(); }
+		if (this.trackball) { this.trackball.dispose(); }
 	}
+
 	/**
 	 * @description Origami Simulator solver just executed. This is attached
 	 * to the window.requestAnimationFrame and will fire at the end of every loop
 	 */
 	onCompute({ error }) {
-		// this has been disabled because it is causing the component to
-		// refresh every frame
-		// this.props.setError(error);
+		// enabling this will cause the component to quietUpdate every frame
+		this.props.setError(error);
 
 		// The raycaster will update on a mousemove event, but if the origami is
 		// in a folding animation, the raycaster will not update and the visuals
 		// will mismatch, hence, the raycaster can fire on a frame update if needed
 		this.raycasters.animate({ pullEnabled: this.props.tool === "pull" });
-	};
+	}
+
 	/**
 	 * @description This is the callback from ThreeView after three.js has
 	 * finished initializing. This is not the JS framework's builtin function.
 	 */
-	didMount({ renderer, scene, camera, trackball }) {
+	didMount({ renderer, scene, camera }) {
 		this.renderer = renderer;
 		this.scene = scene;
 		this.camera = camera;
-		this.trackball = trackball;
 		this.lights.forEach(light => scene.add(light));
 		if (this.raycasters) { this.raycasters.dealloc(); }
 		if (this.simulator) { this.simulator.dealloc(); }
+		if (this.trackball) { this.trackball.dispose(); }
 		// initialize origami simulator
 		const simulator = OrigamiSimulator({
 			scene,
@@ -168,20 +168,46 @@ class Simulator extends Component {
 			simulator,
 			setTouches: (...args) => this.setTouches(...args),
 		});
+		this.trackball = new TrackballControls(camera, renderer.domElement);
+		this.trackball.panSpeed = 1;
+		this.trackball.rotateSpeed = 4;
+		this.trackball.zoomSpeed = 16;
+		this.trackball.dynamicDampingFactor = 1;
+
 		this.props.setReset(() => simulator.reset);
 		this.props.setExportModel(() => simulator.export);
 		if (this.props.origami) {
 			this.loadModel(this.props.origami);
 		}
 		this.quietUpdate(this.props, true);
-	};
+	}
 
+	didResize() {
+		if (this.trackball) { this.trackball.handleResize(); }
+	}
+
+	animate() {
+		if (this.trackball) { this.trackball.update(); }
+	}
+
+	/**
+	 * @description forward all modified props to origami simulator,
+	 * do this only if props have changed, and bypass DOM reload
+	 */
 	quietUpdate(props, setAll = false) {
-		// forward these props to settings of origami simulator
-		// only set if necessary
+		if (setAll || props.origamiDidLoad) {
+			if (props.origami) {
+				this.loadModel(props.origami);
+			}
+			props.setOrigamiDidLoad(false);
+		}
 		if (setAll || this.active !== props.active) {
 			this.active = props.active;
 			this.simulator.setActive(this.active);
+		}
+		if (setAll || this.foldAmount !== props.foldAmount) {
+			this.foldAmount = props.foldAmount;
+			this.simulator.setFoldAmount(this.foldAmount);
 		}
 		if (setAll || this.strain !== props.strain) {
 			this.strain = props.strain;
@@ -216,48 +242,55 @@ class Simulator extends Component {
 			if (this.lights) {
 				this.simulator.setShadows(props.showShadows);
 				[0, 3, 4, 7].forEach(i => {
-					this.lights[i].castShadow = props.showShadows;
+					this.lights[i].castShadow = this.showShadows;
 				});
 			}
 		}
-		// set as many times as you like
-		this.simulator.setFoldAmount(props.foldAmount);
-		this.simulator.setFrontColor(props.frontColor);
-		this.simulator.setBackColor(props.backColor);
-		this.simulator.setLineColor(props.lineColor);
-		this.simulator.materials.line.opacity = props.lineOpacity;
-		if (this.scene) {
-			this.scene.background = new THREE.Color(props.backgroundColor);
+		if (setAll || this.frontColor !== props.frontColor) {
+			this.frontColor = props.frontColor;
+			this.simulator.setFrontColor(this.frontColor);
 		}
-		if (this.highlights && !this.props.showTouches) {
+		if (setAll || this.backColor !== props.backColor) {
+			this.backColor = props.backColor;
+			this.simulator.setBackColor(this.backColor);
+		}
+		if (setAll || this.lineColor !== props.lineColor) {
+			this.lineColor = props.lineColor;
+			this.simulator.setLineColor(this.lineColor);
+		}
+		if (setAll || this.lineOpacity !== props.lineOpacity) {
+			this.lineOpacity = props.lineOpacity;
+			this.simulator.materials.line.opacity = this.lineOpacity;
+		}
+		if (setAll || this.backgroundColor !== props.backgroundColor) {
+			if (this.scene) {
+				this.backgroundColor = props.backgroundColor;
+				this.scene.background = new THREE.Color(props.backgroundColor);
+			}
+		}
+		if (this.highlights && !props.showTouches) {
 			this.highlights.clear();
 		}
-		// tool -> what happens when cursor is pressed
 		this.trackballEnabled = props.tool !== "pull";
 		if (this.trackball) {
 			this.trackball.enabled = this.trackballEnabled;
+			this.trackball.maxDistance = this.modelSize * 30;
+			this.trackball.minDistance = this.modelSize * 0.1;
 		}
-		// setTrackballEnabled(props.tool !== "pull");
-		// setPullNodesEnabled(props.tool === "pull");
-
-		// nitpicky. upon tool change we need raycasterPullVertex to be undefined
-		if (setAll || this.tool !== props.tool) {
-			if (this.raycasters) { this.raycasters.raycasterReleaseHandler(); }
-		}
+		// upon tool change we need raycasterPullVertex to be undefined
+		// does not seem to be necessary in React
+		// if (setAll || this.tool !== props.tool) {
+		// 	if (this.raycasters) { this.raycasters.raycasterReleaseHandler(); }
+		// }
 	}
 
 	render() {
 		return (
 			<div className="Simulator">
-				<TrackballView
-					enabled={this.trackballEnabled}
-					maxDistance={this.modelSize * 30}
-					minDistance={this.modelSize * 0.1}
-					panSpeed={1}
-					rotateSpeed={4}
-					zoomSpeed={16}
-					dynamicDampingFactor={1}
+				<ThreeView
+					didResize={(...args) => this.didResize(...args)}
 					didMount={(...args) => this.didMount(...args)}
+					animate={() => this.animate()}
 				/>
 			</div>
 		);

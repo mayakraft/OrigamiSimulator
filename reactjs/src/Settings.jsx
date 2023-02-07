@@ -8,6 +8,7 @@ const Settings = (props) => {
 		reader.onload = event => {
 			try {
 				props.setOrigami(JSON.parse(event.target.result));
+				props.setOrigamiDidLoad(true);
 			} catch (error) {
 				window.alert(error);
 			}
@@ -54,7 +55,6 @@ const Settings = (props) => {
 
 			<h3>pointer tool</h3>
 			<input
-				disabled
 				type="radio"
 				name="radio-webgl-tool"
 				// value="radio-webgl-tool-trackball"
@@ -62,7 +62,6 @@ const Settings = (props) => {
 				defaultChecked={props.tool === "trackball"} />
 			<label htmlFor="radio-webgl-tool-trackball">trackball</label>
 			<input
-				disabled
 				type="radio"
 				name="radio-webgl-tool"
 				// value="radio-webgl-tool-pull"

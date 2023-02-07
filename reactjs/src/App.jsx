@@ -8,6 +8,7 @@ import craneCP from "../../fold/crane-cp.fold?raw";
 function App() {
 	// the origami model, in FOLD format
 	const [origami, setOrigami] = useState(JSON.parse(craneCP));
+	const [origamiDidLoad, setOrigamiDidLoad] = useState(false);
 	// tool is either ["trackball", "pull"]
 	const [tool, setTool] = useState("trackball");
 	// turn on/off Origami Simulator's folding engine
@@ -44,6 +45,7 @@ function App() {
 			<Settings
 				origami={origami}
 				setOrigami={setOrigami}
+				setOrigamiDidLoad={setOrigamiDidLoad}
 				tool={tool}
 				setTool={setTool}
 				active={active}
@@ -84,6 +86,8 @@ function App() {
 			/>
 			<Simulator
 				origami={origami}
+				origamiDidLoad={origamiDidLoad}
+				setOrigamiDidLoad={setOrigamiDidLoad}
 				active={active}
 				foldAmount={foldAmount}
 				strain={strain}

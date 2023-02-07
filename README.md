@@ -6,25 +6,24 @@ The primary purpose of the rewrite is to uncouple the codebase from its frontend
 
 # examples
 
-This repo contains simple example apps implemented in a few Javascript frameworks.
+This repo contains one simple example app implemented across a few Javascript frameworks.
 
 |   |   |   |
 |---|---|---|
 | ✅ | [Svelte](https://svelte.dev) | svelte/ |
 | ✅ | [Solid JS](https://www.solidjs.com/) | solidjs/ |
-| ⚠️ | [React JS](https://reactjs.org/) | reactjs/ |
-| ✅ | Vanilla JS | vanillajs/ |
+| ✅ | [React JS](https://reactjs.org/) | reactjs/ |
+| ✅ | Vanilla JS \* | vanillajs/ |
 
-To run the examples, clone this repository and run `npm i` **twice, in two directories**:
+To run an example:
 
-- in the root of this project (this installs Origami Simulator's dependencies)
-- choose a framework (Svelte, SolidJS...), cd into that directory and run `npm i` again.
+1. `npm i` in the root directory
+2. `cd svelte/` (or solidjs/ or reactjs/) and run `npm i` again
+3. `npm run dev` to start the app
 
-Everything should be installed. Run the app using the standard command according to whichever framework you chose (`npm run dev` for Svelte/SolidJS).
+**Vanilla JS** only requires you run a local server, then open `index.html` [more details](#vanilla-js).
 
-> **React JS** 95% complete, missing a couple features: "pull node tool" and "folding error". This is due to React's desire to refresh the DOM often and the particular chosen work around.
->
-> **Vanilla JS** only requires you run a local server. Also, this example is *much* more simple compared to the others.
+> \* the Vanilla JS example is the odd one out, it is much more simple compared to the others.
 
 # installation
 
