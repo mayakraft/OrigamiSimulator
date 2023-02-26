@@ -1,23 +1,30 @@
 <script>
-	export let origami = {};
-
 	import {
 		active,
 		foldAmount,
 		strain,
-		showTouches,
-		showShadows,
 		tool,
+		error,
+		reset,
+		exportModel,
+	} from "./stores/Simulator.js";
+	import {
 		integration,
 		axialStiffness,
 		faceStiffness,
 		joinStiffness,
 		creaseStiffness,
 		dampingRatio,
-		error,
-		reset,
-	} from "./stores/Simulator.js";
+	} from "./stores/Solver.js";
 	import {
+		showTouches,
+		showShadows,
+		showBoundary,
+		showMountain,
+		showValley,
+		showFlat,
+		showJoin,
+		showUnassigned,
 		backgroundColor,
 		frontColor,
 		backColor,
@@ -28,16 +35,10 @@
 		flatColor,
 		joinColor,
 		unassignedColor,
-		showBoundary,
-		showMountain,
-		showValley,
-		showFlat,
-		showJoin,
-		showUnassigned,
 	} from "./stores/Style.js";
 
-	//
-	export let exportModel;
+	export let origami = {};
+
 	// throws error if file is not a valid JSON format
 	// event handler for file dialog <input>
 	let files;
@@ -56,10 +57,11 @@
 	}
 
 	const saveFoldFile = () => {
+		const FOLD = $exportModel();
 		const a = document.createElement("a");
 		a.style = "display: none";
 		document.body.appendChild(a);
-		const blob = new Blob([JSON.stringify(exportModel())], { type: "octet/stream" });
+		const blob = new Blob([JSON.stringify(FOLD)], { type: "octet/stream" });
 		const url = window.URL.createObjectURL(blob);
 		a.href = url;
 		a.download = "origami.fold";
@@ -283,7 +285,11 @@
 		padding: 0.5rem;
 		overflow-y: auto;
 		max-height: 100vh;
-		text-shadow: -1px -1px 0 #0008, 1px -1px 0 #0008, -1px 1px 0 #0008, 1px 1px 0 #0008;
+		text-shadow:
+			-1px -1px 0 #0008,
+			1px -1px 0 #0008,
+			-1px 1px 0 #0008,
+			1px 1px 0 #0008;
 	}
 	.container > * {
 		margin: 0.33rem 0;

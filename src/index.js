@@ -162,6 +162,7 @@ const OrigamiSimulator = ({ scene, onCompute } = {}) => {
 		getLines: () => model.lines,
 		setFrontColor: (color) => model.materials.front.color.set(color),
 		setBackColor: (color) => model.materials.back.color.set(color),
+		// set all line assignments to one color
 		setLineColor: (...args) => model.setLineColor(...args),
 		// line colors by assignment type
 		setBoundaryColor: (...args) => model.setBoundaryColor(...args),
