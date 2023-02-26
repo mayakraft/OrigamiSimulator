@@ -44,6 +44,8 @@ const prepare = (inputFOLD, epsilon) => {
 	if (fold.edges_assignment && !fold.edges_foldAngle) {
 		fold.edges_foldAngle = makeEdgesFoldAngle(fold);
 	}
+	// make all edges_assignments uppercase
+	fold.edges_assignment = fold.edges_assignment.map(a => a.toUpperCase());
 
 	// find a nice epsilon for vertex merging, unless the user specified one.
 	if (epsilon === undefined) {
@@ -60,7 +62,7 @@ const prepare = (inputFOLD, epsilon) => {
 	}
 	// get the indices of every cut "C" edge.
 	const cut_edge_indices = fold.edges_assignment
-		.map((assign, i) => (assign === "C" || assign === "c" ? i : undefined))
+		.map((assign, i) => (assign === "C" ? i : undefined))
 		.filter(a => a !== undefined);
 	// if cut creases exist, convert them into boundaries
 	if (cut_edge_indices.length > 0) {

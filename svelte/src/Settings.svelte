@@ -1,24 +1,42 @@
 <script>
 	export let origami = {};
-  export let tool;
-  export let active;
-  export let strain;
-  export let foldAmount;
-  export let showTouches;
-  export let showShadows;
-  export let backgroundColor;
-	export let frontColor;
-	export let backColor;
-	export let lineColor;
-	export let lineOpacity;
-  export let error;
-  export let reset;
-  export let integration;
-  export let axialStiffness;
-  export let faceStiffness;
-  export let joinStiffness;
-	export let creaseStiffness;
-	export let dampingRatio;
+
+	import {
+		active,
+		foldAmount,
+		strain,
+		showTouches,
+		showShadows,
+		tool,
+		integration,
+		axialStiffness,
+		faceStiffness,
+		joinStiffness,
+		creaseStiffness,
+		dampingRatio,
+		error,
+		reset,
+	} from "./stores/Simulator.js";
+	import {
+		backgroundColor,
+		frontColor,
+		backColor,
+		lineOpacity,
+		boundaryColor,
+		mountainColor,
+		valleyColor,
+		flatColor,
+		joinColor,
+		unassignedColor,
+		showBoundary,
+		showMountain,
+		showValley,
+		showFlat,
+		showJoin,
+		showUnassigned,
+	} from "./stores/Style.js";
+
+	//
 	export let exportModel;
 	// throws error if file is not a valid JSON format
 	// event handler for file dialog <input>
@@ -55,7 +73,7 @@
 
 	<h3>
 		simulator active
-		<input type="checkbox" bind:checked={active} />
+		<input type="checkbox" bind:checked={$active} />
 
 	</h3>
 
@@ -65,62 +83,106 @@
 		min="0"
 		max="1"
 		step="0.01"
-		disabled={!active}
-		bind:value={foldAmount} />
+		disabled={!$active}
+		bind:value={$foldAmount} />
 
 	<h3>pointer tool</h3>
 	<input
 		type="radio"
 		id="radio-webgl-tool-trackball"
 		name="radio-webgl-tool"
-		bind:group={tool}
+		bind:group={$tool}
 		value="trackball" />
 	<label for="radio-webgl-tool-trackball">trackball</label>
 	<input
 		type="radio"
 		id="radio-webgl-tool-pull"
 		name="radio-webgl-tool"
-		bind:group={tool}
+		bind:group={$tool}
 		value="pull" />
 	<label for="radio-webgl-tool-pull">pull</label>
 
 	<h3>
 		show strain
-		<input type="checkbox" disabled={!active} bind:checked={strain} />
+		<input type="checkbox" disabled={!$active} bind:checked={$strain} />
 	</h3>
 
 	<h3>
 		show touches
-		<input type="checkbox" bind:checked={showTouches} />
+		<input type="checkbox" bind:checked={$showTouches} />
 	</h3>
 
 	<h3>
 		show shadows
-		<input type="checkbox" disabled={strain} bind:checked={showShadows} />
+		<input type="checkbox" disabled={$strain} bind:checked={$showShadows} />
+	</h3>
+
+	<h3>
+		background
+		<input type="text" class="medium" bind:value={$backgroundColor} />
 	</h3>
 
 	<h3>
 		front
-		<input type="text" class="medium" bind:value={frontColor} />
+		<input type="text" class="medium" bind:value={$frontColor} />
 	</h3>
 	<h3>
 		back
-		<input type="text" class="medium" bind:value={backColor} />
+		<input type="text" class="medium" bind:value={$backColor} />
 	</h3>
+
 	<h3>
 		lines
-		<input type="text" class="medium" bind:value={lineColor} />
 	</h3>
 	<input
 		type="range"
 		min="0"
 		max="1"
 		step="0.02"
-		bind:value={lineOpacity} />
-	<h3>
-		background
-		<input type="text" class="medium" bind:value={backgroundColor} />
-	</h3>
+		bind:value={$lineOpacity} />
+	<div>
+		<input
+			type="checkbox"
+			id="show-line-boundary"
+			bind:checked={$showBoundary} />
+		<input type="text" class="short" bind:value={$boundaryColor} />
+		<label for="show-line-boundary">boundary</label>
+		<br />
+		<input
+			type="checkbox"
+			id="show-line-mountain"
+			bind:checked={$showMountain} />
+		<input type="text" class="short" bind:value={$mountainColor} />
+		<label for="show-line-mountain">mountain</label>
+		<br />
+		<input
+			type="checkbox"
+			id="show-line-valley"
+			bind:checked={$showValley} />
+		<input type="text" class="short" bind:value={$valleyColor} />
+		<label for="show-line-valley">valley</label>
+		<br />
+		<input
+			type="checkbox"
+			id="show-line-flat"
+			bind:checked={$showFlat} />
+		<input type="text" class="short" bind:value={$flatColor} />
+		<label for="show-line-flat">flat</label>
+		<br />
+		<input
+			type="checkbox"
+			id="show-line-join"
+			bind:checked={$showJoin} />
+		<input type="text" class="short" bind:value={$joinColor} />
+		<label for="show-line-join">triangulated</label>
+		<br />
+		<input
+			type="checkbox"
+			id="show-line-unassigned"
+			bind:checked={$showUnassigned} />
+		<input type="text" class="short" bind:value={$unassignedColor} />
+		<label for="show-line-unassigned">unassigned</label>
+	</div>
 
 	<h3>integration</h3>
 	<input
@@ -128,41 +190,41 @@
 		name="radio-integration"
 		id="radio-integration-euler"
 		value="euler"
-		bind:group={integration} />
+		bind:group={$integration} />
 	<label for="radio-integration-euler">euler</label>
 	<input
 		type="radio"
 		name="radio-integration"
 		id="radio-integration-verlet"
 		value="verlet"
-		bind:group={integration} />
+		bind:group={$integration} />
 	<label for="radio-integration-verlet">verlet</label>
 
 	<h3>
 		axial stiffness
-		<input type="text" class="short" bind:value={axialStiffness} />
+		<input type="text" class="short" bind:value={$axialStiffness} />
 	</h3>
 	<input
 		type="range"
 		min="10"
 		max="100"
 		step="1"
-		bind:value={axialStiffness} />
+		bind:value={$axialStiffness} />
 
 	<h3>
 		face stiffness
-		<input type="text" class="short" bind:value={faceStiffness} />
+		<input type="text" class="short" bind:value={$faceStiffness} />
 	</h3>
 	<input
 		type="range"
 		min="0"
 		max="5"
 		step="0.02"
-		bind:value={faceStiffness} />
+		bind:value={$faceStiffness} />
 
 	<h3>
 		join stiffness
-		<input type="text" class="short" bind:value={joinStiffness} />
+		<input type="text" class="short" bind:value={$joinStiffness} />
 
 	</h3>
 	<input
@@ -170,11 +232,11 @@
 		min="0"
 		max="3"
 		step="0.01"
-		bind:value={joinStiffness} />
+		bind:value={$joinStiffness} />
 
 	<h3>
 		crease stiffness
-		<input type="text" class="short" bind:value={creaseStiffness} />
+		<input type="text" class="short" bind:value={$creaseStiffness} />
 
 	</h3>
 	<input
@@ -182,11 +244,11 @@
 		min="0"
 		max="3"
 		step="0.01"
-		bind:value={creaseStiffness} />
+		bind:value={$creaseStiffness} />
 
 	<h3>
 		damping ratio
-		<input type="text" class="short" bind:value={dampingRatio} />
+		<input type="text" class="short" bind:value={$dampingRatio} />
 
 	</h3>
 	<input
@@ -194,16 +256,16 @@
 		min="0.01"
 		max="0.5"
 		step="0.01"
-		bind:value={dampingRatio} />
+		bind:value={$dampingRatio} />
 
 	<h3>
 		error
-		<input type="text" class="long" disabled={!active} bind:value={error} />
+		<input type="text" class="long" disabled={!$active} bind:value={$error} />
 	</h3>
 
 	<button
-		disabled={!active}
-		on:click={reset}>reset model</button>
+		disabled={!$active}
+		on:click={$reset}>reset model</button>
 	<br />
 
 	<button on:click={saveFoldFile}>export model as FOLD</button>

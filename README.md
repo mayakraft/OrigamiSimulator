@@ -4,6 +4,19 @@ This is a fork of Origami Simulator, by Amanda Ghassaei; see the [original repo]
 
 The primary purpose of the rewrite is to uncouple the codebase from its frontend and UI. This allows Origami Simulator to be instanced (multiple times even) inside of a custom Javascript framework, React, Svelte, SolidJS, etc..
 
+# this repo
+
+the `src/` folder contains all of Origami Simulator's source code.
+
+there are 4 example apps which demo Origami Simulator, each implementation in a different framework:
+
+- `reactjs/`
+- `solidjs/`
+- `svelte/`
+- `vanilla/`
+
+the `fold/` folder contains an example origami model, models are in [FOLD file format](https://github.com/edemaine/FOLD/).
+
 # examples
 
 This repo contains one simple example app implemented across a few Javascript frameworks.

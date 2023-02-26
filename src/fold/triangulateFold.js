@@ -55,13 +55,13 @@ function triangulatedFOLD(inputFOLD, is2d) {
 			if (dist2 < dist1) {
 				fold.edges_vertices.push([face[1], face[3]]);
 				fold.edges_foldAngle.push(0);
-				fold.edges_assignment.push("F");
+				fold.edges_assignment.push("J");
 				triangulated_vertices.push([face[0], face[1], face[3]]);
 				triangulated_vertices.push([face[1], face[2], face[3]]);
 			} else {
 				fold.edges_vertices.push([face[0], face[2]]);
 				fold.edges_foldAngle.push(0);
-				fold.edges_assignment.push("F");
+				fold.edges_assignment.push("J");
 				triangulated_vertices.push([face[0], face[1], face[2]]);
 				triangulated_vertices.push([face[0], face[2], face[3]]);
 			}
@@ -126,17 +126,17 @@ function triangulatedFOLD(inputFOLD, is2d) {
 					faceEdges.push(fold.edges_vertices.length);
 					fold.edges_vertices.push([tri[0], tri[1]]);
 					fold.edges_foldAngle.push(0);
-					fold.edges_assignment.push("F");
+					fold.edges_assignment.push("J");
 				} else if (k === 1) {
 					faceEdges.push(fold.edges_vertices.length);
 					fold.edges_vertices.push([tri[2], tri[1]]);
 					fold.edges_foldAngle.push(0);
-					fold.edges_assignment.push("F");
+					fold.edges_assignment.push("J");
 				} else if (k === 2) {
 					faceEdges.push(fold.edges_vertices.length);
 					fold.edges_vertices.push([tri[2], tri[0]]);
 					fold.edges_foldAngle.push(0);
-					fold.edges_assignment.push("F");
+					fold.edges_assignment.push("J");
 				}
 			}
 			triangulated_vertices.push(tri);

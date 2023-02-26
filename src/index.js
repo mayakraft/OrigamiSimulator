@@ -141,26 +141,42 @@ const OrigamiSimulator = ({ scene, onCompute } = {}) => {
 		export: () => model.export(),
 		model,
 		reset,
+		setScene: (newScene) => model.setScene(newScene),
+		setOnCompute: (handler) => { onCompute = handler; },
 		dealloc,
 		nodeDidMove,
+		// solver settings
 		setActive,
 		setFoldAmount,
-		setStrain,
-		setShadows,
 		setIntegration,
 		setAxialStiffness,
 		setFaceStiffness,
 		setJoinStiffness,
 		setCreaseStiffness,
 		setDampingRatio,
+		// style
+		setStrain,
+		setShadows,
+		// materials
 		getMaterials: () => model.materials,
+		getLines: () => model.lines,
 		setFrontColor: (color) => model.materials.front.color.set(color),
 		setBackColor: (color) => model.materials.back.color.set(color),
-		setLineColor: (color) => model.materials.line.color.set(color),
-		setMaterialFront: (...args) => model.setMaterialFront(...args),
-		setMaterialBack: (...args) => model.setMaterialBack(...args),
-		setMaterialLine: (...args) => model.setMaterialLine(...args),
-		setMaterialStrain: (...args) => model.setMaterialStrain(...args),
+		setLineColor: (...args) => model.setLineColor(...args),
+		// line colors by assignment type
+		setBoundaryColor: (...args) => model.setBoundaryColor(...args),
+		setMountainColor: (...args) => model.setMountainColor(...args),
+		setValleyColor: (...args) => model.setValleyColor(...args),
+		setFlatColor: (...args) => model.setFlatColor(...args),
+		setJoinColor: (...args) => model.setJoinColor(...args),
+		setUnassignedColor: (...args) => model.setUnassignedColor(...args),
+		// set the materials directly
+		setMaterialFront: (material) => model.setMaterialFront(material),
+		setMaterialBack: (material) => model.setMaterialBack(material),
+		setMaterialStrain: (material) => model.setMaterialStrain(material),
+		setMaterialLine: (material, ...assignments) => (
+			model.setMaterialLine(material, ...assignments)
+		),
 	};
 	// getters and setters
 	Object.defineProperty(app, "active", { get: () => active, set: setActive });

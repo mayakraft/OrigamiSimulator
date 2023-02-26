@@ -12,7 +12,8 @@ import exportFold from "./exportFold.js";
 
 // buffer geometry has materialIndex property. use this for front/back colors
 
-const assignments = Array.from("BMVFCU");
+// no "cut" assignment. all cuts have now been turned into boundaries
+const assignments = Array.from("BMVFJU");
 
 function Model({ scene }) {
 	// if the user chooses to export the 3D model, we need to reference
@@ -20,15 +21,25 @@ function Model({ scene }) {
 	this.fold = {};
 	this.foldUnmodified = {};
 	this.geometry = null;
+	this.materials = {};
+	this.materials.front = Materials.front;
+	this.materials.back = Materials.back;
+	this.materials.strain = Materials.strain;
+	this.materials.line = {};
+	assignments.forEach(key => {
+		this.materials.line[key] = Materials.line.clone();
+	});
 	this.frontMesh = new THREE.Mesh(); // front face of mesh
 	this.backMesh = new THREE.Mesh(); // back face of mesh (different color)
 	this.lines = {};
 	assignments.forEach(key => {
 		this.lines[key] = new THREE.LineSegments(
 			new THREE.BufferGeometry(),
-			Materials.line,
+			this.materials.line[key],
 		);
 	});
+	// by default, "join" edges (result of triangulation) are not visible
+	this.lines.J.visible = false;
 	this.strain = false;
 	this.axialStiffness = 20;
 	this.joinStiffness = 0.7;
@@ -42,12 +53,6 @@ function Model({ scene }) {
 	this.edges = [];
 	this.creases = [];
 	this.faces_vertices = [];
-
-	this.materials = {};
-	this.materials.front = Materials.front;
-	this.materials.back = Materials.back;
-	this.materials.strain = Materials.strain;
-	this.materials.line = Materials.line;
 
 	this.frontMesh.castShadow = true;
 	this.frontMesh.receiveShadow = true;
@@ -103,9 +108,9 @@ Model.prototype.faceMaterialDidUpdate = function () {
 };
 
 Model.prototype.lineMaterialDidUpdate = function () {
-	Object.values(this.lines).forEach(line => {
-		line.material = this.materials.line;
-		line.material.needsUpdate = true;
+	assignments.forEach(key => {
+		this.lines[key].material = this.materials.line[key] || Materials.line.clone();
+		this.lines[key].material.needsUpdate = true;
 	});
 };
 
@@ -117,12 +122,6 @@ Model.prototype.materialDidUpdate = function () {
 Model.prototype.setStrain = function (strain) {
 	this.strain = strain;
 	this.faceMaterialDidUpdate();
-};
-
-// in this case, options is an object where each key is B, M, V, F...
-// and each value is a boolean true/false
-Model.prototype.updateEdgeVisibility = function (options) {
-	assignments.forEach(a => { this.lines[a].visible = options[a]; });
 };
 
 Model.prototype.getMesh = function () { return [this.frontMesh, this.backMesh]; };
@@ -145,7 +144,6 @@ Model.prototype.makeObjects = function (fold) {
 	};
 	this.nodes = fold.vertices_coords
 		.map(vertex => new THREE.Vector3(...vertex))
-		// .map((vector, i) => new Node(vector.clone(), i, Model.prototype.getPositionsArray));
 		.map((vector, i) => new Node(vector.clone(), i, this));
 	this.edges = fold.edges_vertices
 		.map(ev => ev.map(v => this.nodes[v]))
@@ -269,7 +267,6 @@ Model.prototype.dealloc = function () {
 Model.prototype.load = function (foldObject) {
 	this.dealloc();
 	this.makeNewGeometries();
-	// this.updateEdgeVisibility(options.visible);
 	const fold = prepare(foldObject);
 	this.foldUnmodified = foldObject;
 	this.fold = fold;
@@ -327,12 +324,41 @@ Model.prototype.setDampingRatio = function (value) {
  */
 Model.prototype.setFrontColor = function (color) {
 	this.materials.front.color.set(color);
+	this.frontMesh.material.needsUpdate = true;
 };
 Model.prototype.setBackColor = function (color) {
 	this.materials.back.color.set(color);
+	this.backMesh.material.needsUpdate = true;
 };
-Model.prototype.setLineColor = function (color) {
-	this.materials.line.color.set(color);
+Model.prototype.setBoundaryColor = function (color) {
+	this.materials.line.B.color.set(color);
+	this.lines.B.material.needsUpdate = true;
+};
+Model.prototype.setMountainColor = function (color) {
+	this.materials.line.M.color.set(color);
+	this.lines.M.material.needsUpdate = true;
+};
+Model.prototype.setValleyColor = function (color) {
+	this.materials.line.V.color.set(color);
+	this.lines.V.material.needsUpdate = true;
+};
+Model.prototype.setFlatColor = function (color) {
+	this.materials.line.F.color.set(color);
+	this.lines.F.material.needsUpdate = true;
+};
+Model.prototype.setUnassignedColor = function (color) {
+	this.materials.line.U.color.set(color);
+	this.lines.U.material.needsUpdate = true;
+};
+Model.prototype.setJoinColor = function (color) {
+	this.materials.line.J.color.set(color);
+	this.lines.J.material.needsUpdate = true;
+};
+Model.prototype.setLineColor = function(color) {
+	assignments.forEach(key => {
+		this.materials.line[key].color.set(color);
+	});
+	this.lineMaterialDidUpdate();
 };
 /**
  *
@@ -351,9 +377,18 @@ Model.prototype.setMaterialBack = function (material) {
 Model.prototype.setMaterialStrain = function (material) {
 	setNewFaceMaterial(this, material, "strain");
 };
-Model.prototype.setMaterialLine = function (material) {
-	if (this.materials.line) { this.materials.line.dispose(); }
-	this.materials.line = material;
+/**
+ * @param {object} material a three js material
+ * @param {string} assignments a list of the assignment(s) you want to apply this material to.
+ */
+Model.prototype.setMaterialLine = function (material, ...assignmentsOptions) {
+	const keys = assignmentsOptions.length
+		? assignmentsOptions
+			.filter(a => typeof a === "string")
+			.map(str => str.toUpperCase())
+		: assignments;
+	keys.forEach(key => this.materials.line[key].dispose());
+	keys.forEach(key => { this.materials.line[key] = material; });
 	this.lineMaterialDidUpdate();
 };
 

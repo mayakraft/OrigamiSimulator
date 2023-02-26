@@ -21,7 +21,10 @@ const getFacesAndVerticesForEdges = (fold) => {
 	const faces = fold.faces_vertices;
 	for (let i = 0; i < fold.edges_vertices.length; i += 1) {
 		const assignment = fold.edges_assignment[i];
-		if (assignment !== "M" && assignment !== "V" && assignment !== "F") {
+		if (assignment !== "M"
+			&& assignment !== "V"
+			&& assignment !== "F"
+			&& assignment !== "J") {
 			continue;
 		}
 		const edge = fold.edges_vertices[i];
