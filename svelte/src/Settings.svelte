@@ -19,6 +19,8 @@
 	import {
 		showTouches,
 		showShadows,
+		showFront,
+		showBack,
 		showBoundary,
 		showMountain,
 		showValley,
@@ -126,10 +128,18 @@
 
 	<h3>
 		front
+		<input
+			type="checkbox"
+			id="show-faces-front"
+			bind:checked={$showFront} />
 		<input type="text" class="medium" bind:value={$frontColor} />
 	</h3>
 	<h3>
 		back
+		<input
+			type="checkbox"
+			id="show-faces-back"
+			bind:checked={$showBack} />
 		<input type="text" class="medium" bind:value={$backColor} />
 	</h3>
 

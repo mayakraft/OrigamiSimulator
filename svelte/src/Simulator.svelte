@@ -46,6 +46,8 @@
 	import {
 		showTouches,
 		showShadows,
+		showFront,
+		showBack,
 		showBoundary,
 		showMountain,
 		showValley,
@@ -66,12 +68,6 @@
 
 	export let origami = {};
 
-	// intensity of point lights for light and dark mode
-	const lightIntensityLightMode = 0.45;
-	const lightIntensityDarkMode = 0.707;
-	// octahedron
-	// const lightVertices = [[1,0,0], [0,1,0], [0,0,1], [-1,0,0], [0,-1,0], [0,0,-1]];
-	// cube
 	const lightVertices = [
 		[+1, +1, +1],
 		[-1, +1, +1],
@@ -82,11 +78,12 @@
 		[+1, -1, -1],
 		[-1, -1, -1],
 	];
+	const lightRadius = 10;
 	// model size will update the position of the lights, camera, and
 	// trackball controlls, allowing for models to be of vastly different scales
 	let modelSize = 1;
-	// "touches" are the current position of the cursor and where the raycaster
-	// has intersected the origami mesh, nearest vertex/face, etc..
+	// "touches" arises from the cursor position, it is an array containing
+	// a point object for every raycasted intersection with the mesh.
 	let touches = [];
 	// origami simulator
 	let simulator = OrigamiSimulator();
@@ -101,9 +98,8 @@
 	let lights = lightVertices.map(pos => {
 		const light = new THREE.PointLight();
 		light.position.set(...pos);
-		light.intensity = 0.5;
-		light.distance = 0;
-		light.decay = 2;
+		light.position.setLength(lightRadius);
+		light.distance = lightRadius * Math.E;
 		light.castShadow = false;
 		light.shadow.mapSize.width = 512; // default
 		light.shadow.mapSize.height = 512; // default
@@ -118,7 +114,7 @@
 		// The raycaster will update on a mousemove event, but if the origami is
 		// in a folding animation, the raycaster will not update and the visuals
 		// will mismatch, hence, the raycaster can fire on a frame update if needed
-		raycasters.animate({ pullEnabled: $tool === "pull" });
+		raycasters.animate($tool === "pull");
 	};
 	/**
 	 * @description This is the callback from ThreeView after three.js has
@@ -128,8 +124,6 @@
 		scene = _scene;
 		camera = _camera;
 		// initialize origami simulator
-		// simulator = OrigamiSimulator({ scene, onCompute });
-		// highlights = Highlights({ scene, simulator });
 		simulator.setScene(scene);
 		simulator.setOnCompute(onCompute);
 		highlights.setScene(scene);
@@ -173,11 +167,12 @@
 	$: {
 		const radius = modelSize * Math.SQRT1_2;
 		// todo, might need these inside the initialize method
-		lights.forEach((light, i) => {
-			light.position.set(...lightVertices[i % lightVertices.length]);
-			light.position.setLength(radius);
-			light.shadow.camera.near = radius / 10; // 0.5 default
-			light.shadow.camera.far = radius * 10; // 500 default
+		lightVertices.forEach((pos, i) => {
+			lights[i].position.set(...pos);
+			lights[i].position.setLength(radius * lightRadius);
+			lights[i].distance = radius * lightRadius * Math.E;
+			lights[i].shadow.camera.near = radius / 10; // 0.5 default
+			lights[i].shadow.camera.far = radius * 10; // 500 default
 		});
 	}
 	$: reset.set(simulator.reset);
@@ -197,11 +192,13 @@
 	// show/hide things
 	$: simulator.setShadows($showShadows);
 	$: [0, 3, 4, 7].forEach(i => {
-		lights[i % lights.length].castShadow = $showShadows
+		lights[i % lights.length].castShadow = $showShadows;
 	});
 	$: $showTouches
 		? highlights.highlightTouch(touches[0])
 		: highlights.clear();
+	$: simulator.getModel().frontMesh.visible = $showFront;
+	$: simulator.getModel().backMesh.visible = $showBack;
 	$: simulator.getLines().B.visible = $showBoundary;
 	$: simulator.getLines().M.visible = $showMountain;
 	$: simulator.getLines().V.visible = $showValley;
@@ -230,7 +227,7 @@
 	onDestroy(() => {
 		if (raycasters) { raycasters.dealloc(); }
 		if (simulator) { simulator.dealloc(); }
-		// needs highlights dealloc
+		if (highlights) { highlights.dealloc(); }
 	});
 </script>
 

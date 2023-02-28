@@ -354,7 +354,7 @@ Model.prototype.setJoinColor = function (color) {
 	this.materials.line.J.color.set(color);
 	this.lines.J.material.needsUpdate = true;
 };
-Model.prototype.setLineColor = function(color) {
+Model.prototype.setLineColor = function (color) {
 	assignments.forEach(key => {
 		this.materials.line[key].color.set(color);
 	});
@@ -379,7 +379,8 @@ Model.prototype.setMaterialStrain = function (material) {
 };
 /**
  * @param {object} material a three js material
- * @param {string} assignments a list of the assignment(s) you want to apply this material to.
+ * @param {string} assignments a list of the assignment(s)
+ * you want to apply this material to.
  */
 Model.prototype.setMaterialLine = function (material, ...assignmentsOptions) {
 	const keys = assignmentsOptions.length

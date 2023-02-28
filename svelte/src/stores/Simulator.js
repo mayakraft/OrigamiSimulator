@@ -28,4 +28,4 @@ export const error = writable(0);
 export const reset = writable(() => {});
 
 // ask origami simulator to export the current 3D state
-export let exportModel = writable(() => {});
+export const exportModel = writable(() => {});

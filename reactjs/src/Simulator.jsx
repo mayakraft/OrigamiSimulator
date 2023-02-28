@@ -139,7 +139,7 @@ class Simulator extends Component {
 		// The raycaster will update on a mousemove event, but if the origami is
 		// in a folding animation, the raycaster will not update and the visuals
 		// will mismatch, hence, the raycaster can fire on a frame update if needed
-		this.raycasters.animate({ pullEnabled: this.props.tool === "pull" });
+		this.raycasters.animate(this.props.tool === "pull");
 	}
 
 	/**

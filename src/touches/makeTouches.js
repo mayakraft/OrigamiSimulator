@@ -1,5 +1,43 @@
 import * as THREE from "three";
 /**
+ * @param {object} intersection a three.js ray caster intersection object,
+ * containing: { distance, face, faceIndex, object, point }
+ * https://threejs.org/docs/#api/en/core/Raycaster.intersectObject
+ * @param {object} fold the FOLD file this model was loaded from
+ */
+const makeTouchObject = ({ distance, face, faceIndex, object, point }, fold) => {
+	const vertices3d = object.geometry.attributes.position.array;
+	const material = face.materialIndex;
+	const normal = face.normal;
+	const originalFace = fold.faces_backmap
+		? fold.faces_backmap[faceIndex]
+		: faceIndex;
+	const triangle = faceIndex;
+	const triangle_vertices = [face.a, face.b, face.c];
+	const nearestFaceVertex = triangle_vertices
+		.map(f => [0, 1, 2].map(n => vertices3d[f * 3 + n]))
+		.map(v => new THREE.Vector3(...v))
+		.map(p => p.distanceTo(point))
+		.map((d, i) => ({ d, i }))
+		.sort((a, b) => a.d - b.d)
+		.map(el => el.i)
+		.shift();
+	const vertex = triangle_vertices[nearestFaceVertex];
+	const triangles = fold.faces_nextmap
+		? fold.faces_nextmap[originalFace]
+		: faceIndex;
+	return {
+		point,
+		vertex,
+		face: originalFace,
+		triangle,
+		triangles,
+		material,
+		normal,
+		distance,
+	};
+};
+/**
  * @description Given a 3D model and a raycaster, gather helpful information
  * such as which face was intersected, what is the nearest vertex, etc..
  * @returns {object[]} array of touch objects, or empty array if none.
@@ -7,40 +45,11 @@ import * as THREE from "three";
 const makeTouches = (model, raycaster) => {
 	// simulator must have a model loaded
 	if (!model) { return []; }
-	const timeStamp = Date.now();
-	const intersections = raycaster.intersectObjects(model.getMesh());
-	// for every intersection point, calculate a few more properties
-	intersections.forEach(touch => {
-		touch.timeStamp = timeStamp;
-		// the face being touched
-		touch.face_vertices = [touch.face.a, touch.face.b, touch.face.c];
-		touch.material = touch.face.materialIndex;
-		touch.normal = touch.face.normal;
-		touch.face = touch.faceIndex;
-		touch.hover = touch.point;
-		delete touch.faceIndex;
-		// delete touch.point;
-		// for the face being touched, calculate the distances from
-		// the touch point to each of the triangle's points
-		touch.touch_face_vertices_distance = touch.face_vertices
-			.map(f => [0, 1, 2].map(n => model.positions[f * 3 + n]))
-			.map(v => new THREE.Vector3(...v))
-			.map(p => p.distanceTo(touch.point));
-		// find the nearest vertex in the graph to the touch point
-		const nearestFaceVertex = touch.touch_face_vertices_distance
-			.map((d, i) => ({ d, i }))
-			.sort((a, b) => a.d - b.d)
-			.map(el => el.i)
-			.shift();
-		touch.vertex = touch.face_vertices[nearestFaceVertex];
-		// get the nearest vertex's coords (in 3D)
-		touch.vertex_coords = new THREE.Vector3(
-			model.positions[touch.vertex * 3 + 0],
-			model.positions[touch.vertex * 3 + 1],
-			model.positions[touch.vertex * 3 + 2],
-		);
-	});
-	return intersections;
+	// for every intersection point, fill it with additional
+	// relevant information specific to the mesh graph.
+	return raycaster
+		.intersectObjects(model.getMesh())
+		.map(touch => makeTouchObject(touch, model.fold));
 };
 
 export default makeTouches;

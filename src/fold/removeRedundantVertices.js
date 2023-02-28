@@ -49,7 +49,7 @@ function mergeEdge(fold, v1, v2, v3) { // v2 is center vertex
 	return true;
 }
 
-function removeRedundantVertices(fold, epsilon) {
+function removeRedundantVertices(fold, epsilon = 1e-4) {
 	const old2new = [];
 	let numRedundant = 0;
 	let newIndex = 0;
@@ -77,7 +77,7 @@ function removeRedundantVertices(fold, epsilon) {
 		}
 		dot /= Math.sqrt(magSqVec0 * magSqVec1);
 		if (Math.abs(dot + 1.0) < epsilon) {
-			let merged = mergeEdge(fold, vertex_vertices[0], i, vertex_vertices[1]);
+			const merged = mergeEdge(fold, vertex_vertices[0], i, vertex_vertices[1]);
 			if (merged) {
 				numRedundant += 1;
 				old2new.push(null);

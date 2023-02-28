@@ -1,9 +1,9 @@
 import * as THREE from "three";
 import makeTouches from "./makeTouches.js";
 /**
- * @description For each instance of the Simulator component, initialize
- * one Raycaster to manage all event handling/highlighting/interacting
- * with the vertices/edges/faces of the origami model.
+ * @description This raycaster object will manage all touch event
+ * handlers which in turn calculate ray casting intersections with
+ * the origami model.
  */
 const Raycasters = ({
 	renderer, camera, simulator, setTouches,
@@ -62,7 +62,7 @@ const Raycasters = ({
 	// the touch data will not update, and there will be a visual disparity.
 	// To fix this, during the animation loop, if the simulator is on,
 	// calculate the touches under the cursor.
-	const animate = ({ pullEnabled }) => {
+	const animate = (pullEnabled = false) => {
 		if (!simulator.active) { return; }
 		// console.log("pullEnabled, raycasterPullVertex", pullEnabled, raycasterPullVertex);
 		const touches = pullEnabled && raycasterPullVertex !== undefined

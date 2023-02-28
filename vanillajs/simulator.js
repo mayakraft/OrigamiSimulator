@@ -79,7 +79,7 @@ const onCompute = () => {
 	// The raycaster will update on a mousemove event, but if the origami is
 	// in a folding animation, the raycaster will not update and the visuals
 	// will mismatch, hence, the raycaster can fire on a frame update if needed
-	raycasters.animate({ pullEnabled: tool === "pull" });
+	raycasters.animate(tool === "pull");
 };
 /**
  * @description This is the callback from ThreeView after three.js has

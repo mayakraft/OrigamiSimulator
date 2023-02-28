@@ -25,7 +25,7 @@ This repo contains one simple example app implemented across a few Javascript fr
 |---|---|---|
 | ✅ | [Svelte](https://svelte.dev) | svelte/ |
 | ✅ | [Solid JS](https://www.solidjs.com/) | solidjs/ |
-| ✅ | [React JS](https://reactjs.org/) | reactjs/ |
+| ⚠️ | [React JS](https://reactjs.org/) | reactjs/ |
 | ✅ | Vanilla JS \* | vanillajs/ |
 
 To run an example:
@@ -37,6 +37,7 @@ To run an example:
 **Vanilla JS** only requires you run a local server, then open `index.html` [more details](#vanilla-js).
 
 > \* the Vanilla JS example is the odd one out, it is much more simple compared to the others.
+> \* the React example is buggy; use Svelte or Solid if you can.
 
 # installation
 

@@ -10,9 +10,7 @@ import OrigamiSimulator from "../../src/index";
 import Highlights from "../../src/touches/highlights";
 import Raycasters from "../../src/touches/raycasters";
 import boundingBox from "../../src/fold/boundingBox";
-// octahedron
-// const lightVertices = [[1,0,0], [0,1,0], [0,0,1], [-1,0,0], [0,-1,0], [0,0,-1]];
-// cube
+
 const lightVertices = [
 	[+1, +1, +1],
 	[-1, +1, +1],
@@ -23,6 +21,7 @@ const lightVertices = [
 	[+1, -1, -1],
 	[-1, -1, -1],
 ];
+const lightRadius = 10;
 /**
  * @description SolidJS component and interface for Origami Simulator
  * by Amanda Ghassaei.
@@ -65,7 +64,7 @@ const Simulator = (props) => {
 		// The raycaster will update on a mousemove event, but if the origami is
 		// in a folding animation, the raycaster will not update and the visuals
 		// will mismatch, hence, the raycaster can fire on a frame update if needed
-		raycasters.animate({ pullEnabled: pullNodesEnabled() });
+		raycasters.animate(pullNodesEnabled());
 	};
 	/**
 	 * @description This is the callback from ThreeView after three.js has
@@ -81,9 +80,8 @@ const Simulator = (props) => {
 		lights = lightVertices.map(pos => {
 			const light = new THREE.PointLight();
 			light.position.set(...pos);
-			light.intensity = 0.5;
-			light.distance = 0;
-			light.decay = 2;
+			light.position.setLength(lightRadius);
+			light.distance = lightRadius * Math.E;
 			light.castShadow = false;
 			light.shadow.mapSize.width = 512; // default
 			light.shadow.mapSize.height = 512; // default
@@ -120,11 +118,12 @@ const Simulator = (props) => {
 		createEffect(() => {
 			const radius = modelSize() * Math.SQRT1_2;
 			// todo, might need these inside the initialize method
-			lights.forEach((light, i) => {
-				light.position.set(...lightVertices[i % lightVertices.length]);
-				light.position.setLength(radius);
-				light.shadow.camera.near = radius / 10; // 0.5 default
-				light.shadow.camera.far = radius * 10; // 500 default
+			lightVertices.forEach((pos, i) => {
+				lights[i].position.set(...pos);
+				lights[i].position.setLength(radius * lightRadius);
+				lights[i].distance = radius * lightRadius * Math.E;
+				lights[i].shadow.camera.near = radius / 10; // 0.5 default
+				lights[i].shadow.camera.far = radius * 10; // 500 default
 			});
 		});
 		// tool -> what happens when cursor is pressed
@@ -136,36 +135,57 @@ const Simulator = (props) => {
 		createEffect(() => simulator.setActive(props.active()));
 		createEffect(() => simulator.setStrain(props.strain()));
 		createEffect(() => simulator.setFoldAmount(props.foldAmount()));
-		createEffect(() => { scene.background = new THREE.Color(props.backgroundColor()); });
-		createEffect(() => simulator.setFrontColor(props.frontColor()));
-		createEffect(() => simulator.setBackColor(props.backColor()));
-		createEffect(() => simulator.setLineColor(props.lineColor()));
-		createEffect(() => { simulator.materials.line.opacity = props.lineOpacity(); });
-		// createEffect(() => { simulator.getMaterials().line.opacity = props.lineOpacity(); });
 		createEffect(() => simulator.setIntegration(props.integration()));
 		createEffect(() => simulator.setAxialStiffness(props.axialStiffness()));
 		createEffect(() => simulator.setFaceStiffness(props.faceStiffness()));
 		createEffect(() => simulator.setJoinStiffness(props.joinStiffness()));
 		createEffect(() => simulator.setCreaseStiffness(props.creaseStiffness()));
 		createEffect(() => simulator.setDampingRatio(props.dampingRatio()));
-		// deliver the touch data from the raycaster to be highlighted
-		createEffect(() => {
-			if (props.showTouches()) { highlights.highlightTouch(touches()[0]); }
-		});
-		createEffect(() => {
-			if (!props.showTouches()) { highlights.clear(); }
-		});
-		// nitpicky. upon tool change we need raycasterPullVertex to be undefined
-		createEffect(() => raycasters.raycasterReleaseHandler(pullNodesEnabled()));
-		// reset materials depending on dark or light mode
-		// createEffect(() => updateStyle(props.darkMode(), scene));
-		// shadows
+
+		// show/hide things
 		createEffect(() => {
 			simulator.shadows = props.showShadows();
 			[0, 3, 4, 7].forEach(i => {
 				lights[i].castShadow = props.showShadows();
 			});
 		});
+		createEffect(() => {
+			if (props.showTouches()) { highlights.highlightTouch(touches()[0]); }
+		});
+		createEffect(() => {
+			if (!props.showTouches()) { highlights.clear(); }
+		});
+
+		createEffect(() => { simulator.getModel().frontMesh.visible = props.showFront(); });
+		createEffect(() => { simulator.getModel().backMesh.visible = props.showBack(); });
+		createEffect(() => { simulator.getLines().B.visible = props.showBoundary(); });
+		createEffect(() => { simulator.getLines().M.visible = props.showMountain(); });
+		createEffect(() => { simulator.getLines().V.visible = props.showValley(); });
+		createEffect(() => { simulator.getLines().F.visible = props.showFlat(); });
+		createEffect(() => { simulator.getLines().J.visible = props.showJoin(); });
+		createEffect(() => { simulator.getLines().U.visible = props.showUnassigned(); });
+
+		createEffect(() => simulator.setFrontColor(props.frontColor()));
+		createEffect(() => simulator.setBackColor(props.backColor()));
+		createEffect(() => simulator.setLineColor(props.lineColor()));
+		createEffect(() => Object.values(simulator.getMaterials().line)
+			.forEach(m => { m.opacity = props.lineOpacity(); }));
+
+		createEffect(() => simulator.setBoundaryColor(props.boundaryColor()));
+		createEffect(() => simulator.setMountainColor(props.mountainColor()));
+		createEffect(() => simulator.setValleyColor(props.valleyColor()));
+		createEffect(() => simulator.setFlatColor(props.flatColor()));
+		createEffect(() => simulator.setJoinColor(props.joinColor()));
+		createEffect(() => simulator.setUnassignedColor(props.unassignedColor()));
+
+		createEffect(() => { scene.background = new THREE.Color(props.backgroundColor()); });
+
+		// createEffect(() => { simulator.getMaterials().line.opacity = props.lineOpacity(); });
+		// deliver the touch data from the raycaster to be highlighted
+		// nitpicky. upon tool change we need raycasterPullVertex to be undefined
+		createEffect(() => raycasters.raycasterReleaseHandler(pullNodesEnabled()));
+		// reset materials depending on dark or light mode
+		// createEffect(() => updateStyle(props.darkMode(), scene));
 		// upstream
 		props.setReset(() => simulator.reset);
 		props.setExportModel(() => simulator.export);

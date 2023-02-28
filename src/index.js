@@ -158,6 +158,7 @@ const OrigamiSimulator = ({ scene, onCompute } = {}) => {
 		setStrain,
 		setShadows,
 		// materials
+		getModel: () => model,
 		getMaterials: () => model.materials,
 		getLines: () => model.lines,
 		setFrontColor: (color) => model.materials.front.color.set(color),

@@ -29,6 +29,36 @@ const Settings = (props) => {
 		window.URL.revokeObjectURL(url);
 	};
 
+	// showFront
+	// setShowFront
+	// showBack
+	// setShowBack
+	// showBoundary
+	// setShowBoundary
+	// showMountain
+	// setShowMountain
+	// showValley
+	// setShowValley
+	// showFlat
+	// setShowFlat
+	// showJoin
+	// setShowJoin
+	// showUnassigned
+	// setShowUnassigned
+
+	// boundaryColor
+	// setboundaryColor
+	// mountainColor
+	// setmountainColor
+	// valleyColor
+	// setvalleyColor
+	// flatColor
+	// setflatColor
+	// joinColor
+	// setjoinColor
+	// unassignedColor
+	// setunassignedColor
+
 	return (
 		<div class={Style.Container}>
 			<input type="file" onInput={fileDialogOnInput} />
@@ -98,7 +128,23 @@ const Settings = (props) => {
 			</h3>
 
 			<h3>
+				background
+				<input
+					type="text"
+					class={Style.Medium}
+					value={props.backgroundColor()}
+					onInput={e => props.setBackgroundColor(e.target.value)}
+				/>
+			</h3>
+
+			<h3>
 				front
+				<input
+					type="checkbox"
+					id="show-faces-front"
+					checked={props.showFront()}
+					onClick={() => props.setShowFront(!props.showFront())}
+				/>
 				<input
 					type="text"
 					class={Style.Medium}
@@ -109,6 +155,12 @@ const Settings = (props) => {
 			<h3>
 				back
 				<input
+					type="checkbox"
+					id="show-faces-back"
+					checked={props.showBack()}
+					onClick={() => props.setShowBack(!props.showBack())}
+				/>
+				<input
 					type="text"
 					class={Style.Medium}
 					value={props.backColor()}
@@ -117,12 +169,6 @@ const Settings = (props) => {
 			</h3>
 			<h3>
 				line
-				<input
-					type="text"
-					class={Style.Medium}
-					value={props.lineColor()}
-					onInput={e => props.setLineColor(e.target.value)}
-				/>
 			</h3>
 			<input
 				type="range"
@@ -131,15 +177,91 @@ const Settings = (props) => {
 				step="0.02"
 				value={props.lineOpacity()}
 				onInput={e => props.setLineOpacity(e.target.value)} />
-			<h3>
-				background
+			<div>
+				<input
+					type="checkbox"
+					id="show-line-boundary"
+					checked={props.showBoundary()}
+					onClick={() => props.setShowBoundary(!props.showBoundary())}
+				/>
 				<input
 					type="text"
-					class={Style.Medium}
-					value={props.backgroundColor()}
-					onInput={e => props.setBackgroundColor(e.target.value)}
+					class={Style.Short}
+					value={props.boundaryColor()}
+					onInput={e => props.setBoundaryColor(e.target.value)}
 				/>
-			</h3>
+				<label for="show-line-boundary">boundary</label>
+				<br />
+				<input
+					type="checkbox"
+					id="show-line-mountain"
+					checked={props.showMountain()}
+					onClick={() => props.setShowMountain(!props.showMountain())}
+				/>
+				<input
+					type="text"
+					class={Style.Short}
+					value={props.mountainColor()}
+					onInput={e => props.setMountainColor(e.target.value)}
+				/>
+				<label for="show-line-mountain">mountain</label>
+				<br />
+				<input
+					type="checkbox"
+					id="show-line-valley"
+					checked={props.showValley()}
+					onClick={() => props.setShowValley(!props.showValley())}
+				/>
+				<input
+					type="text"
+					class={Style.Short}
+					value={props.valleyColor()}
+					onInput={e => props.setValleyColor(e.target.value)}
+				/>
+				<label for="show-line-valley">valley</label>
+				<br />
+				<input
+					type="checkbox"
+					id="show-line-flat"
+					checked={props.showFlat()}
+					onClick={() => props.setShowFlat(!props.showFlat())}
+				/>
+				<input
+					type="text"
+					class={Style.Short}
+					value={props.flatColor()}
+					onInput={e => props.setFlatColor(e.target.value)}
+				/>
+				<label for="show-line-flat">flat</label>
+				<br />
+				<input
+					type="checkbox"
+					id="show-line-join"
+					checked={props.showJoin()}
+					onClick={() => props.setShowJoin(!props.showJoin())}
+				/>
+				<input
+					type="text"
+					class={Style.Short}
+					value={props.joinColor()}
+					onInput={e => props.setJoinColor(e.target.value)}
+				/>
+				<label for="show-line-join">triangulated</label>
+				<br />
+				<input
+					type="checkbox"
+					id="show-line-unassigned"
+					checked={props.showUnassigned()}
+					onClick={() => props.setShowUnassigned(!props.showUnassigned())}
+				/>
+				<input
+					type="text"
+					class={Style.Short}
+					value={props.unassignedColor()}
+					onInput={e => props.setUnassignedColor(e.target.value)}
+				/>
+				<label for="show-line-unassigned">unassigned</label>
+			</div>
 
 			<h3>integration</h3>
 			<input

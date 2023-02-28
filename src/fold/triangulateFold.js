@@ -5,7 +5,7 @@ import earcut from "earcut";
 /**
  * @description distance squared between two points, 2D or 3D
  */
-const distance_sq = (a, b) => {
+const distSq = (a, b) => {
 	const vector = [
 		b[0] - a[0],
 		b[1] - a[1],
@@ -13,58 +13,45 @@ const distance_sq = (a, b) => {
 	return (vector[0] ** 2) + (vector[1] ** 2) + (vector[2] ** 2);
 };
 /**
- * @description deep copy a fold object. only keep 5 of the arrays:
- * - vertices_coords,
- * - edges_vertices/assignment/foldAngle
- * - faces_vertices
+ * @description Triangulate faces inside a FOLD graph. This will
+ * modify the input parameter.
+ * @param {object} fold a FOLD object
+ * @param {boolean} is2d are all vertices in the graph 2D?
+ * @returns {number[]} an array matching the length of the new
+ * faces, with index:value mapping indices between newFace:oldFace.
  */
-const copy_fold = fold => JSON.parse(JSON.stringify({
-	vertices_coords: fold.vertices_coords || [],
-	edges_vertices: fold.edges_vertices || [],
-	edges_foldAngle: fold.edges_foldAngle || [],
-	edges_assignment: fold.edges_assignment || [],
-	faces_vertices: fold.faces_vertices || [],
-}));
-// returns a copy of the original, where the copy
-// contains triangulated faces, and
-// DOES NOT modify the original
-function triangulatedFOLD(inputFOLD, is2d) {
-	const fold = copy_fold(inputFOLD);
-	// as this loop encounters faces which need to be subdivided, the loop
-	// will add the necessary edges to the "fold" graph, however,
-	// faces_vertices will be built from scratch then set at the end.
+const triangulatedFOLD = (fold, is2d = true) => {
+	// as this loop encounters faces which need to be subdivided,
+	// new join edges will be added inside the loop.
+	// new faces_vertices will be made here, and set at the end.
 	const triangulated_vertices = [];
+
+	// we will have (potentially) new faces- what was the original
+	// face index that each face came from?
+	const faces_backmap = [];
+
 	for (let i = 0; i < fold.faces_vertices.length; i += 1) {
 		const face = fold.faces_vertices[i];
+
 		// face is already a triangle
 		if (face.length === 3) {
 			triangulated_vertices.push(face);
+			faces_backmap.push(i);
 			continue;
 		}
+
 		// face is a quad, manually triangulate.
-		// todo: this assumes the face is convex!
 		if (face.length === 4) {
-			const dist1 = distance_sq(
-				fold.vertices_coords[face[0]],
-				fold.vertices_coords[face[2]],
-			);
-			const dist2 = distance_sq(
-				fold.vertices_coords[face[1]],
-				fold.vertices_coords[face[3]],
-			);
-			if (dist2 < dist1) {
-				fold.edges_vertices.push([face[1], face[3]]);
-				fold.edges_foldAngle.push(0);
-				fold.edges_assignment.push("J");
-				triangulated_vertices.push([face[0], face[1], face[3]]);
-				triangulated_vertices.push([face[1], face[2], face[3]]);
-			} else {
-				fold.edges_vertices.push([face[0], face[2]]);
-				fold.edges_foldAngle.push(0);
-				fold.edges_assignment.push("J");
-				triangulated_vertices.push([face[0], face[1], face[2]]);
-				triangulated_vertices.push([face[0], face[2], face[3]]);
-			}
+			const pts = face.map(f => fold.vertices_coords[f]);
+			// which diagonal is shorter? true: 0-2, false: 1-3
+			const shorter = distSq(pts[0], pts[2]) < distSq(pts[1], pts[3]);
+			const e_v = shorter ? [0, 2] : [1, 3];
+			const f_v = shorter ? [[0, 1, 2], [0, 2, 3]] : [[0, 1, 3], [1, 2, 3]];
+			fold.edges_vertices.push(e_v.map(j => face[j]));
+			triangulated_vertices.push(...f_v.map(f => f.map(j => face[j])));
+			fold.edges_foldAngle.push(0);
+			fold.edges_assignment.push("J");
+			faces_backmap.push(i, i);
 			continue;
 		}
 		// if the face is not a triangle or a quad, use the earcut library
@@ -75,19 +62,14 @@ function triangulatedFOLD(inputFOLD, is2d) {
 				faceEdges.push(j);
 			}
 		}
-		// oh no, somewhere in this library, the 3D modeler is switching
-		// all the Z and Y values to move the crease pattern into the XZ plane.
-		// update: this was fixed. if this ever happens again, here was the fix.
-		// const dim = is2d ? [0,2] : [0,2,1];
+		// create a flat array of all the vertices in this face
 		const dim = is2d ? [0, 1] : [0, 1, 2];
 		const faceVert = fold.faces_vertices[i]
 			.flatMap(v => dim.map(d => fold.vertices_coords[v][d]));
-
+		// triangulate
 		const triangles = earcut(faceVert, null, is2d ? 2 : 3);
 
 		for (let j = 0; j < triangles.length; j += 3) {
-			// this fixes the bug where triangles from earcut() have backwards winding
-			// const tri = [face[triangles[j + 2]], face[triangles[j + 1]], face[triangles[j]]];
 			const tri = [
 				face[triangles[j + 1]],
 				face[triangles[j + 2]],
@@ -140,10 +122,11 @@ function triangulatedFOLD(inputFOLD, is2d) {
 				}
 			}
 			triangulated_vertices.push(tri);
+			faces_backmap.push(i);
 		}
 	}
 	fold.faces_vertices = triangulated_vertices;
-	return fold;
-}
+	return faces_backmap;
+};
 
 export default triangulatedFOLD;
