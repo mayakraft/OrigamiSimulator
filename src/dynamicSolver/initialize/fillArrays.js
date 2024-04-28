@@ -7,6 +7,12 @@ import {
 	updateCreaseVectors,
 	updateCreasesMeta,
 } from "../update.js";
+import {
+	normalize,
+	dot,
+	subtract,
+} from "../../model/math.js";
+
 /**
  * @description todo
  */
@@ -40,12 +46,12 @@ const fillArrays = (gpuMath, model, {
 		const a = model.nodes[face[0]].getOriginalPosition();
 		const b = model.nodes[face[1]].getOriginalPosition();
 		const c = model.nodes[face[2]].getOriginalPosition();
-		const ab = (b.clone().sub(a)).normalize();
-		const ac = (c.clone().sub(a)).normalize();
-		const bc = (c.clone().sub(b)).normalize();
-		nominalTriangles[4 * i + 0] = Math.acos(ab.dot(ac));
-		nominalTriangles[4 * i + 1] = Math.acos(-1 * ab.dot(bc));
-		nominalTriangles[4 * i + 2] = Math.acos(ac.dot(bc));
+		const ab = normalize(subtract(b, a));
+		const ac = normalize(subtract(c, a));
+		const bc = normalize(subtract(c, b));
+		nominalTriangles[4 * i + 0] = Math.acos(dot(ab, ac));
+		nominalTriangles[4 * i + 1] = Math.acos(-1 * dot(ab, bc));
+		nominalTriangles[4 * i + 2] = Math.acos(dot(ac, bc));
 		if (Math.abs(nominalTriangles[4 * i]
 			+ nominalTriangles[4 * i + 1]
 			+ nominalTriangles[4 * i + 2]

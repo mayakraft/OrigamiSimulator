@@ -143,8 +143,7 @@ Model.prototype.makeObjects = function (fold) {
 		dampingRatio: this.dampingRatio,
 	};
 	this.nodes = fold.vertices_coords
-		.map(vertex => new THREE.Vector3(...vertex))
-		.map((vector, i) => new Node(vector.clone(), i, this));
+		.map((coords, i) => new Node(coords, i, this));
 	this.edges = fold.edges_vertices
 		.map(ev => ev.map(v => this.nodes[v]))
 		.map(nodes => new Beam(nodes, options));
@@ -382,7 +381,7 @@ Model.prototype.setMaterialStrain = function (material) {
  * @param {string} assignments a list of the assignment(s)
  * you want to apply this material to.
  */
-Model.prototype.setMaterialLine = function (material, ...assignmentsOptions) {
+Model.prototype.setMaterialLine = function (material, assignmentsOptions = []) {
 	const keys = assignmentsOptions.length
 		? assignmentsOptions
 			.filter(a => typeof a === "string")

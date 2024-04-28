@@ -9,7 +9,7 @@
     "build": "vite build",
     "preview": "vite preview"
   },
-  "devDependencies": {
+  "dependencies": {
     "@sveltejs/vite-plugin-svelte": "^2.0.0",
     "earcut": "^2.2.4",
     "svelte": "^3.54.0",

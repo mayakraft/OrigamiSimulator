@@ -1,6 +1,13 @@
 /**
  * Created by amandaghassaei on 2/25/17.
  */
+import {
+	magSquared,
+	magnitude,
+	normalize,
+	dot,
+	subtract,
+} from "./math.js";
 
 function Crease(options, edge, face1Index, face2Index, targetTheta, type, node1, node2, index) {
 	// type = 0 panel, 1 crease
@@ -71,12 +78,10 @@ Crease.prototype.getCoef2 = function (edgeNode) {
 };
 Crease.prototype.getCoef = function (node, edgeNode) {
 	const vector1 = this.getVector(edgeNode);
-	const creaseLength = vector1.length();
-	vector1.normalize();
-	const nodePosition = node.getOriginalPosition();
-	const vector2 = nodePosition.sub(edgeNode.getOriginalPosition());
-	const projLength = vector1.dot(vector2);
-	let length = Math.sqrt(vector2.lengthSq() - projLength * projLength);
+	const creaseLength = magnitude(vector1);
+	const vector2 = subtract(node.getOriginalPosition(), edgeNode.getOriginalPosition());
+	const projLength = dot(normalize(vector1), vector2);
+	let length = Math.sqrt(magSquared(vector2) - projLength * projLength);
 	if (length <= 0.0) {
 		console.warn("bad moment arm");
 		length = 0.001;
@@ -84,11 +89,10 @@ Crease.prototype.getCoef = function (node, edgeNode) {
 	return (1 - projLength / creaseLength);
 };
 Crease.prototype.getLengthTo = function (node) {
-	const vector1 = this.getVector().normalize();
-	const nodePosition = node.getOriginalPosition();
-	const vector2 = nodePosition.sub(this.edge.nodes[1].getOriginalPosition());
-	const projLength = vector1.dot(vector2);
-	let length = Math.sqrt(vector2.lengthSq() - projLength * projLength);
+	const vector1 = normalize(this.getVector());
+	const vector2 = subtract(node.getOriginalPosition(), this.edge.nodes[1].getOriginalPosition());
+	const projLength = dot(vector1, vector2);
+	let length = Math.sqrt(magSquared(vector2) - projLength * projLength);
 	if (length <= 0.0) {
 		console.warn("bad moment arm");
 		length = 0.001;

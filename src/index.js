@@ -176,8 +176,8 @@ const OrigamiSimulator = ({ scene, onCompute } = {}) => {
 		setMaterialFront: (material) => model.setMaterialFront(material),
 		setMaterialBack: (material) => model.setMaterialBack(material),
 		setMaterialStrain: (material) => model.setMaterialStrain(material),
-		setMaterialLine: (material, ...assignments) => (
-			model.setMaterialLine(material, ...assignments)
+		setMaterialLine: (material, assignments) => (
+			model.setMaterialLine(material, assignments)
 		),
 	};
 	// getters and setters

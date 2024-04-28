@@ -2,7 +2,6 @@
  * Created by ghassaei on 10/7/16.
  */
 import GPUMath from "./GPUMath.js";
-import modelCenter from "../model/modelCenter.js";
 import initialize from "./initialize/index.js";
 import {
 	updateMaterials,
@@ -16,6 +15,25 @@ import {
 // these few options are still remaining to be handled.
 // not sure where the were used exactly
 // - fixedHasChanged: false,
+
+/**
+ * @description Get the center of the bounding box of the model.
+ */
+const modelCenter = (model) => {
+	const min = Array(3).fill(Infinity);
+	const max = Array(3).fill(-Infinity);
+	for (let i = 0; i < model.positions.length; i += 3) {
+		for (let dim = 0; dim < 3; dim += 1) {
+			min[dim] = Math.min(min[dim], model.positions[i + dim]);
+			max[dim] = Math.max(max[dim], model.positions[i + dim]);
+		}
+	}
+	return [
+		(min[0] + max[0]) / 2,
+		(min[1] + max[1]) / 2,
+		(min[2] + max[2]) / 2,
+	];
+};
 
 const DynamicSolver = () => {
 	// the GPU instance which will be doing our calculation
@@ -40,9 +58,9 @@ const DynamicSolver = () => {
 	const nodeDidMove = () => {
 		if (!gpuMath || !model) { return; }
 		updateLastPosition(gpuMath, model, { lastPosition, textureDim });
-		const avgPosition = modelCenter(model);
+		const [x, y, z] = modelCenter(model);
 		gpuMath.setProgram("centerTexture");
-		gpuMath.setUniformForProgram("centerTexture", "u_center", [avgPosition.x, avgPosition.y, avgPosition.z], "3f");
+		gpuMath.setUniformForProgram("centerTexture", "u_center", [x, y, z], "3f");
 		gpuMath.step("centerTexture", ["u_lastPosition"], "u_position");
 		if (integrationType === "verlet") {
 			gpuMath.step("copyTexture", ["u_position"], "u_lastLastPosition");

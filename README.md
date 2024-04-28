@@ -37,7 +37,8 @@ To run an example:
 **Vanilla JS** only requires you run a local server, then open `index.html` [more details](#vanilla-js).
 
 > \* the Vanilla JS example is the odd one out, it is much more simple compared to the others.
-> \* the React example is buggy; use Svelte or Solid if you can.
+>
+> the React example is buggy; use Svelte or Solid if you can.
 
 # installation
 
@@ -71,24 +72,30 @@ now the app should run. Interface with your `origamiSimulator` instance with the
 - `load(object)` load in an origami model in FOLD format
 - `setActive(boolean)` turn on/off origami simulator's compute loop
 - `setFoldAmount(float)` set the current fold angle between 0 and 1
-- `setStrain(boolean)` override the material to visualize strain forces
-- `setShadows(boolean)` turn on three.js shadows
 - `reset()` reset the vertices back to their initial position
 - `dealloc()` deallocate origami simulator when done
 - `nodeDidMove()` if you implement a UI for grabbing vertices, call this when a vertex is pulled
 
 style
 
-- `getMaterials()` get the three.js materials in an object sorted by type
+- `setStrain(boolean)` override the material to visualize strain forces
+- `setShadows(boolean)` turn on three.js shadows
 - `setFrontColor(color)` color hex (0xFF00FF) or string "#FF00FF"
 - `setBackColor(color)` color hex (0xFF00FF) or string "#FF00FF"
 - `setLineColor(color)` color hex (0xFF00FF) or string "#FF00FF"
+- `setBoundaryColor(color)` color hex (0xFF00FF) or string "#FF00FF"
+- `setMountainColor(color)` color hex (0xFF00FF) or string "#FF00FF"
+- `setValleyColor(color)` color hex (0xFF00FF) or string "#FF00FF"
+- `setFlatColor(color)` color hex (0xFF00FF) or string "#FF00FF"
+- `setJoinColor(color)` color hex (0xFF00FF) or string "#FF00FF"
+- `setUnassignedColor(color)` color hex (0xFF00FF) or string "#FF00FF"
 - `setMaterialFront(material)` three.js material
 - `setMaterialBack(material)` three.js material
-- `setMaterialLine(material)` three.js material
 - `setMaterialStrain(material)` three.js material
+- `setMaterialLine(material, assignments)` three.js material, array of assignments like ["B", "F"]
+- `getMaterials()` get the three.js materials in an object sorted by type
 
-solver settings
+advanced solver settings
 
 - `setIntegration(string)` "euler" or "verlet"
 - `setAxialStiffness(number)` default 20
@@ -129,3 +136,7 @@ ES6 modules are finally supported natively on the browser (yay!) so the Origami 
 # license
 
 amandaghassaei/OrigamiSimulator is licensed under the [MIT License](https://github.com/amandaghassaei/OrigamiSimulator/blob/main/LICENSE)
+
+# more dev notes
+
+it's possible that we can remove this method `geometry.computeBoundingBox`, boundingBox is no longer being used by the shader, although, raycaster might still be using it.

@@ -1,4 +1,7 @@
-import * as THREE from "three";
+import {
+	add,
+	hslToRgb,
+} from "../model/math.js";
 
 const strainClip = 0.5;
 
@@ -65,23 +68,27 @@ export const render = (gpuMath, model, { textureDim, axialStrain }) => {
 		const rgbaIndex = i * vectorLength;
 		let nodeError = parsedPixels[rgbaIndex + 3] * 100;
 		globalError += nodeError;
-		const nodePosition = new THREE.Vector3(
+		const nodePosition = [
 			parsedPixels[rgbaIndex],
 			parsedPixels[rgbaIndex + 1],
 			parsedPixels[rgbaIndex + 2],
-		);
-		nodePosition.add(model.nodes[i]._originalPosition);
-		model.positions[3 * i] = nodePosition.x;
-		model.positions[3 * i + 1] = nodePosition.y;
-		model.positions[3 * i + 2] = nodePosition.z;
+		];
+		const [x, y, z] = add(nodePosition, model.nodes[i].originalPosition);
+		model.positions[3 * i] = x;
+		model.positions[3 * i + 1] = y;
+		model.positions[3 * i + 2] = z;
 		if (axialStrain) {
 			if (nodeError > strainClip) nodeError = strainClip;
 			const scaledVal = (1 - nodeError / strainClip) * 0.7;
-			const color = new THREE.Color();
-			color.setHSL(scaledVal, 1, 0.5);
-			model.colors[3 * i] = color.r;
-			model.colors[3 * i + 1] = color.g;
-			model.colors[3 * i + 2] = color.b;
+			// const color = new THREE.Color();
+			// color.setHSL(scaledVal, 1, 0.5);
+			// model.colors[3 * i] = color.r;
+			// model.colors[3 * i + 1] = color.g;
+			// model.colors[3 * i + 2] = color.b;
+			const [r, g, b] = hslToRgb(scaledVal * 360, 100, 50);
+			model.colors[i * 3 + 0] = r / 255;
+			model.colors[i * 3 + 1] = g / 255;
+			model.colors[i * 3 + 2] = b / 255;
 		}
 	}
 	return globalError / model.nodes.length;

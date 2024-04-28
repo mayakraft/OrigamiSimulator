@@ -9,6 +9,20 @@ import {
 	makeTexture,
 } from "./GLBoilerplate.js";
 
+const initialize = (canvas) => {
+	// const gl2 = canvas.getContext("webgl2", { antialias: false });
+	// if (gl2) { return { gl: gl2, version: 2 }; }
+	const gl1 = canvas.getContext("webgl", { antialias: false });
+	if (gl1) { return { gl: gl1, version: 1 }; }
+	return { gl: undefined, version: undefined };
+	// const gl = canvas.getContext("webgl", { antialias: false })
+	// 	|| canvas.getContext("experimental-webgl", { antialias: false });
+};
+
+function notSupported() {
+	console.warn("floating point textures are not supported on your system");
+}
+
 function initGPUMath() {
 	// const glBoilerplate = GLBoilerPlate();
 
@@ -16,17 +30,12 @@ function initGPUMath() {
 	canvas.setAttribute("style", "display:none;");
 	canvas.setAttribute("class", "gpuMathCanvas");
 	window.document.body.appendChild(canvas);
-	const gl = canvas.getContext("webgl", { antialias: false })
-		|| canvas.getContext("experimental-webgl", { antialias: false });
-	const floatTextures = gl.getExtension("OES_texture_float");
-
-	function notSupported() {
-		console.warn("floating point textures are not supported on your system");
+	const { gl, version } = initialize(canvas);
+	console.log(`initializing webgl version ${version}`);
+	if (version === 1) {
+		if (!gl.getExtension("OES_texture_float")) { notSupported(); }
 	}
 
-	if (!floatTextures) {
-		notSupported();
-	}
 	gl.disable(gl.DEPTH_TEST);
 
 	// const maxTexturesInFragmentShader = gl.getParameter(gl.MAX_TEXTURE_IMAGE_UNITS);

@@ -17,16 +17,16 @@ export const point = new THREE.PointsMaterial({
 export const vertex = new THREE.PointsMaterial({
 	sizeAttenuation: false,
 	depthTest: false,
-	color: 0xEE5533,
+	color: 0x000000,
 	size: 10,
 });
 
 // face
 export const frontFace = new THREE.MeshBasicMaterial({
 	side: THREE.FrontSide,
-	color: 0xFFBB44,
+	color: 0xFF8800,
 });
 export const backFace = new THREE.MeshBasicMaterial({
 	side: THREE.FrontSide,
-	color: 0x115588,
+	color: 0x888888,
 });

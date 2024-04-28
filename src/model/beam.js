@@ -1,3 +1,8 @@
+import {
+	magnitude,
+	subtract,
+} from "./math.js";
+
 /**
  * Created by ghassaei on 9/16/16.
  */
@@ -7,28 +12,28 @@ function Beam(nodes, { axialStiffness, dampingRatio }) {
 	this.dampingRatio = dampingRatio;
 	nodes[0].addBeam(this);
 	nodes[1].addBeam(this);
-	this.vertices = [nodes[0]._originalPosition, nodes[1]._originalPosition];
+	this.vertices = [nodes[0].originalPosition, nodes[1].originalPosition];
 	this.nodes = nodes;
 	this.originalLength = this.getLength();
 }
 
 Beam.prototype.getLength = function () {
-	return this.getVector().length();
+	return magnitude(this.getVector());
 };
-Beam.prototype.getOriginalLength = function () {
-	return this.originalLength;
-};
+// Beam.prototype.getOriginalLength = function () {
+// 	return this.originalLength;
+// };
 Beam.prototype.recalcOriginalLength = function () {
-	this.originalLength = this.getVector().length();
+	this.originalLength = magnitude(this.getVector());
 };
 Beam.prototype.isFixed = function () {
 	return this.nodes[0].fixed && this.nodes[1].fixed;
 };
 Beam.prototype.getVector = function (fromNode) {
 	if (fromNode === this.nodes[1]) {
-		return this.vertices[0].clone().sub(this.vertices[1]);
+		return subtract(this.vertices[0], this.vertices[1]);
 	}
-	return this.vertices[1].clone().sub(this.vertices[0]);
+	return subtract(this.vertices[1], this.vertices[0]);
 };
 
 // dynamic solve

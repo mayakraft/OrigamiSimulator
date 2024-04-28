@@ -26,12 +26,16 @@ export const updateMaterials = (
 	gpuMath.initTextureFromData("u_beamMeta", textureDimEdges, textureDimEdges, float_type, beamMeta, true);
 };
 
+// this method was built with something in mind, (no, it is not the
+// UI-grab node and manual moving behavior). whatever that was,
+// this is no longer in use. the texture just gets set to 0.
 export const updateExternalForces = (gpuMath, model, { externalForces, textureDim }) => {
 	for (let i = 0; i < model.nodes.length; i += 1) {
-		const externalForce = model.nodes[i].getExternalForce();
-		externalForces[4 * i] = externalForce.x;
-		externalForces[4 * i + 1] = externalForce.y;
-		externalForces[4 * i + 2] = externalForce.z;
+		// external forces is always 0, 0, 0
+		// const [x, y, z] = model.nodes[i].getExternalForce();
+		externalForces[4 * i] = 0;
+		externalForces[4 * i + 1] = 0;
+		externalForces[4 * i + 2] = 0;
 	}
 	gpuMath.initTextureFromData("u_externalForces", textureDim, textureDim, float_type, externalForces, true);
 };
@@ -45,10 +49,10 @@ export const updateFixed = (gpuMath, model, { mass, textureDim }) => {
 
 export const updateOriginalPosition = (gpuMath, model, { originalPosition, textureDim }) => {
 	for (let i = 0; i < model.nodes.length; i += 1) {
-		const origPosition = model.nodes[i].getOriginalPosition();
-		originalPosition[4 * i] = origPosition.x;
-		originalPosition[4 * i + 1] = origPosition.y;
-		originalPosition[4 * i + 2] = origPosition.z;
+		const [x, y, z] = model.nodes[i].getOriginalPosition();
+		originalPosition[i * 4 + 0] = x;
+		originalPosition[i * 4 + 1] = y;
+		originalPosition[i * 4 + 2] = z;
 	}
 	gpuMath.initTextureFromData("u_originalPosition", textureDim, textureDim, float_type, originalPosition, true);
 };
@@ -86,10 +90,10 @@ export const updateCreasesMeta = (
 
 export const updateLastPosition = (gpuMath, model, { lastPosition, textureDim }) => {
 	for (let i = 0; i < model.nodes.length; i += 1) {
-		const _position = model.nodes[i].getRelativePosition();
-		lastPosition[4 * i] = _position.x;
-		lastPosition[4 * i + 1] = _position.y;
-		lastPosition[4 * i + 2] = _position.z;
+		const [x, y, z] = model.nodes[i].getRelativePosition();
+		lastPosition[i * 4 + 0] = x;
+		lastPosition[i * 4 + 1] = y;
+		lastPosition[i * 4 + 2] = z;
 	}
 	gpuMath.initTextureFromData("u_lastPosition", textureDim, textureDim, float_type, lastPosition, true);
 	gpuMath.initFrameBufferForTexture("u_lastPosition", true);

@@ -157,42 +157,42 @@
 			type="checkbox"
 			id="show-line-boundary"
 			bind:checked={$showBoundary} />
-		<input type="text" class="short" bind:value={$boundaryColor} />
+		<input type="text" class="medium" bind:value={$boundaryColor} />
 		<label for="show-line-boundary">boundary</label>
 		<br />
 		<input
 			type="checkbox"
 			id="show-line-mountain"
 			bind:checked={$showMountain} />
-		<input type="text" class="short" bind:value={$mountainColor} />
+		<input type="text" class="medium" bind:value={$mountainColor} />
 		<label for="show-line-mountain">mountain</label>
 		<br />
 		<input
 			type="checkbox"
 			id="show-line-valley"
 			bind:checked={$showValley} />
-		<input type="text" class="short" bind:value={$valleyColor} />
+		<input type="text" class="medium" bind:value={$valleyColor} />
 		<label for="show-line-valley">valley</label>
 		<br />
 		<input
 			type="checkbox"
 			id="show-line-flat"
 			bind:checked={$showFlat} />
-		<input type="text" class="short" bind:value={$flatColor} />
+		<input type="text" class="medium" bind:value={$flatColor} />
 		<label for="show-line-flat">flat</label>
 		<br />
 		<input
 			type="checkbox"
 			id="show-line-join"
 			bind:checked={$showJoin} />
-		<input type="text" class="short" bind:value={$joinColor} />
+		<input type="text" class="medium" bind:value={$joinColor} />
 		<label for="show-line-join">triangulated</label>
 		<br />
 		<input
 			type="checkbox"
 			id="show-line-unassigned"
 			bind:checked={$showUnassigned} />
-		<input type="text" class="short" bind:value={$unassignedColor} />
+		<input type="text" class="medium" bind:value={$unassignedColor} />
 		<label for="show-line-unassigned">unassigned</label>
 	</div>
 
@@ -287,7 +287,7 @@
 
 <style>
 	.container {
-		background-color: #fff1;
+		background-color: #000b;
 		z-index: 2;
 		position: absolute;
 		top: 0;
@@ -309,6 +309,6 @@
 		margin: 0rem 0.25rem;
 	}
 	.long { width: 8rem; }
-	.medium { width: 5.5rem; }
-	.short { width: 2.5rem; }
+	.medium { width: 5rem; }
+	.short { width: 3rem; }
 </style>

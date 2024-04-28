@@ -1,16 +1,19 @@
 /**
  * Created by ghassaei on 9/16/16.
  */
-import * as THREE from "three";
+import {
+	subtract,
+} from "./math.js";
 
-function Node(position, index, model) {
+function Node([x, y, z], index, model) {
 	this.type = "node";
 	this.index = index;
-	this._originalPosition = position.clone();
+	this.originalPosition = [x, y, z];
 
 	this.beams = [];
 	this.creases = [];
 	this.invCreases = [];
+	// this is, in all cases, null. unclear what type it is supposed to be.
 	this.externalForce = null;
 	this.fixed = false;
 
@@ -36,18 +39,21 @@ Node.prototype.isFixed = function () {
 
 // forces
 
-Node.prototype.addExternalForce = function (force) {
-	// this.externalForce = force;
-	// var position = this.getOriginalPosition();
-	// this.externalForce.setOrigin(position);
-	// if (this.fixed) this.externalForce.hide();
-};
+// Node.prototype.addExternalForce = function (force) {
+// 	// this.externalForce = force;
+// 	// var position = this.getOriginalPosition();
+// 	// this.externalForce.setOrigin(position);
+// 	// if (this.fixed) this.externalForce.hide();
+// };
 
-Node.prototype.getExternalForce = function () {
-	return (!this.externalForce)
-		? new THREE.Vector3(0, 0, 0)
-		: this.externalForce.getForce();
-};
+// Node.prototype.getExternalForce = function () {
+// 	// return (!this.externalForce)
+// 	// 	? new THREE.Vector3(0, 0, 0)
+// 	// 	: this.externalForce.getForce();
+// 	return (!this.externalForce)
+// 		? [0, 0, 0]
+// 		: this.externalForce.getForce();
+// };
 
 Node.prototype.addCrease = function (crease) {
 	this.creases.push(crease);
@@ -105,32 +111,28 @@ Node.prototype.getIndex = function () { // in nodes array
 // dynamic solve
 
 Node.prototype.getOriginalPosition = function () {
-	return this._originalPosition.clone();
+	const [x, y, z] = this.originalPosition;
+	return [x, y, z];
 };
 Node.prototype.setOriginalPosition = function (x, y, z) {
-	this._originalPosition.set(x, y, z);
-};
-
-Node.prototype.getPosition = function () {
-	// const positions = this.getPositionsArray();
-	const i = this.getIndex();
-	return new THREE.Vector3(
-		this.model.positions[3 * i],
-		this.model.positions[3 * i + 1],
-		this.model.positions[3 * i + 2],
-	);
+	this.originalPosition = [x, y, z];
 };
 
 Node.prototype.moveManually = function (position) {
-	// const positions = this.getPositionsArray();
 	const i = this.getIndex();
-	this.model.positions[3 * i] = position.x;
-	this.model.positions[3 * i + 1] = position.y;
-	this.model.positions[3 * i + 2] = position.z;
+	this.model.positions[i * 3 + 0] = position.x;
+	this.model.positions[i * 3 + 1] = position.y;
+	this.model.positions[i * 3 + 2] = position.z;
 };
 
 Node.prototype.getRelativePosition = function () {
-	return this.getPosition().sub(this._originalPosition);
+	const i = this.getIndex();
+	const position = [
+		this.model.positions[i * 3 + 0],
+		this.model.positions[i * 3 + 1],
+		this.model.positions[i * 3 + 2],
+	];
+	return subtract(position, this.originalPosition);
 };
 
 Node.prototype.getSimMass = function () {

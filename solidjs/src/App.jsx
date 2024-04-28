@@ -42,7 +42,7 @@ function App() {
 	const [showJoin, setShowJoin] = createSignal(false);
 	const [showUnassigned, setShowUnassigned] = createSignal(true);
 	// style
-	const [backgroundColor, setBackgroundColor] = createSignal("#111");
+	const [backgroundColor, setBackgroundColor] = createSignal("gray");
 	const [frontColor, setFrontColor] = createSignal("#222");
 	const [backColor, setBackColor] = createSignal("white");
 	const [lineColor, setLineColor] = createSignal("black");
