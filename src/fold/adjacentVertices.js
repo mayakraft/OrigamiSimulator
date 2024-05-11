@@ -1,7 +1,10 @@
 /**
  * Rabbit Ear (c) Kraft
  */
-const subtract2 = (a, b) => [a[0] - b[0], a[1] - b[1]];
+import {
+	subtract2,
+} from "../general/math.js";
+
 /**
  * @description This is a subroutine for building vertices_vertices. This will
  * take a set of vertices indices and a vertex index to be the center point, and
@@ -23,6 +26,7 @@ const sortVerticesCounterClockwise = ({ vertices_coords }, vertices, vertex) => 
 		.map(el => el.i)
 		.map(i => vertices[i])
 );
+
 /**
  * @description Make `vertices_edges` from `edges_vertices`, unsorted, which should
  * be used sparingly. Prefer makeVerticesEdges().
@@ -44,6 +48,7 @@ const makeVerticesEdgesUnsorted = ({ edges_vertices }) => {
 		}));
 	return vertices_edges;
 };
+
 /**
  * @description Make an object which answers the question: "which edge connects
  * these two vertices?". This is accomplished by building an object with keys
@@ -62,6 +67,7 @@ const makeVerticesToEdgeBidirectional = ({ edges_vertices }) => {
 		.forEach((key, i) => { map[key] = i; });
 	return map;
 };
+
 /**
  * @description Make `vertices_edges` sorted, so that the edges are sorted
  * radially around the vertex, corresponding with the order in `vertices_vertices`.
@@ -75,6 +81,7 @@ export const makeVerticesEdges = ({ edges_vertices, vertices_vertices }) => {
 		.map((verts, i) => verts
 			.map(v => edge_map[`${i} ${v}`]));
 };
+
 /**
  * @description Make `vertices_vertices` sorted radially counter-clockwise.
  * @param {FOLD} graph a FOLD object, containing vertices_coords, vertices_edges, edges_vertices
@@ -94,6 +101,7 @@ export const makeVerticesVertices2D = ({ vertices_coords, edges_vertices }) => {
 		: vertices_vertices
 			.map((verts, i) => sortVerticesCounterClockwise({ vertices_coords }, verts, i));
 };
+
 /**
  * @description Make `vertices_faces` **not sorted** counter-clockwise,
  * which should be used sparingly. Prefer makeVerticesFaces().
@@ -117,6 +125,7 @@ export const makeVerticesFacesUnsorted = ({ vertices_coords, faces_vertices }) =
 	});
 	return vertices_faces;
 };
+
 /**
  * @description Make `vertices_vertices` sorted radially counter-clockwise.
  * @param {FOLD} graph a FOLD object, containing vertices_coords, vertices_edges, edges_vertices
@@ -246,6 +255,7 @@ export const makeVerticesVerticesFromFaces = ({
 		return vertex_vertices;
 	});
 };
+
 /**
  * @description Make `vertices_vertices` sorted radially counter-clockwise.
  * @param {FOLD} graph a FOLD object, containing vertices_coords, vertices_edges, edges_vertices

@@ -1,19 +1,23 @@
 {
-  "name": "Origami Simulator Svelte example",
-  "private": true,
-  "version": "0.0.0",
-  "type": "module",
-  "license": "MIT",
-  "scripts": {
-    "dev": "vite",
-    "build": "vite build",
-    "preview": "vite preview"
-  },
-  "dependencies": {
-    "@sveltejs/vite-plugin-svelte": "^2.0.0",
-    "earcut": "^2.2.4",
-    "svelte": "^3.54.0",
-    "three": "^0.149.0",
-    "vite": "^4.1.0"
-  }
+	"name": "Origami Simulator Svelte example",
+	"private": true,
+	"version": "0.0.0",
+	"type": "module",
+	"license": "MIT",
+	"scripts": {
+		"dev": "vite",
+		"build": "vite build",
+		"preview": "vite preview"
+	},
+	"devDependencies": {
+		"@types/three": "^0.164.0",
+		"typescript": "^5.2.2"
+	},
+	"dependencies": {
+		"@sveltejs/vite-plugin-svelte": "^2.0.0",
+		"earcut": "^2.2.4",
+		"svelte": "^3.54.0",
+		"three": "^0.164.1",
+		"vite": "^4.1.0"
+	}
 }

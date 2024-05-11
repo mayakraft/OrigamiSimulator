@@ -42,6 +42,15 @@ export const add = (v, u) => [v[0] + u[0], v[1] + u[1], v[2] + u[2]];
 /**
  * @description subtract the second vector from the first,
  * return the result as a copy.
+ * @param {[number, number]} v one 2D vector
+ * @param {[number, number]} u one 2D vector
+ * @returns {[number, number]} one 2D vector
+ */
+export const subtract2 = (v, u) => [v[0] - u[0], v[1] - u[1]];
+
+/**
+ * @description subtract the second vector from the first,
+ * return the result as a copy.
  * @param {[number, number, number]} v one 3D vector
  * @param {[number, number, number]} u one 3D vector
  * @returns {[number, number, number]} one 3D vector
@@ -98,23 +107,36 @@ export const distance = (v, u) => {
 export const flip = v => [-v[0], -v[1], -v[2]];
 
 /**
+ * @description Resize a vector to 2D, filling any missing values with 0.
+ * @param {number[]} vector the vector to resize
+ * @returns {[number, number]} a copy of the vector in 2D.
+ */
+export const resize2 = (vector) => [vector[0] || 0, vector[1] || 0];
+
+/**
+ * @description Resize a vector to 3D, filling any missing values with 0.
+ * @param {number[]} vector the vector to resize
+ * @returns {[number, number, number]} a copy of the vector in 3D.
+ */
+export const resize3 = (vector) => [vector[0] || 0, vector[1] || 0, vector[2] || 0];
+
+/**
  * @description Convert hue-saturation-lightness values into
  * three RGB values, each between 0 and 1 (not 0-255).
  * @param {number} hue value between 0 and 360
  * @param {number} saturation value between 0 and 100
  * @param {number} lightness value between 0 and 100
- * @param {number | undefined} alpha the alpha component from 0 to 1
+ * @param {number} [alpha] the alpha component from 0 to 1
  * @returns {number[]} three values between 0 and 255, or four
  * if an alpha value is provided, where the fourth is between 0 and 1.
- * @linkcode Origami ./src/convert/svgParsers/colors/hexToRGB.js 10
  */
 export const hslToRgb = (hue, saturation, lightness, alpha) => {
 	const s = saturation / 100;
 	const l = lightness / 100;
-	/** @param {number} n */
+	/** @param {number} n @returns {number} */
 	const k = n => (n + hue / 30) % 12;
 	const a = s * Math.min(l, 1 - l);
-	/** @param {number} n */
+	/** @param {number} n @returns {number} */
 	const f = n => (
 		l - a * Math.max(-1, Math.min(k(n) - 3, Math.min(9 - k(n), 1)))
 	);

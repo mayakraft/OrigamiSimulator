@@ -11,10 +11,11 @@ import {
 	normalize,
 	dot,
 	subtract,
-} from "../../model/math.js";
+} from "../../general/math.js";
 
 /**
  * @description todo
+ *
  */
 const fillArrays = (gpuMath, model, {
 	textureDim,
@@ -43,9 +44,9 @@ const fillArrays = (gpuMath, model, {
 		faceVertexIndices[4 * i + 0] = face[0];
 		faceVertexIndices[4 * i + 1] = face[1];
 		faceVertexIndices[4 * i + 2] = face[2];
-		const a = model.nodes[face[0]].getOriginalPosition();
-		const b = model.nodes[face[1]].getOriginalPosition();
-		const c = model.nodes[face[2]].getOriginalPosition();
+		const a = model.nodes[face[0]].originalPosition;
+		const b = model.nodes[face[1]].originalPosition;
+		const c = model.nodes[face[2]].originalPosition;
 		const ab = normalize(subtract(b, a));
 		const ac = normalize(subtract(c, a));
 		const bc = normalize(subtract(c, b));
@@ -68,8 +69,8 @@ const fillArrays = (gpuMath, model, {
 			lastTheta[i * 4 + 3] = -1;
 			continue;
 		}
-		lastTheta[i * 4 + 2] = model.creases[i].getNormal1Index();
-		lastTheta[i * 4 + 3] = model.creases[i].getNormal2Index();
+		lastTheta[i * 4 + 2] = model.creases[i].faces[0];
+		lastTheta[i * 4 + 3] = model.creases[i].faces[1];
 	}
 	let index = 0;
 	for (let i = 0; i < model.nodes.length; i += 1) {
@@ -88,20 +89,20 @@ const fillArrays = (gpuMath, model, {
 	}
 	index = 0;
 	for (let i = 0; i < model.nodes.length; i += 1) {
-		mass[4 * i] = model.nodes[i].getSimMass();
+		mass[4 * i] = model.nodes[i].simMass;
 		meta[i * 4 + 2] = index;
 		const nodeCreases = model.nodes[i].creases;
 		// nodes attached to crease move in opposite direction
 		const nodeInvCreases = model.nodes[i].invCreases;
 		meta[i * 4 + 3] = nodeCreases.length + nodeInvCreases.length;
 		for (let j = 0; j < nodeCreases.length; j += 1) {
-			nodeCreaseMeta[index * 4] = nodeCreases[j].getIndex();
+			nodeCreaseMeta[index * 4] = nodeCreases[j].index;
 			// type 1, 2, 3, 4
 			nodeCreaseMeta[index * 4 + 1] = nodeCreases[j].getNodeIndex(model.nodes[i]);
 			index += 1;
 		}
 		for (let j = 0; j < nodeInvCreases.length; j += 1) {
-			nodeCreaseMeta[index * 4] = nodeInvCreases[j].getIndex();
+			nodeCreaseMeta[index * 4] = nodeInvCreases[j].index;
 			// type 1, 2, 3, 4
 			nodeCreaseMeta[index * 4 + 1] = nodeInvCreases[j].getNodeIndex(model.nodes[i]);
 			index += 1;
@@ -109,10 +110,10 @@ const fillArrays = (gpuMath, model, {
 	}
 	for (let i = 0; i < model.creases.length; i += 1) {
 		const crease = model.creases[i];
-		creaseMeta2[i * 4] = crease.node1.getIndex();
-		creaseMeta2[i * 4 + 1] = crease.node2.getIndex();
-		creaseMeta2[i * 4 + 2] = crease.edge.nodes[0].getIndex();
-		creaseMeta2[i * 4 + 3] = crease.edge.nodes[1].getIndex();
+		creaseMeta2[i * 4 + 0] = crease.nodes[0].index;
+		creaseMeta2[i * 4 + 1] = crease.nodes[1].index;
+		creaseMeta2[i * 4 + 2] = crease.edge.nodes[0].index;
+		creaseMeta2[i * 4 + 3] = crease.edge.nodes[1].index;
 		index += 1;
 	}
 	updateOriginalPosition(gpuMath, model, { originalPosition, textureDim });

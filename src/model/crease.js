@@ -1,139 +1,106 @@
 /**
  * Created by amandaghassaei on 2/25/17.
  */
-import {
-	magSquared,
-	magnitude,
-	normalize,
-	dot,
-	subtract,
-} from "./math.js";
 
-function Crease(options, edge, face1Index, face2Index, targetTheta, type, node1, node2, index) {
-	// type = 0 panel, 1 crease
-	this.options = options;
-	// face1 corresponds to node1, face2 to node2
-	this.edge = edge;
-	for (let i = 0; i < edge.nodes.length; i += 1) {
-		edge.nodes[i].addInvCrease(this);
-	}
-	this.face1Index = face1Index; // todo this is useless
-	this.face2Index = face2Index;
-	this.targetTheta = targetTheta;
-	this.type = type;
-	this.node1 = node1; // node at vertex of face 1
-	this.node2 = node2; // node at vertex of face 2
-	this.index = index;
-	node1.addCrease(this);
-	node2.addCrease(this);
-	this.joinStiffness = options.joinStiffness !== undefined
-		? options.joinStiffness
-		: 0.7;
-	this.creaseStiffness = options.creaseStiffness !== undefined
-		? options.creaseStiffness
-		: 0.7;
-	this.dampingRatio = options.dampingRatio !== undefined
-		? options.dampingRatio
-		: 0.45;
-}
+class Crease {
+	/**
+	 * @param {Beam} edge
+	 * @param {number} index
+	 * @param {0|1} type either a 0 or 1, where 0 indicates a "join" assignment
+	 * (and no folding behavior), and 1 indicates a crease which moves.
+	 * @param {[number, number]} faces
+	 * @param {[SimulatorNode, SimulatorNode]} nodes
+	 * @param {number} targetTheta
+	 * @param {{
+	 *   joinStiffness: number,
+	 *   creaseStiffness: number,
+	 *   dampingRatio: number
+	 * }} options these options tend to be app-wide, not
+	 * specific to any one crease-line.
+	 */
+	constructor(
+		edge,
+		index,
+		type,
+		faces,
+		nodes,
+		targetTheta,
+		{ joinStiffness = 0.7, creaseStiffness = 0.7, dampingRatio = 0.45 },
+	) {
+		/** @type {number} */
+		this.index = index;
 
-Crease.prototype.getLength = function () {
-	return this.edge.getLength();
-};
-Crease.prototype.getVector = function (fromNode) {
-	return this.edge.getVector(fromNode);
-};
-Crease.prototype.getNormal1Index = function () {
-	return this.face1Index;
-};
-Crease.prototype.getNormal2Index = function () {
-	return this.face2Index;
-};
-Crease.prototype.getTargetTheta = function () {
-	return this.targetTheta;
-};
-Crease.prototype.getK = function () {
-	const length = this.getLength();
-	return (this.type === 0)
-		? this.joinStiffness * length
-		: this.creaseStiffness * length;
-};
-Crease.prototype.getD = function () {
-	return this.dampingRatio * 2 * Math.sqrt(this.getK());
-};
-Crease.prototype.getIndex = function () {
-	return this.index;
-};
-Crease.prototype.getLengthToNode1 = function () {
-	return this.getLengthTo(this.node1);
-};
-Crease.prototype.getLengthToNode2 = function () {
-	return this.getLengthTo(this.node2);
-};
-Crease.prototype.getCoef1 = function (edgeNode) {
-	return this.getCoef(this.node1, edgeNode);
-};
-Crease.prototype.getCoef2 = function (edgeNode) {
-	return this.getCoef(this.node2, edgeNode);
-};
-Crease.prototype.getCoef = function (node, edgeNode) {
-	const vector1 = this.getVector(edgeNode);
-	const creaseLength = magnitude(vector1);
-	const vector2 = subtract(node.getOriginalPosition(), edgeNode.getOriginalPosition());
-	const projLength = dot(normalize(vector1), vector2);
-	let length = Math.sqrt(magSquared(vector2) - projLength * projLength);
-	if (length <= 0.0) {
-		console.warn("bad moment arm");
-		length = 0.001;
-	}
-	return (1 - projLength / creaseLength);
-};
-Crease.prototype.getLengthTo = function (node) {
-	const vector1 = normalize(this.getVector());
-	const vector2 = subtract(node.getOriginalPosition(), this.edge.nodes[1].getOriginalPosition());
-	const projLength = dot(vector1, vector2);
-	let length = Math.sqrt(magSquared(vector2) - projLength * projLength);
-	if (length <= 0.0) {
-		console.warn("bad moment arm");
-		length = 0.001;
-	}
-	return length;
-};
-Crease.prototype.getNodeIndex = function (node) {
-	if (node === this.node1) { return 1; }
-	if (node === this.node2) { return 2; }
-	if (node === this.edge.nodes[0]) { return 3; }
-	if (node === this.edge.nodes[1]) { return 4; }
-	console.log("unknown node type");
-	return 0;
-};
+		/** @type {0|1} */
+		this.type = type;
 
-Crease.prototype.setVisibility = function () {
-	let vis = false;
-	if (this.type === 0) vis = this.options.visible.facet;
-	else {
-		vis = (this.targetTheta > 0 && this.options.visible.mountain)
-		|| (this.targetTheta < 0 && this.options.visible.valley);
-	}
-	this.edge.setVisibility(vis);
-};
+		/** @type {Beam} */
+		this.edge = edge;
 
-Crease.prototype.destroy = function () {
-	this.node1.removeCrease(this);
-	this.node2.removeCrease(this);
-	if (this.edge && this.edge.nodes) {
-		for (let i = 0; i < this.edge.nodes.length; i += 1) {
-			this.edge.nodes[i].removeInvCrease(this);
+		/** @type {[number, number]} */
+		this.faces = [faces[0], faces[1]];
+
+		// face[0] corresponds to node[0], face[1] to node[1]
+		/** @type {[SimulatorNode, SimulatorNode]} */
+		this.nodes = nodes;
+
+		/** @type {number} */
+		this.targetTheta = targetTheta;
+
+		/** @type {number} */
+		this.joinStiffness = joinStiffness;
+
+		/** @type {number} */
+		this.creaseStiffness = creaseStiffness;
+
+		/** @type {number} */
+		this.dampingRatio = dampingRatio;
+
+		edge.nodes.forEach(node => node.invCreases.push(this));
+		nodes[0].creases.push(this);
+		nodes[1].creases.push(this);
+	}
+
+	/** @returns {number} */
+	getK() {
+		const length = this.edge.getLength();
+		return (this.type === 0)
+			? this.joinStiffness * length
+			: this.creaseStiffness * length;
+	}
+
+	/** @returns {number} */
+	getD() {
+		return this.dampingRatio * 2 * Math.sqrt(this.getK());
+	}
+
+	/**
+	 * @param {SimulatorNode} node
+	 * @returns {0|1|2|3|4}
+	 */
+	getNodeIndex(node) {
+		if (node === this.nodes[0]) { return 1; }
+		if (node === this.nodes[1]) { return 2; }
+		if (node === this.edge.nodes[0]) { return 3; }
+		if (node === this.edge.nodes[1]) { return 4; }
+		console.log("unknown node type");
+		return 0;
+	}
+
+	destroy() {
+		this.nodes.forEach(node => {
+			const index = node.creases.indexOf(this);
+			if (index >= 0) node.creases.splice(index, 1);
+		});
+
+		if (this.edge && this.edge.nodes) {
+			for (let i = 0; i < this.edge.nodes.length; i += 1) {
+				const index = this.edge.nodes[i].invCreases.indexOf(this);
+				if (index >= 0) this.edge.nodes[i].invCreases.splice(index, 1);
+			}
 		}
+		this.edge = undefined;
+		this.nodes = undefined;
 	}
-	this.edge = null;
-	this.face1Index = null;
-	this.face2Index = null;
-	this.targetTheta = null;
-	this.type = null;
-	this.node1 = null;
-	this.node2 = null;
-	this.index = null;
-};
+}
 
 export default Crease;

@@ -1,4 +1,22 @@
 // from http://webglfundamentals.org/webgl/lessons/webgl-boilerplate.html
+
+/**
+ * @param {HTMLCanvasElement} canvas
+ * @returns {{
+ *   gl: WebGLRenderingContext|WebGL2RenderingContext,
+ *   version: number,
+ * }}
+ */
+export const initializeWebGL = (canvas) => {
+	// const gl2 = canvas.getContext("webgl2", { antialias: false });
+	// if (gl2) { return { gl: gl2, version: 2 }; }
+	const gl1 = canvas.getContext("webgl", { antialias: false });
+	if (gl1) { return { gl: gl1, version: 1 }; }
+	return { gl: undefined, version: undefined };
+	// const gl = canvas.getContext("webgl", { antialias: false })
+	// 	|| canvas.getContext("experimental-webgl", { antialias: false });
+};
+
 /**
  * Creates and compiles a shader.
  *
@@ -23,10 +41,11 @@ const compileShader = (gl, shaderSource, shaderType) => {
 	}
 	return shader;
 };
+
 /**
  * Creates a program from 2 shaders.
  *
- * @param {!WebGLRenderingContext) gl The WebGL context.
+ * @param {!WebGLRenderingContext|!WebGL2RenderingContext} gl The WebGL context.
  * @param {!WebGLShader} vertexShader A vertex shader.
  * @param {!WebGLShader} fragmentShader A fragment shader.
  * @return {!WebGLProgram} A program.
@@ -47,25 +66,25 @@ const createProgram = (gl, vertexShader, fragmentShader) => {
 	}
 	return program;
 };
+
 /**
  * Creates a shader from the content of a script tag.
  *
  * @param {!WebGLRenderingContext} gl The WebGL Context.
- * @param {string} scriptId The id of the script tag.
- * @param {string} opt_shaderType. The type of shader to create.
- *     If not passed in will use the type attribute from the
- *     script tag.
+ * @param {string} shaderSource the source code
+ * @param {number} shaderType The type of shader to create.
  * @return {!WebGLShader} A shader.
  */
 const createShaderFromSource = (gl, shaderSource, shaderType) => (
 	compileShader(gl, shaderSource, shaderType)
 );
+
 /**
  * Creates a program from 2 script tags.
  *
  * @param {!WebGLRenderingContext} gl The WebGL Context.
- * @param {string} vertexShaderId The id of the vertex shader script tag.
- * @param {string} fragmentShaderId The id of the fragment shader script tag.
+ * @param {string} vertexShaderSrc The id of the vertex shader script tag.
+ * @param {string} fragmentShaderSrc The id of the fragment shader script tag.
  * @return {!WebGLProgram} A program
  */
 export const createProgramFromSource = (gl, vertexShaderSrc, fragmentShaderSrc) => {
@@ -83,6 +102,13 @@ export const loadVertexData = (gl, program) => {
 	gl.vertexAttribPointer(positionLocation, 2, gl.FLOAT, false, 0, 0);
 };
 
+/**
+ * @param {WebGLRenderingContext|WebGL2RenderingContext} gl the WebGL Context
+ * @param {number} width
+ * @param {number} height
+ * @param {number} type
+ * @param {ArrayBufferView} data
+ */
 export const makeTexture = (gl, width, height, type, data) => {
 	const texture = gl.createTexture();
 	gl.bindTexture(gl.TEXTURE_2D, texture);

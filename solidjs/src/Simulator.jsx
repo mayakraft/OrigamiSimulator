@@ -81,6 +81,7 @@ const Simulator = (props) => {
 			const light = new THREE.PointLight();
 			light.position.set(...pos);
 			light.position.setLength(lightRadius);
+			light.decay = 0;
 			light.distance = lightRadius * Math.E;
 			light.castShadow = false;
 			light.shadow.mapSize.width = 512; // default

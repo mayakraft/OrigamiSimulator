@@ -1,9 +1,9 @@
-<!-- 
+<!--
 	Origami Simulator for Svelte (c) Kraft
 	MIT license
  -->
 
-<!-- 
+<!--
 	@component
 	Svelte component and interface for Origami Simulator by Amanda Ghassaei.
 	@props
@@ -95,10 +95,11 @@
 	let scene;
 	let camera;
 	// three.js lights for this scene
-	let lights = lightVertices.map(pos => {
+	let lights = lightVertices.map(([x, y, z]) => {
 		const light = new THREE.PointLight();
-		light.position.set(...pos);
+		light.position.set(x, y, z);
 		light.position.setLength(lightRadius);
+		light.decay = 0;
 		light.distance = lightRadius * Math.E;
 		light.castShadow = false;
 		light.shadow.mapSize.width = 512; // default
@@ -167,8 +168,8 @@
 	$: {
 		const radius = modelSize * Math.SQRT1_2;
 		// todo, might need these inside the initialize method
-		lightVertices.forEach((pos, i) => {
-			lights[i].position.set(...pos);
+		lightVertices.forEach(([x, y, z], i) => {
+			lights[i].position.set(x, y, z);
 			lights[i].position.setLength(radius * lightRadius);
 			lights[i].distance = radius * lightRadius * Math.E;
 			lights[i].shadow.camera.near = radius / 10; // 0.5 default

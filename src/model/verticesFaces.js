@@ -1,6 +1,8 @@
 /**
  * @description Get the vertices_faces (for every vertex, the adjacent faces)
  * given an already initialized Origami Simulator model.
+ * Note: this is not the FOLD vertices_faces array. Conceptually this is,
+ * but build using the Origami Simulator Model type as input.
  */
 const verticesFaces = (model) => {
 	const vertices_faces = model.nodes.map(() => []);

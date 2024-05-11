@@ -37,7 +37,7 @@ const modelCenter = (model) => {
 
 const DynamicSolver = () => {
 	// the GPU instance which will be doing our calculation
-	let gpuMath = GPUMath();
+	let gpuMath = new GPUMath();
 	// store reference to the Origami Simulator model
 	let model;
 	// store these here due to being used the solve loop or nodeDidMove
@@ -51,6 +51,7 @@ const DynamicSolver = () => {
 	//
 	let lastPosition;
 	let integrationType = "euler";
+
 	/**
 	 * @description The user will call this method when the UI is pulling on a
 	 * vertex, this conveys to the solver that a node is being manually moved.
@@ -65,15 +66,15 @@ const DynamicSolver = () => {
 		if (integrationType === "verlet") {
 			gpuMath.step("copyTexture", ["u_position"], "u_lastLastPosition");
 		}
-		gpuMath.swapTextures("u_position", "u_lastPosition");
+		gpuMath.swapTextures2("u_position", "u_lastPosition");
 		gpuMath.step("zeroTexture", [], "u_lastVelocity");
 		gpuMath.step("zeroTexture", [], "u_velocity");
 	};
+
 	/**
 	 * @returns {number} the global error as a percent
 	 * @param {number} numSteps number of iterations to run the solver
-	 * @param {object} props to be passed along to render(). should
-	 * include "axialStrain" set to a boolean.
+	 * @param {boolean} computeStrain should the strain values be computed?
 	 */
 	const solve = (numSteps = 100, computeStrain = false) => {
 		if (!gpuMath || !model) { return 0; }
@@ -86,6 +87,7 @@ const DynamicSolver = () => {
 		}
 		return render(gpuMath, model, { textureDim, axialStrain: computeStrain });
 	};
+
 	/**
 	 * @description Call this after a new model has been loaded
 	 * @params {object} model the origami simulator model
@@ -98,7 +100,7 @@ const DynamicSolver = () => {
 	const setModel = (newModel, options = {}) => {
 		// these next 2 might be unnecessary
 		// dealloc();
-		// gpuMath = GPUMath();
+		// gpuMath = new GPUMath();
 		// store the model
 		model = newModel;
 		// save these initialization variables

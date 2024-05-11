@@ -52,7 +52,10 @@ const Raycasters = ({
 		if (!node) { return; }
 		const intersection = new THREE.Vector3();
 		raycaster.ray.intersectPlane(raycasterPlane, intersection);
-		node.moveManually(intersection);
+		// node.moveManually(intersection);
+		simulator.model.positions[node.index * 3 + 0] = intersection.x;
+		simulator.model.positions[node.index * 3 + 1] = intersection.y;
+		simulator.model.positions[node.index * 3 + 2] = intersection.z;
 		simulator.nodeDidMove();
 	};
 

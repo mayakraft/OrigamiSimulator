@@ -1,10 +1,14 @@
 import {
 	add,
 	hslToRgb,
-} from "../model/math.js";
+} from "../general/math.js";
 
 const strainClip = 0.5;
 
+/**
+ * @description todo
+ * @param {GPUMath} gpuMath
+ */
 export const solveStep = (
 	gpuMath,
 	{ textureDim, textureDimCreases, textureDimFaces, integrationType },
@@ -27,7 +31,7 @@ export const solveStep = (
 			"u_mass", "u_meta", "u_beamMeta", "u_creaseMeta", "u_nodeCreaseMeta", "u_normals", "u_theta", "u_creaseGeo",
 			"u_meta2", "u_nodeFaceMeta", "u_nominalTriangles"], "u_position");
 		gpuMath.step("velocityCalcVerlet", ["u_position", "u_lastPosition", "u_mass"], "u_velocity");
-		gpuMath.swapTextures("u_lastPosition", "u_lastLastPosition");
+		gpuMath.swapTextures2("u_lastPosition", "u_lastLastPosition");
 		break;
 	case "euler":
 	default:
@@ -39,13 +43,14 @@ export const solveStep = (
 		gpuMath.step("positionCalc", ["u_velocity", "u_lastPosition", "u_mass"], "u_position");
 		break;
 	}
-	gpuMath.swapTextures("u_theta", "u_lastTheta");
-	gpuMath.swapTextures("u_velocity", "u_lastVelocity");
-	gpuMath.swapTextures("u_position", "u_lastPosition");
+	gpuMath.swapTextures2("u_theta", "u_lastTheta");
+	gpuMath.swapTextures2("u_velocity", "u_lastVelocity");
+	gpuMath.swapTextures2("u_position", "u_lastPosition");
 };
 
 /**
  * @description todo
+ * @param {GPUMath} gpuMath
  * @returns {number} the global error as a percent
  */
 export const render = (gpuMath, model, { textureDim, axialStrain }) => {
@@ -68,6 +73,7 @@ export const render = (gpuMath, model, { textureDim, axialStrain }) => {
 		const rgbaIndex = i * vectorLength;
 		let nodeError = parsedPixels[rgbaIndex + 3] * 100;
 		globalError += nodeError;
+		/** @type {[number, number, number]} */
 		const nodePosition = [
 			parsedPixels[rgbaIndex],
 			parsedPixels[rgbaIndex + 1],
@@ -80,11 +86,6 @@ export const render = (gpuMath, model, { textureDim, axialStrain }) => {
 		if (axialStrain) {
 			if (nodeError > strainClip) nodeError = strainClip;
 			const scaledVal = (1 - nodeError / strainClip) * 0.7;
-			// const color = new THREE.Color();
-			// color.setHSL(scaledVal, 1, 0.5);
-			// model.colors[3 * i] = color.r;
-			// model.colors[3 * i + 1] = color.g;
-			// model.colors[3 * i + 2] = color.b;
 			const [r, g, b] = hslToRgb(scaledVal * 360, 100, 50);
 			model.colors[i * 3 + 0] = r / 255;
 			model.colors[i * 3 + 1] = g / 255;

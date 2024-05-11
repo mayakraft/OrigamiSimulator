@@ -62,7 +62,7 @@ const Highlights = ({ scene, simulator }) => {
 	/**
 	 * @description Given a list of triangle indices, make a flat array
 	 * of vertices ready to be used in a BufferGeometry.
-	 * @param {number[]} a list of triangle face indices
+	 * @param {number[]} triangles a list of triangle face indices
 	 */
 	const makeTrianglesVertexArray = (triangles) => {
 		const faces = triangles

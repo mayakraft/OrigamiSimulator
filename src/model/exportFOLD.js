@@ -1,28 +1,22 @@
 /**
  * Created by amandaghassaei on 5/6/17.
  */
-// const getTriangulatedFold = () => {
-// 	const useTriangulated = globals.triangulateFOLDexport;
-// 	const fold = globals.pattern.getFoldData(!useTriangulated);
-// 	json.edges_vertices = fold.edges_vertices;
-// 	const assignment = [];
-// 	for (let i = 0; i < fold.edges_assignment.length; i += 1) {
-// 		if (fold.edges_assignment[i] === "C") assignment.push("B");
-// 		else assignment.push(fold.edges_assignment[i]);
-// 	}
-// 	json.edges_assignment = assignment;
-// 	json.faces_vertices = fold.faces_vertices;
-// };
+
 /**
  * @description Merge the new computed vertices coordinates back into
  * the original FOLD graph, update the edges_foldAngle to their current
  * fold angle as well, and if the user chooses, replace the faces with
  * their triangulated counterparts, creating additional "J" (join) edges.
- * @param {object} fold a FOLD object, the original one loaded into the app.
  * @param {object} model the OrigamiSimulator Model object
+ * @param {FOLD} foldUnmodified a FOLD object, the original one loaded into the app.
+ * @param {FOLD} foldTriangulated a FOLD object, the original input but modified
+ * so that all faces are triangulated.
+ * @param {{ triangulated?: boolean, angles?: boolean }} options
  */
 const exportFold = (model, foldUnmodified, foldTriangulated, { triangulated, angles } = {}) => {
-	const verticesMatch = foldUnmodified.length === model.positions.length / 3;
+	const verticesMatch = (
+		foldUnmodified.vertices_coords.length === model.positions.length / 3
+	);
 	if (!verticesMatch) {
 		triangulated = true;
 		console.warn("vertex count mismatch. reverting to triangulated model");

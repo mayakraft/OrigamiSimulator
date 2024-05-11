@@ -3,6 +3,7 @@
  */
 import Model from "./model/index.js";
 import DynamicSolver from "./dynamicSolver/index.js";
+
 /**
  * @description Origami Simulator by Amanda Ghassaei.
  * refactored so that:
@@ -13,34 +14,47 @@ import DynamicSolver from "./dynamicSolver/index.js";
  * This will create an instance of an Origami Simulator, which is meant to
  * be created just after you create a ThreeJS canvas, so that this can
  * bind itself to the ThreeJS instance.
- * @param {object} props provide a pre-initialized three.js scene (THREE.Scene)
+ * @param {{ scene: THREE.Scene, onCompute: Function }} options
+ * where scene is a pre-initialized three.js scene (THREE.Scene).
  */
 const OrigamiSimulator = ({ scene, onCompute } = {}) => {
 	const model = new Model({ scene });
 	const solver = DynamicSolver();
 	// the error from strain in the folding
 	let error = 0;
+
 	/**
 	 * @description Fold the origami, between 0.0 and 1.0.
 	 */
 	let foldAmount = 0.0;
+	/**
+	 * @param {number|string} value
+	 */
 	const setFoldAmount = (value) => {
 		const number = parseFloat(value);
 		foldAmount = !Number.isNaN(number) ? number : 0.0;
 		solver.setCreasePercent(foldAmount);
 	};
+
 	/**
 	 * @description Override the material with the strain forces visualization.
 	 */
 	let strain = false;
+	/**
+	 * @param {boolean} value
+	 */
 	const setStrain = (value) => {
 		strain = !!value;
 		model.setStrain(strain);
 	};
+
 	/**
 	 * @description Activate three.js shadows on the materials.
 	 */
 	let shadows = false;
+	/**
+	 * @param {boolean} newShadows
+	 */
 	const setShadows = (newShadows) => {
 		shadows = newShadows;
 		model.frontMesh.castShadow = shadows;

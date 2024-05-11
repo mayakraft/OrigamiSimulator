@@ -1,5 +1,9 @@
 import verticesFaces from "../../model/verticesFaces.js";
 
+/**
+* @param {number} numNodes
+* @returns {number}
+ */
 const calcTextureSize = (numNodes) => {
 	if (numNodes === 1) return 2;
 	for (let i = 0; i < numNodes; i += 1) {
@@ -17,13 +21,13 @@ const initArrays = (gpuMath, model) => {
 	const numNodeFaces = verticesFaces(model)
 		.reduce((a, b) => a + b.length, 0);
 	const numEdges = model.nodes
-		.map(n => n.numBeams())
+		.map(node => node.beams.length)
 		.reduce((a, b) => a + b, 0);
 	const numFaces = model.faces_vertices.length;
 	const numCreases = model.creases.length;
 	// numNodeCreases + reactions
 	const numNodeCreases = (numCreases * 2) + model.nodes
-		.map(n => n.numCreases())
+		.map(node => node.creases.length)
 		.reduce((a, b) => a + b, 0);
 	const textureDim = calcTextureSize(model.nodes.length);
 	const textureDimNodeFaces = calcTextureSize(numNodeFaces);
