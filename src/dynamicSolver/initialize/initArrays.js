@@ -17,6 +17,10 @@ const calcTextureSize = (numNodes) => {
 	return 2;
 };
 
+/**
+* @param {GPUMath} gpuMath
+* @param {Model} model
+ */
 const initArrays = (gpuMath, model) => {
 	const numNodeFaces = verticesFaces(model)
 		.reduce((a, b) => a + b.length, 0);

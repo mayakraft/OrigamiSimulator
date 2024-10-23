@@ -24,16 +24,21 @@ import {
 // no "cut" assignment. all cuts have now been turned into boundaries
 const assignments = Array.from("BMVFJU");
 
+/**
+ * @param {Model} model
+ * @param {THREE.Material} material
+ * @param {string} key
+ */
 const setNewFaceMaterial = (model, material, key) => {
 	if (model.materials[key]) { model.materials[key].dispose(); }
 	model.materials[key] = material;
 	model.faceMaterialDidUpdate();
 };
 
-/**
- * @param {{ scene: THREE.Scene }} options
- */
 class Model {
+	/**
+	 * @param {{ scene: THREE.Scene }} options
+	 */
 	constructor({ scene }) {
 		// if the user chooses to export the 3D model, we need to reference
 		// the original FOLD data. "this.fold" contains triangulated faces.
@@ -248,6 +253,7 @@ class Model {
 	/**
 	 * @description Load a new FOLD object into origami simulator.
 	 * Immediately following this method the solver should call .setModel()
+	 * @param {FOLD} foldObject
 	 */
 	load(foldObject) {
 		this.dealloc();
@@ -280,81 +286,105 @@ class Model {
 	}
 
 	/**
-	 *
+	 * @param {number|string} value
 	 */
 	setAxialStiffness(value) {
-		this.axialStiffness = parseFloat(value);
+		this.axialStiffness = typeof value === "number" ? value : parseFloat(value);
 		this.edges.forEach(edge => { edge.axialStiffness = this.axialStiffness; });
 	}
 
 	/**
-	 *
+	 * @param {number|string} value
 	 */
 	setJoinStiffness(value) {
-		this.joinStiffness = parseFloat(value);
+		this.joinStiffness = typeof value === "number" ? value : parseFloat(value);
 		this.creases.forEach(crease => { crease.joinStiffness = this.joinStiffness; });
 	}
 
 	/**
-	 *
+	 * @param {number|string} value
 	 */
 	setCreaseStiffness(value) {
-		this.creaseStiffness = parseFloat(value);
+		this.creaseStiffness = typeof value === "number" ? value : parseFloat(value);
 		this.creases.forEach(crease => { crease.creaseStiffness = this.creaseStiffness; });
 	}
 
 	/**
-	 *
+	 * @param {number|string} value
 	 */
 	setDampingRatio(value) {
-		this.dampingRatio = parseFloat(value);
+		this.dampingRatio = typeof value === "number" ? value : parseFloat(value);
 		this.creases.forEach(crease => { crease.dampingRatio = this.dampingRatio; });
 		this.edges.forEach(edge => { edge.dampingRatio = this.dampingRatio; });
 	}
 
 	/**
-	 *
+	 * @param {number|string} color
 	 */
 	setFrontColor(color) {
 		this.materials.front.color.set(color);
 		this.frontMesh.material.needsUpdate = true;
 	}
 
+	/**
+	 * @param {number|string} color
+	 */
 	setBackColor(color) {
 		this.materials.back.color.set(color);
 		this.backMesh.material.needsUpdate = true;
 	}
 
+	/**
+	 * @param {number|string} color
+	 */
 	setBoundaryColor(color) {
 		this.materials.line.B.color.set(color);
 		this.lines.B.material.needsUpdate = true;
 	}
 
+	/**
+	 * @param {number|string} color
+	 */
 	setMountainColor(color) {
 		this.materials.line.M.color.set(color);
 		this.lines.M.material.needsUpdate = true;
 	}
 
+	/**
+	 * @param {number|string} color
+	 */
 	setValleyColor(color) {
 		this.materials.line.V.color.set(color);
 		this.lines.V.material.needsUpdate = true;
 	}
 
+	/**
+	 * @param {number|string} color
+	 */
 	setFlatColor(color) {
 		this.materials.line.F.color.set(color);
 		this.lines.F.material.needsUpdate = true;
 	}
 
+	/**
+	 * @param {number|string} color
+	 */
 	setUnassignedColor(color) {
 		this.materials.line.U.color.set(color);
 		this.lines.U.material.needsUpdate = true;
 	}
 
+	/**
+	 * @param {number|string} color
+	 */
 	setJoinColor(color) {
 		this.materials.line.J.color.set(color);
 		this.lines.J.material.needsUpdate = true;
 	}
 
+	/**
+	 * @param {number|string} color
+	 */
 	setLineColor(color) {
 		assignments.forEach(key => {
 			this.materials.line[key].color.set(color);
@@ -363,24 +393,30 @@ class Model {
 	}
 
 	/**
-	 *
+	 * @param {THREE.Material} material
 	 */
 	setMaterialFront(material) {
 		setNewFaceMaterial(this, material, "front");
 	}
 
+	/**
+	 * @param {THREE.Material} material
+	 */
 	setMaterialBack(material) {
 		setNewFaceMaterial(this, material, "back");
 	}
 
+	/**
+	 * @param {THREE.Material} material
+	 */
 	setMaterialStrain(material) {
 		setNewFaceMaterial(this, material, "strain");
 	}
 
 	/**
-	 * @param {object} material a three js material
-	 * @param {string} assignments a list of the assignment(s)
-	 * you want to apply this material to.
+	 * @param {THREE.Material} material a three js material
+	 * @param {string[]} assignmentsOptions list of assignment keys like ["M"]
+	 * a list of the assignment(s) you want to apply this material to.
 	 */
 	setMaterialLine(material, assignmentsOptions = []) {
 		const keys = assignmentsOptions.length

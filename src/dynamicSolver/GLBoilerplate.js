@@ -20,11 +20,11 @@ export const initializeWebGL = (canvas) => {
 /**
  * Creates and compiles a shader.
  *
- * @param {!WebGLRenderingContext} gl The WebGL Context.
+ * @param {WebGLRenderingContext} gl The WebGL Context.
  * @param {string} shaderSource The GLSL source code for the shader.
  * @param {number} shaderType The type of shader, VERTEX_SHADER or
  *     FRAGMENT_SHADER.
- * @return {!WebGLShader} The shader.
+ * @return {WebGLShader} The shader.
  */
 const compileShader = (gl, shaderSource, shaderType) => {
 	// Create the shader object
@@ -45,10 +45,10 @@ const compileShader = (gl, shaderSource, shaderType) => {
 /**
  * Creates a program from 2 shaders.
  *
- * @param {!WebGLRenderingContext|!WebGL2RenderingContext} gl The WebGL context.
- * @param {!WebGLShader} vertexShader A vertex shader.
- * @param {!WebGLShader} fragmentShader A fragment shader.
- * @return {!WebGLProgram} A program.
+ * @param {WebGLRenderingContext|WebGL2RenderingContext} gl The WebGL context.
+ * @param {WebGLShader} vertexShader A vertex shader.
+ * @param {WebGLShader} fragmentShader A fragment shader.
+ * @return {WebGLProgram} A program.
  */
 const createProgram = (gl, vertexShader, fragmentShader) => {
 	// create a program.
@@ -70,10 +70,10 @@ const createProgram = (gl, vertexShader, fragmentShader) => {
 /**
  * Creates a shader from the content of a script tag.
  *
- * @param {!WebGLRenderingContext} gl The WebGL Context.
+ * @param {WebGLRenderingContext} gl The WebGL Context.
  * @param {string} shaderSource the source code
  * @param {number} shaderType The type of shader to create.
- * @return {!WebGLShader} A shader.
+ * @return {WebGLShader} A shader.
  */
 const createShaderFromSource = (gl, shaderSource, shaderType) => (
 	compileShader(gl, shaderSource, shaderType)
@@ -82,10 +82,10 @@ const createShaderFromSource = (gl, shaderSource, shaderType) => (
 /**
  * Creates a program from 2 script tags.
  *
- * @param {!WebGLRenderingContext} gl The WebGL Context.
+ * @param {WebGLRenderingContext} gl The WebGL Context.
  * @param {string} vertexShaderSrc The id of the vertex shader script tag.
  * @param {string} fragmentShaderSrc The id of the fragment shader script tag.
- * @return {!WebGLProgram} A program
+ * @return {WebGLProgram} A program
  */
 export const createProgramFromSource = (gl, vertexShaderSrc, fragmentShaderSrc) => {
 	const vertexShader = createShaderFromSource(gl, vertexShaderSrc, gl.VERTEX_SHADER);
@@ -93,6 +93,10 @@ export const createProgramFromSource = (gl, vertexShaderSrc, fragmentShaderSrc) 
 	return createProgram(gl, vertexShader, fragmentShader);
 };
 
+/**
+ * @param {WebGLRenderingContext|WebGL2RenderingContext} gl the WebGL Context.
+ * @param {WebGLProgram} program
+ */
 export const loadVertexData = (gl, program) => {
 	gl.bindBuffer(gl.ARRAY_BUFFER, gl.createBuffer());
 	gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1, -1, 1, -1, -1, 1, 1, 1]), gl.STATIC_DRAW);

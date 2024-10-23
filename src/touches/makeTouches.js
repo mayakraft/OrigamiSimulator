@@ -1,4 +1,5 @@
-import * as THREE from "three";
+import { distance as Distance } from "../general/math";
+
 /**
  * @param {object} intersection a three.js ray caster intersection object,
  * containing: { distance, face, faceIndex, object, point }
@@ -6,6 +7,7 @@ import * as THREE from "three";
  * @param {object} fold the FOLD file this model was loaded from
  */
 const makeTouchObject = ({ distance, face, faceIndex, object, point }, fold) => {
+	const point3 = [point.x, point.y, point.z];
 	const vertices3d = object.geometry.attributes.position.array;
 	const material = face.materialIndex;
 	const normal = face.normal;
@@ -16,8 +18,7 @@ const makeTouchObject = ({ distance, face, faceIndex, object, point }, fold) => 
 	const triangle_vertices = [face.a, face.b, face.c];
 	const nearestFaceVertex = triangle_vertices
 		.map(f => [0, 1, 2].map(n => vertices3d[f * 3 + n]))
-		.map(v => new THREE.Vector3(...v))
-		.map(p => p.distanceTo(point))
+		.map(v => Distance(v, point3))
 		.map((d, i) => ({ d, i }))
 		.sort((a, b) => a.d - b.d)
 		.map(el => el.i)

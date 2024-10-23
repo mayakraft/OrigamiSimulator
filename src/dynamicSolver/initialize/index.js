@@ -2,6 +2,10 @@ import initArrays from "./initArrays.js";
 import fillArrays from "./fillArrays.js";
 import initGPU from "./initGPU.js";
 
+/**
+ * @param {Model} model
+ * @returns {number}
+ */
 const calcDt = (model) => {
 	let maxFreqNat = 0;
 	model.edges.forEach((beam) => {
@@ -13,6 +17,10 @@ const calcDt = (model) => {
 	return (1 / (2 * Math.PI * maxFreqNat)) * 0.9;
 };
 
+/**
+ * @param {GPUMath} gpuMath
+ * @param {Model} model
+ */
 const setSolveParams = (gpuMath, model) => {
 	const dt = calcDt(model);
 	// $("#deltaT").html(dt);
@@ -29,6 +37,11 @@ const setSolveParams = (gpuMath, model) => {
 	// options.controls.setDeltaT(dt);
 };
 
+/**
+ * @param {GPUMath} gpuMath
+ * @param {Model} model
+ * @param {object} options
+ */
 const initialize = (gpuMath, model, options) => {
 	const arrays = initArrays(gpuMath, model);
 	const moreArrays = fillArrays(gpuMath, model, arrays);

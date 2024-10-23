@@ -8,6 +8,7 @@ const strainClip = 0.5;
 /**
  * @description todo
  * @param {GPUMath} gpuMath
+ * @param {object} options
  */
 export const solveStep = (
 	gpuMath,
@@ -51,6 +52,8 @@ export const solveStep = (
 /**
  * @description todo
  * @param {GPUMath} gpuMath
+ * @param {Model} model
+ * @param {object} options
  * @returns {number} the global error as a percent
  */
 export const render = (gpuMath, model, { textureDim, axialStrain }) => {

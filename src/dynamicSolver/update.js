@@ -8,6 +8,7 @@ import {
 /**
  * @description todo
  * @param {GPUMath} gpuMath
+ * @param {Model} model
  */
 export const updateMaterials = (
 	gpuMath,
@@ -47,6 +48,7 @@ export const updateMaterials = (
 /**
  * @description todo
  * @param {GPUMath} gpuMath
+ * @param {Model} model
  */
 export const updateExternalForces = (gpuMath, model, { externalForces, textureDim }) => {
 	for (let i = 0; i < model.nodes.length; i += 1) {
@@ -69,6 +71,7 @@ export const updateExternalForces = (gpuMath, model, { externalForces, textureDi
 /**
  * @description todo
  * @param {GPUMath} gpuMath
+ * @param {Model} model
  */
 export const updateFixed = (gpuMath, model, { mass, textureDim }) => {
 	for (let i = 0; i < model.nodes.length; i += 1) {
@@ -87,6 +90,7 @@ export const updateFixed = (gpuMath, model, { mass, textureDim }) => {
 /**
  * @description todo
  * @param {GPUMath} gpuMath
+ * @param {Model} model
  */
 export const updateOriginalPosition = (gpuMath, model, { originalPosition, textureDim }) => {
 	for (let i = 0; i < model.nodes.length; i += 1) {
@@ -108,6 +112,7 @@ export const updateOriginalPosition = (gpuMath, model, { originalPosition, textu
 /**
  * @description todo
  * @param {GPUMath} gpuMath
+ * @param {Model} model
  */
 export const updateCreaseVectors = (gpuMath, model, { creaseVectors, textureDimCreases }) => {
 	for (let i = 0; i < model.creases.length; i += 1) {
@@ -130,6 +135,7 @@ export const updateCreaseVectors = (gpuMath, model, { creaseVectors, textureDimC
 /**
  * @description todo
  * @param {GPUMath} gpuMath
+ * @param {Model} model
  */
 export const updateCreasesMeta = (
 	gpuMath,
@@ -161,6 +167,7 @@ export const updateCreasesMeta = (
 /**
  * @description todo
  * @param {GPUMath} gpuMath
+ * @param {Model} model
  */
 export const updateLastPosition = (gpuMath, model, { lastPosition, textureDim }) => {
 	for (let i = 0; i < model.nodes.length; i += 1) {

@@ -19,7 +19,7 @@ import DynamicSolver from "./dynamicSolver/index.js";
  */
 const OrigamiSimulator = ({ scene, onCompute } = {}) => {
 	const model = new Model({ scene });
-	const solver = DynamicSolver();
+	const solver = new DynamicSolver();
 	// the error from strain in the folding
 	let error = 0;
 
@@ -29,9 +29,9 @@ const OrigamiSimulator = ({ scene, onCompute } = {}) => {
 	let foldAmount = 0.0;
 	/**
 	 * @param {number|string} value
-	 */
+DynamicSolver	 */
 	const setFoldAmount = (value) => {
-		const number = parseFloat(value);
+		const number = typeof value === "number" ? value : parseFloat(value);
 		foldAmount = !Number.isNaN(number) ? number : 0.0;
 		solver.setCreasePercent(foldAmount);
 	};
@@ -73,7 +73,8 @@ const OrigamiSimulator = ({ scene, onCompute } = {}) => {
 	const compute = () => {
 		// error is the global error in the folding of the model
 		// not a computational error.
-		error = solver.solve(100, { axialStrain: strain });
+		// error = solver.solve(100, { axialStrain: strain });
+		error = solver.solve(100, strain);
 		model.needsUpdate();
 		// reset single loop variables
 	};
@@ -178,14 +179,14 @@ const OrigamiSimulator = ({ scene, onCompute } = {}) => {
 		setFrontColor: (color) => model.materials.front.color.set(color),
 		setBackColor: (color) => model.materials.back.color.set(color),
 		// set all line assignments to one color
-		setLineColor: (...args) => model.setLineColor(...args),
+		setLineColor: (color) => model.setLineColor(color),
 		// line colors by assignment type
-		setBoundaryColor: (...args) => model.setBoundaryColor(...args),
-		setMountainColor: (...args) => model.setMountainColor(...args),
-		setValleyColor: (...args) => model.setValleyColor(...args),
-		setFlatColor: (...args) => model.setFlatColor(...args),
-		setJoinColor: (...args) => model.setJoinColor(...args),
-		setUnassignedColor: (...args) => model.setUnassignedColor(...args),
+		setBoundaryColor: (color) => model.setBoundaryColor(color),
+		setMountainColor: (color) => model.setMountainColor(color),
+		setValleyColor: (color) => model.setValleyColor(color),
+		setFlatColor: (color) => model.setFlatColor(color),
+		setJoinColor: (color) => model.setJoinColor(color),
+		setUnassignedColor: (color) => model.setUnassignedColor(color),
 		// set the materials directly
 		setMaterialFront: (material) => model.setMaterialFront(material),
 		setMaterialBack: (material) => model.setMaterialBack(material),

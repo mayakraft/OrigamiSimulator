@@ -15,6 +15,8 @@ import {
 
 /**
  * @description todo
+ * @param {GPUMath} gpuMath
+ * @param {Model} model
  *
  */
 const fillArrays = (gpuMath, model, {

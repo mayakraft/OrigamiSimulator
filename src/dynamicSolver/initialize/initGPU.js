@@ -19,6 +19,7 @@ import {
  * @description This method is called when a new model is loaded.
  * This allocates all space needed for communication back and forth
  * with the GPU.
+ * @param {GPUMath} gpuMath
  * @param {object} options these options are not required, if empty it
  * will default to origami simulator's default settings.
  */

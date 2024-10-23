@@ -7,7 +7,7 @@
  * the original FOLD graph, update the edges_foldAngle to their current
  * fold angle as well, and if the user chooses, replace the faces with
  * their triangulated counterparts, creating additional "J" (join) edges.
- * @param {object} model the OrigamiSimulator Model object
+ * @param {Model} model the OrigamiSimulator Model object
  * @param {FOLD} foldUnmodified a FOLD object, the original one loaded into the app.
  * @param {FOLD} foldTriangulated a FOLD object, the original input but modified
  * so that all faces are triangulated.
