@@ -2,7 +2,7 @@
  * Created by amandaghassaei on 5/6/17.
  */
 import type { Model } from "./index.ts";
-import type { FOLD } from "../types.ts";
+import type { FOLD, FOLDMesh } from "../types.ts";
 
 /**
  * @description Merge the new computed vertices coordinates back into
@@ -18,7 +18,7 @@ import type { FOLD } from "../types.ts";
 const exportFold = (
   model: Model,
   foldUnmodified: FOLD,
-  foldTriangulated: FOLD,
+  foldTriangulated: FOLDMesh,
   { triangulated, angles }: { triangulated?: boolean; angles?: boolean } = {},
 ) => {
   const verticesMatch =
@@ -29,13 +29,13 @@ const exportFold = (
   }
 
   // shallow copy is good enough for this purpose
-  const FOLD = triangulated ? { ...foldTriangulated } : { ...foldUnmodified };
-  FOLD.file_creator =
+  const fold = triangulated ? { ...foldTriangulated } : { ...foldUnmodified };
+  fold.file_creator =
     "Origami Simulator: http://git.amandaghassaei.com/OrigamiSimulator/";
-  FOLD.file_classes = ["singleModel"];
-  FOLD.frame_classes = ["foldedForm"];
-  FOLD.frame_attributes = ["3D"];
-  FOLD.vertices_coords = FOLD.vertices_coords.map((_, i) => [
+  fold.file_classes = ["singleModel"];
+  fold.frame_classes = ["foldedForm"];
+  fold.frame_attributes = ["3D"];
+  fold.vertices_coords = fold.vertices_coords.map((_, i) => [
     model.positions[i * 3 + 0],
     model.positions[i * 3 + 1],
     model.positions[i * 3 + 2],
@@ -43,7 +43,7 @@ const exportFold = (
   // if (globals.exportFoldAngle) {
   // 	json.edges_foldAngle = fold.edges_foldAngle;
   // }
-  return FOLD;
+  return fold;
 };
 
 export default exportFold;

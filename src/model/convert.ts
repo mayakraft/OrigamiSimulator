@@ -1,11 +1,18 @@
-
+import type { FOLDMesh } from "../types.ts";
 // no "cut" assignment. all cuts have now been turned into boundaries
 const assignments = Array.from("BMVFJU");
 
 /**
  * @param {FOLD} fold
  */
-export const makeTypedArrays = (fold) => {
+export const makeTypedArrays = (
+  fold: FOLDMesh,
+): {
+  positions: Float32Array;
+  colors: Float32Array;
+  indices: Uint16Array;
+  lineIndices: { [key: string]: Uint16Array };
+} => {
   const positions = new Float32Array(fold.vertices_coords.length * 3);
   const colors = new Float32Array(fold.vertices_coords.length * 3);
   const indices = new Uint16Array(fold.faces_vertices.length * 3);
@@ -27,9 +34,11 @@ export const makeTypedArrays = (fold) => {
   // each array is a stride-2 of vertices where each pair describes
   // an edge, like [2, 5, 9, 5, ...] meaning edge between 2 & 5, 9 & 5...
   const assignmentEdgeVertices = {};
-  assignments.forEach(key => { assignmentEdgeVertices[key] = []; });
+  assignments.forEach((key) => {
+    assignmentEdgeVertices[key] = [];
+  });
   fold.edges_assignment
-    .map(assignment => assignment.toUpperCase())
+    .map((assignment) => assignment.toUpperCase())
     .forEach((assignment, i) => {
       assignmentEdgeVertices[assignment].push(fold.edges_vertices[i][0]);
       assignmentEdgeVertices[assignment].push(fold.edges_vertices[i][1]);

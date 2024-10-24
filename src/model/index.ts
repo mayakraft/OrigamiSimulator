@@ -2,28 +2,31 @@
  * Created by amandaghassaei on 2/24/17.
  */
 import * as THREE from "three";
+import type { FOLD, FOLDMesh } from "../types.ts";
 import type { SimulatorNode } from "../types.ts";
-import {
-  makeNode,
-  destroyNode,
-} from "./node.ts";
+import { makeNode, destroyNode } from "./node.ts";
 import { Beam } from "./beam.ts";
 import { Crease } from "./crease.ts";
 import * as Materials from "./materials.ts";
 import { makeCreasesParams } from "../fold/creaseParams.ts";
 import prepare from "../fold/prepare.ts";
 import exportFold from "./exportFOLD.ts";
-import {
-  makeTypedArrays,
-} from "./convert.ts";
-import {
-  resize3,
-} from "../general/math.ts";
+import { makeTypedArrays } from "./convert.ts";
+import { resize3 } from "../general/math.ts";
 
 // buffer geometry has materialIndex property. use this for front/back colors
 
 // no "cut" assignment. all cuts have now been turned into boundaries
 const assignments = Array.from("BMVFJU");
+
+const emptyMesh = (): FOLDMesh => ({
+  vertices_coords: [],
+  edges_vertices: [],
+  edges_assignment: [],
+  edges_foldAngle: [],
+  faces_vertices: [],
+  faces_edges: [],
+});
 
 /**
  * @param {Model} model
@@ -31,7 +34,9 @@ const assignments = Array.from("BMVFJU");
  * @param {string} key
  */
 const setNewFaceMaterial = (model, material, key) => {
-  if (model.materials[key]) { model.materials[key].dispose(); }
+  if (model.materials[key]) {
+    model.materials[key].dispose();
+  }
   model.materials[key] = material;
   model.faceMaterialDidUpdate();
 };
@@ -39,8 +44,8 @@ const setNewFaceMaterial = (model, material, key) => {
 export class Model {
   // if the user chooses to export the 3D model, we need to reference
   // the original FOLD data. "this.fold" contains triangulated faces.
-  fold = {};
-  foldUnmodified = {};
+  fold: FOLDMesh;
+  foldUnmodified: FOLD;
   geometry: any;
   materials: { [key: string]: THREE.MeshMaterial };
   //materials.line = {};
@@ -54,14 +59,14 @@ export class Model {
   creaseStiffness: number;
   dampingRatio: number;
   // vertex / color buffer arrays for GPU
-  positions = null;
-  colors = null;
+  positions: Float32Array | undefined;
+  colors: Float32Array | undefined;
   // these contain a bunch of information for the solver.
   /** @type {SimulatorNode[]} */
   nodes: SimulatorNode[];
-  edges: any[];
-  creases: any[];
-  faces_vertices: any[];
+  edges: Beam[];
+  creases: Crease[];
+  faces_vertices: number[][];
 
   /**
    * @param {{ scene: THREE.Scene }} options
@@ -69,7 +74,7 @@ export class Model {
   constructor({ scene }: { scene: THREE.Scene | undefined }) {
     // if the user chooses to export the 3D model, we need to reference
     // the original FOLD data. "this.fold" contains triangulated faces.
-    this.fold = {};
+    this.fold = emptyMesh();
     this.foldUnmodified = {};
     this.geometry = null;
     this.materials = {};
@@ -77,18 +82,19 @@ export class Model {
     this.materials.back = Materials.back;
     this.materials.strain = Materials.strain;
     this.materials.line = {};
-    assignments.forEach(key => {
+    assignments.forEach((key) => {
       this.materials.line[key] = Materials.line.clone();
     });
     this.frontMesh = new THREE.Mesh(); // front face of mesh
     this.backMesh = new THREE.Mesh(); // back face of mesh (different color)
     this.lines = {};
-    assignments.forEach(key => {
+    assignments.forEach((key) => {
       this.lines[key] = new THREE.LineSegments(
         new THREE.BufferGeometry(),
         this.materials.line[key],
       );
     });
+
     // by default, "join" edges (result of triangulation) are not visible
     this.lines.J.visible = false;
     this.strain = false;
@@ -97,10 +103,9 @@ export class Model {
     this.creaseStiffness = 0.7;
     this.dampingRatio = 0.45;
     // vertex / color buffer arrays for GPU
-    this.positions = null;
-    this.colors = null;
+    this.positions = undefined;
+    this.colors = undefined;
     // these contain a bunch of information for the solver.
-    /** @type {SimulatorNode[]} */
     this.nodes = [];
     this.edges = [];
     this.creases = [];
@@ -116,26 +121,23 @@ export class Model {
     this.setScene(scene);
   }
 
-  /**
-   * @param {THREE.Scene} scene
-   */
-  setScene(scene) {
+  setScene(scene?: THREE.Scene): void {
     // remove from previous scene
     [this.frontMesh, this.backMesh]
-      .filter(el => el.removeFromParent)
-      .forEach(side => side.removeFromParent());
+      .filter((el) => el.removeFromParent)
+      .forEach((side) => side.removeFromParent());
     Object.values(this.lines)
-      .filter(el => el.removeFromParent)
-      .forEach(line => line.removeFromParent());
+      .filter((el) => el.removeFromParent)
+      .forEach((line) => line.removeFromParent());
     // add to new scene
     if (scene) {
       scene.add(this.frontMesh);
       scene.add(this.backMesh);
-      Object.values(this.lines).forEach(line => scene.add(line));
+      Object.values(this.lines).forEach((line) => scene.add(line));
     }
   }
 
-  makeNewGeometries() {
+  makeNewGeometries(): void {
     this.geometry = new THREE.BufferGeometry();
     // this.geometry.dynamic = true; // property no longer exists
     this.frontMesh.geometry = this.geometry;
@@ -149,10 +151,8 @@ export class Model {
     });
   }
 
-  faceMaterialDidUpdate() {
-    this.frontMesh.material = this.strain
-      ? this.materials.strain
-      : this.materials.front;
+  faceMaterialDidUpdate(): void {
+    this.frontMesh.material = this.strain ? this.materials.strain : this.materials.front;
     this.backMesh.material = this.materials.back;
     // hide the back mesh if strain is currently enabled
     this.backMesh.visible = !this.strain;
@@ -162,41 +162,41 @@ export class Model {
     this.backMesh.material.needsUpdate = true;
   }
 
-  lineMaterialDidUpdate() {
-    assignments.forEach(key => {
+  lineMaterialDidUpdate(): void {
+    assignments.forEach((key) => {
       this.lines[key].material = this.materials.line[key] || Materials.line.clone();
       this.lines[key].material.needsUpdate = true;
     });
   }
 
-  materialDidUpdate() {
+  materialDidUpdate(): void {
     this.faceMaterialDidUpdate();
     this.lineMaterialDidUpdate();
   }
 
-  /**
-   * @param {boolean} strain
-   */
-  setStrain(strain) {
+  setStrain(strain: boolean): void {
     this.strain = strain;
     this.faceMaterialDidUpdate();
   }
 
-  getMesh() { return [this.frontMesh, this.backMesh]; }
+  getMesh(): [THREE.Mesh, THREE.Mesh] {
+    return [this.frontMesh, this.backMesh];
+  }
 
-  needsUpdate() {
-    if (!this.positions) { return; }
+  needsUpdate(): void {
+    if (!this.positions) {
+      return;
+    }
     this.geometry.attributes.position.needsUpdate = true;
-    if (this.strain) { this.geometry.attributes.color.needsUpdate = true; }
+    if (this.strain) {
+      this.geometry.attributes.color.needsUpdate = true;
+    }
     // if (vrEnabled) this.geometry.computeBoundingBox();
     // this is needed for the raycaster. even if VR is not enabled.
     this.geometry.computeBoundingBox();
   }
 
-  /**
-   * @param {FOLD} fold
-   */
-  makeObjects(fold) {
+  makeObjects(fold: FOLDMesh): void {
     const options = {
       axialStiffness: this.axialStiffness,
       joinStiffness: this.joinStiffness,
@@ -205,24 +205,34 @@ export class Model {
     };
     this.nodes = fold.vertices_coords.map(resize3).map(makeNode);
     this.edges = fold.edges_vertices
-      .map(ev => ev.map(v => this.nodes[v]))
+      .map((ev) => ev.map((v) => this.nodes[v]))
       .map(([a, b]) => new Beam([a, b], options));
-    this.creases = makeCreasesParams(fold)
-      .map((param, i) => new Crease(
-        this.edges[param.edge],
-        i,
-        param.foldAngle !== 0 ? 1 : 0, // type
-        param.faces,
-        param.vertices.map(v => this.nodes[v]),
-        param.foldAngle * (Math.PI / 180), // up until now everything has been in degrees
-        options,
-      ));
+    this.creases = makeCreasesParams(fold).map(
+      (param, i) =>
+        new Crease(
+          this.edges[param.edge],
+          i,
+          param.foldAngle !== 0 ? 1 : 0, // type
+          param.faces,
+          param.vertices.map((v) => this.nodes[v]),
+          param.foldAngle * (Math.PI / 180), // up until now everything has been in degrees
+          options,
+        ),
+    );
     this.faces_vertices = fold.faces_vertices;
   }
 
   setGeometryBuffers({
-    positions, colors, indices, lineIndices,
-  }) {
+    positions,
+    colors,
+    indices,
+    lineIndices,
+  }: {
+    positions: Float32Array;
+    colors: Float32Array;
+    indices: Uint16Array;
+    lineIndices: { [key: string]: Uint16Array };
+  }): void {
     const positionsAttribute = new THREE.BufferAttribute(positions, 3);
     this.geometry.setAttribute("position", positionsAttribute);
     this.geometry.setAttribute("color", new THREE.BufferAttribute(colors, 3));
@@ -246,32 +256,29 @@ export class Model {
     this.geometry.center();
   }
 
-  /**
-   *
-   */
-  dealloc() {
+  dealloc(): void {
     // console.log("--- dealloc: Model()");
     // dispose geometries
     [this.geometry, this.frontMesh.geometry, this.backMesh.geometry]
-      .filter(geo => geo)
-      .forEach(geo => geo.dispose());
+      .filter((geo) => geo)
+      .forEach((geo) => geo.dispose());
     this.geometry = null;
     this.frontMesh.geometry = null;
     this.backMesh.geometry = null;
     Object.values(this.lines)
-      .filter(line => line.geometry)
+      .filter((line) => line.geometry)
       .forEach((line) => line.geometry.dispose());
     // dispose materials
     [this.frontMesh.material, this.backMesh.material]
-      .filter(material => material)
-      .forEach(material => material.dispose());
+      .filter((material) => material)
+      .forEach((material) => material.dispose());
     Object.values(this.lines)
-      .filter(line => line.material)
-      .forEach(line => line.material.dispose());
+      .filter((line) => line.material)
+      .forEach((line) => line.material.dispose());
     // dispose class objects
     this.nodes.forEach(destroyNode);
-    this.edges.forEach(edge => edge.destroy());
-    this.creases.forEach(crease => crease.destroy());
+    this.edges.forEach((edge) => edge.destroy());
+    this.creases.forEach((crease) => crease.destroy());
     this.nodes = [];
     this.edges = [];
     this.creases = [];
@@ -280,12 +287,11 @@ export class Model {
   /**
    * @description Load a new FOLD object into origami simulator.
    * Immediately following this method the solver should call .setModel()
-   * @param {FOLD} foldObject
    */
-  load(foldObject) {
+  load(foldObject: FOLD): void {
     this.dealloc();
     this.makeNewGeometries();
-    const fold = prepare(foldObject);
+    const fold: FOLDMesh = prepare(foldObject);
     this.foldUnmodified = foldObject;
     this.fold = fold;
     this.makeObjects(fold);
@@ -299,144 +305,103 @@ export class Model {
         positions[3 * i + 2],
       ];
     });
-    this.edges.forEach(edge => edge.recalcOriginalLength());
+    this.edges.forEach((edge) => edge.recalcOriginalLength());
     // save these for the solver to modify
     this.positions = positions;
     this.colors = colors;
   }
 
-  /**
-   *
-   */
-  export() {
+  export(): FOLD {
     return exportFold(this, this.foldUnmodified, this.fold);
   }
 
-  /**
-   * @param {number|string} value
-   */
-  setAxialStiffness(value) {
+  setAxialStiffness(value: number | string): void {
     this.axialStiffness = typeof value === "number" ? value : parseFloat(value);
-    this.edges.forEach(edge => { edge.axialStiffness = this.axialStiffness; });
+    this.edges.forEach((edge) => {
+      edge.axialStiffness = this.axialStiffness;
+    });
   }
 
-  /**
-   * @param {number|string} value
-   */
-  setJoinStiffness(value) {
+  setJoinStiffness(value: number | string): void {
     this.joinStiffness = typeof value === "number" ? value : parseFloat(value);
-    this.creases.forEach(crease => { crease.joinStiffness = this.joinStiffness; });
+    this.creases.forEach((crease) => {
+      crease.joinStiffness = this.joinStiffness;
+    });
   }
 
-  /**
-   * @param {number|string} value
-   */
-  setCreaseStiffness(value) {
+  setCreaseStiffness(value: number | string): void {
     this.creaseStiffness = typeof value === "number" ? value : parseFloat(value);
-    this.creases.forEach(crease => { crease.creaseStiffness = this.creaseStiffness; });
+    this.creases.forEach((crease) => {
+      crease.creaseStiffness = this.creaseStiffness;
+    });
   }
 
-  /**
-   * @param {number|string} value
-   */
-  setDampingRatio(value) {
+  setDampingRatio(value: number | string): void {
     this.dampingRatio = typeof value === "number" ? value : parseFloat(value);
-    this.creases.forEach(crease => { crease.dampingRatio = this.dampingRatio; });
-    this.edges.forEach(edge => { edge.dampingRatio = this.dampingRatio; });
+    this.creases.forEach((crease) => {
+      crease.dampingRatio = this.dampingRatio;
+    });
+    this.edges.forEach((edge) => {
+      edge.dampingRatio = this.dampingRatio;
+    });
   }
 
-  /**
-   * @param {number|string} color
-   */
-  setFrontColor(color) {
+  setFrontColor(color: number | string): void {
     this.materials.front.color.set(color);
     this.frontMesh.material.needsUpdate = true;
   }
 
-  /**
-   * @param {number|string} color
-   */
-  setBackColor(color) {
+  setBackColor(color: number | string): void {
     this.materials.back.color.set(color);
     this.backMesh.material.needsUpdate = true;
   }
 
-  /**
-   * @param {number|string} color
-   */
-  setBoundaryColor(color) {
+  setBoundaryColor(color: number | string): void {
     this.materials.line.B.color.set(color);
     this.lines.B.material.needsUpdate = true;
   }
 
-  /**
-   * @param {number|string} color
-   */
-  setMountainColor(color) {
+  setMountainColor(color: number | string): void {
     this.materials.line.M.color.set(color);
     this.lines.M.material.needsUpdate = true;
   }
 
-  /**
-   * @param {number|string} color
-   */
-  setValleyColor(color) {
+  setValleyColor(color: number | string): void {
     this.materials.line.V.color.set(color);
     this.lines.V.material.needsUpdate = true;
   }
 
-  /**
-   * @param {number|string} color
-   */
-  setFlatColor(color) {
+  setFlatColor(color: number | string): void {
     this.materials.line.F.color.set(color);
     this.lines.F.material.needsUpdate = true;
   }
 
-  /**
-   * @param {number|string} color
-   */
-  setUnassignedColor(color) {
+  setUnassignedColor(color: number | string): void {
     this.materials.line.U.color.set(color);
     this.lines.U.material.needsUpdate = true;
   }
 
-  /**
-   * @param {number|string} color
-   */
-  setJoinColor(color) {
+  setJoinColor(color: number | string): void {
     this.materials.line.J.color.set(color);
     this.lines.J.material.needsUpdate = true;
   }
 
-  /**
-   * @param {number|string} color
-   */
-  setLineColor(color) {
-    assignments.forEach(key => {
+  setLineColor(color: number | string): void {
+    assignments.forEach((key) => {
       this.materials.line[key].color.set(color);
     });
     this.lineMaterialDidUpdate();
   }
 
-  /**
-   * @param {THREE.Material} material
-   */
-  setMaterialFront(material) {
+  setMaterialFront(material: THREE.Material) {
     setNewFaceMaterial(this, material, "front");
   }
 
-  /**
-   * @param {THREE.Material} material
-   */
-  setMaterialBack(material) {
+  setMaterialBack(material: THREE.Material) {
     setNewFaceMaterial(this, material, "back");
   }
 
-  /**
-   * @param {THREE.Material} material
-   */
-  setMaterialStrain(material) {
+  setMaterialStrain(material: THREE.Material) {
     setNewFaceMaterial(this, material, "strain");
   }
 
@@ -445,14 +410,16 @@ export class Model {
    * @param {string[]} assignmentsOptions list of assignment keys like ["M"]
    * a list of the assignment(s) you want to apply this material to.
    */
-  setMaterialLine(material, assignmentsOptions = []) {
+  setMaterialLine(material: THREE.Material, assignmentsOptions = []) {
     const keys = assignmentsOptions.length
       ? assignmentsOptions
-        .filter(a => typeof a === "string")
-        .map(str => str.toUpperCase())
+        .filter((a) => typeof a === "string")
+        .map((str: string) => str.toUpperCase())
       : assignments;
-    keys.forEach(key => this.materials.line[key].dispose());
-    keys.forEach(key => { this.materials.line[key] = material; });
+    keys.forEach((key) => this.materials.line[key].dispose());
+    keys.forEach((key) => {
+      this.materials.line[key] = material;
+    });
     this.lineMaterialDidUpdate();
   }
 }

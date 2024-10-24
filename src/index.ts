@@ -1,6 +1,7 @@
 /**
  * Created by ghassaei on 2/22/17.
  */
+import type { FOLD } from "./types.ts";
 import * as THREE from "three";
 import { Model } from "./model/index.ts";
 import { DynamicSolver } from "./dynamicSolver/index.ts";
@@ -22,47 +23,35 @@ const OrigamiSimulator = ({
   scene,
   onCompute,
 }: { scene?: THREE.Scene; onCompute?: (object) => void } = {}) => {
-  const model = new Model({ scene });
-  const solver = new DynamicSolver();
+  const model: Model = new Model({ scene });
+  const solver: DynamicSolver = new DynamicSolver();
   // the error from strain in the folding
-  let error = 0;
+  let error: number = 0;
 
   /**
    * @description Fold the origami, between 0.0 and 1.0.
    */
-  let foldAmount = 0.0;
+  let foldAmount: number = 0.0;
 
-  /**
-   * @param {number|string} value dynamicSolver
-   */
-  const setFoldAmount = (value) => {
+  /** for the dynamicSolver */
+  const setFoldAmount = (value: number | string): void => {
     const number = typeof value === "number" ? value : parseFloat(value);
     foldAmount = !Number.isNaN(number) ? number : 0.0;
     solver.setCreasePercent(foldAmount);
   };
 
-  /**
-   * @description Override the material with the strain forces visualization.
-   */
-  let strain = false;
+  /** Override the material with the strain forces visualization. */
+  let strain: boolean = false;
 
-  /**
-   * @param {boolean} value
-   */
-  const setStrain = (value) => {
+  const setStrain = (value: boolean): void => {
     strain = !!value;
     model.setStrain(strain);
   };
 
-  /**
-   * @description Activate three.js shadows on the materials.
-   */
-  let shadows = false;
+  /** Activate three.js shadows on the materials. */
+  let shadows: boolean = false;
 
-  /**
-   * @param {boolean} newShadows
-   */
-  const setShadows = (newShadows) => {
+  const setShadows = (newShadows: boolean): void => {
     shadows = newShadows;
     model.frontMesh.castShadow = shadows;
     model.frontMesh.receiveShadow = shadows;
@@ -71,15 +60,15 @@ const OrigamiSimulator = ({
   };
 
   /**
-   * @description When the user pulls on a node, call this method, it will
-   * relay the information to the solver
+   * When the user pulls on a node, call this method,
+   * it will relay the information to the solver
    */
-  const nodeDidMove = () => solver.nodeDidMove();
+  const nodeDidMove = (): void => solver.nodeDidMove();
 
   /**
    * @description One call to origami simulator's solver
    */
-  const compute = () => {
+  const compute = (): void => {
     // error is the global error in the folding of the model
     // not a computational error.
     // error = solver.solve(100, { axialStrain: strain });
@@ -92,8 +81,8 @@ const OrigamiSimulator = ({
    * @description Start a loop with window.requestAnimationFrame
    * which will call the compute method on every frame.
    */
-  let computeLoopID;
-  const computeLoop = () => {
+  let computeLoopID: number | undefined;
+  const computeLoop = (): void => {
     computeLoopID = window.requestAnimationFrame(computeLoop);
     compute();
     if (onCompute) {
@@ -104,8 +93,8 @@ const OrigamiSimulator = ({
   /**
    * @description Activate origami simulator's compute loop.
    */
-  let active = false;
-  const setActive = (isActive) => {
+  let active: boolean = false;
+  const setActive = (isActive: boolean): void => {
     // no matter the new state, ensure that no loop is (already) running
     if (computeLoopID) {
       window.cancelAnimationFrame(computeLoopID);
@@ -121,7 +110,7 @@ const OrigamiSimulator = ({
    * @description this load method can throw an error. wrap it in a try catch
    * and deliver the error to the end user.
    */
-  const load = (fold) => {
+  const load = (fold: FOLD): void => {
     model.load(fold);
     solver.setModel(model, { creasePercent: foldAmount });
   };
@@ -129,27 +118,30 @@ const OrigamiSimulator = ({
   /**
    * @description various solver settings
    */
-  const setIntegration = (value) => {
+  const setIntegration = (value: string): void => {
     solver.setIntegration(value);
   };
-  const setAxialStiffness = (value) => {
+
+  const setAxialStiffness = (value: number): void => {
     solver.setAxialStiffness(value);
     model.setAxialStiffness(value);
     solver.update();
   };
-  const setFaceStiffness = (value) => {
+
+  const setFaceStiffness = (value: number): void => {
     solver.setFaceStiffness(value);
     solver.update();
   };
-  const setJoinStiffness = (value) => {
+
+  const setJoinStiffness = (value: number): void => {
     model.setJoinStiffness(value);
     solver.update();
   };
-  const setCreaseStiffness = (value) => {
+  const setCreaseStiffness = (value: number): void => {
     model.setCreaseStiffness(value);
     solver.update();
   };
-  const setDampingRatio = (value) => {
+  const setDampingRatio = (value: number): void => {
     model.setDampingRatio(value);
     solver.update();
   };
@@ -157,12 +149,12 @@ const OrigamiSimulator = ({
   /**
    * @description Reset the vertices of the model to their original position
    */
-  const reset = () => solver.reset();
+  const reset = (): number => solver.reset();
 
   /**
    * @description Stop the compute loop and free all associated memory
    */
-  const dealloc = () => {
+  const dealloc = (): void => {
     setActive(false);
     model.dealloc();
     solver.dealloc();

@@ -1,14 +1,21 @@
 /**
  * Created by amandaghassaei on 2/25/17.
  */
+import type { FOLDMesh } from "../types.ts";
 import remapField from "./remapField.ts";
+import { makeVerticesVertices } from "./adjacentVertices.ts";
 
-function mergeEdge(fold, v1, v2, v3) { // v2 is center vertex
+// v2 is center vertex
+function mergeEdge(fold: FOLDMesh, v1: number, v2: number, v3: number): boolean {
+  if (!fold.vertices_vertices) {
+    return false;
+  }
   let angleAvg = 0;
   let avgSum = 0;
-  const angles = [];
-  let edgeAssignment = null;
-  const edgeIndices = [];
+  const angles: number[] = [];
+  let edgeAssignment: string | null = null;
+  const edgeIndices: number[] = [];
+
   for (let i = fold.edges_vertices.length - 1; i >= 0; i -= 1) {
     const edge = fold.edges_vertices[i];
     if (edge.indexOf(v2) >= 0 && (edge.indexOf(v1) >= 0 || edge.indexOf(v3) >= 0)) {
@@ -27,15 +34,18 @@ function mergeEdge(fold, v1, v2, v3) { // v2 is center vertex
       edgeIndices.push(i); // larger index in front
     }
   }
+
   if (angles[0] !== angles[1]) {
     console.warn(`incompatible angles: ${JSON.stringify(angles)}`);
   }
+
   for (let i = 0; i < edgeIndices.length; i += 1) {
     const index = edgeIndices[i];
     fold.edges_vertices.splice(index, 1);
     fold.edges_assignment.splice(index, 1);
     fold.edges_foldAngle.splice(index, 1);
   }
+
   fold.edges_vertices.push([v1, v3]);
   fold.edges_assignment.push(edgeAssignment);
   if (avgSum > 0) fold.edges_foldAngle.push(angleAvg / avgSum);
@@ -49,16 +59,22 @@ function mergeEdge(fold, v1, v2, v3) { // v2 is center vertex
   return true;
 }
 
-function removeRedundantVertices(fold, epsilon = 1e-4) {
-  const old2new = [];
+// the FOLD parameter should have vertices_vertices
+function removeRedundantVertices(fold: FOLDMesh, epsilon: number = 1e-4) {
+  if (!fold.vertices_vertices) {
+    fold.vertices_vertices = makeVerticesVertices(fold);
+  }
+  const old2new: (number | null)[] = [];
   let numRedundant = 0;
   let newIndex = 0;
+
   for (let i = 0; i < fold.vertices_vertices.length; i += 1) {
     const vertex_vertices = fold.vertices_vertices[i];
     if (vertex_vertices.length !== 2) {
       old2new.push(newIndex++);
       continue;
     }
+
     const vertex_coord = fold.vertices_coords[i];
     const neighbor0 = fold.vertices_coords[vertex_vertices[0]];
     const neighbor1 = fold.vertices_coords[vertex_vertices[1]];
@@ -68,6 +84,7 @@ function removeRedundantVertices(fold, epsilon = 1e-4) {
     let magSqVec0 = vec0[0] * vec0[0] + vec0[1] * vec0[1];
     let magSqVec1 = vec1[0] * vec1[0] + vec1[1] * vec1[1];
     let dot = vec0[0] * vec1[0] + vec0[1] * vec1[1];
+
     if (threeD) {
       vec0.push(neighbor0[2] - vertex_coord[2]);
       vec1.push(neighbor1[2] - vertex_coord[2]);
@@ -75,7 +92,9 @@ function removeRedundantVertices(fold, epsilon = 1e-4) {
       magSqVec1 += vec1[2] * vec1[2];
       dot += vec0[2] * vec1[2];
     }
+
     dot /= Math.sqrt(magSqVec0 * magSqVec1);
+
     if (Math.abs(dot + 1.0) < epsilon) {
       const merged = mergeEdge(fold, vertex_vertices[0], i, vertex_vertices[1]);
       if (merged) {
@@ -87,9 +106,13 @@ function removeRedundantVertices(fold, epsilon = 1e-4) {
       }
     } else old2new.push(newIndex++);
   }
-  if (numRedundant === 0) { return fold; }
+
+  if (numRedundant === 0) {
+    return fold;
+  }
   console.warn(`${numRedundant} redundant vertices found`);
   fold = remapField(fold, "vertices", old2new);
+
   if (fold.faces_vertices) {
     for (let i = 0; i < fold.faces_vertices.length; i += 1) {
       const face = fold.faces_vertices[i];

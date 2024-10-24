@@ -21,7 +21,7 @@ const sortVerticesCounterClockwise = (
   vertices
     .map((v) => vertices_coords[v])
     .map(resize2)
-    .map((coord) => subtract2(coord, vertices_coords[vertex]))
+    .map((coord) => subtract2(coord, vertices_coords[vertex] as [number, number]))
     .map((vec) => Math.atan2(vec[1], vec[0]))
     // optional line, this makes the cycle loop start/end along the +X axis
     .map((angle) => (angle > -1e-6 ? angle : angle + Math.PI * 2))

@@ -14,7 +14,8 @@ import { solveStep, render } from "./solve.ts";
  * @description Get the center of the bounding box of the model.
  * @param {Model} model
  */
-const modelCenter = (model: Model) => {
+const modelCenter = (model: Model): [number, number, number] => {
+  if (!model.positions) { return [0, 0, 0]; }
   const min = Array(3).fill(Infinity);
   const max = Array(3).fill(-Infinity);
   for (let i = 0; i < model.positions.length; i += 3) {
@@ -62,7 +63,7 @@ export class DynamicSolver {
    * @description The user will call this method when the UI is pulling on a
    * vertex, this conveys to the solver that a node is being manually moved.
    */
-  nodeDidMove() {
+  nodeDidMove(): void {
     if (!this.gpuMath || !this.model) {
       return;
     }
@@ -84,7 +85,7 @@ export class DynamicSolver {
    * @param {number} numSteps number of iterations to run the solver
    * @param {boolean} computeStrain should the strain values be computed?
    */
-  solve(numSteps = 100, computeStrain = false) {
+  solve(numSteps: number = 100, computeStrain: boolean = false): number {
     if (!this.gpuMath || !this.model) {
       return 0;
     }
@@ -111,7 +112,7 @@ export class DynamicSolver {
    * - faceStiffness (number)
    * - calcFaceStrain (bool)
    */
-  setModel(newModel: Model, options = {}) {
+  setModel(newModel: Model, options = {}): void {
     // these next 2 might be unnecessary
     // dealloc();
     // gpuMath = new GPUMath();
@@ -137,7 +138,7 @@ export class DynamicSolver {
    * @description Reset the vertices of the model back to their original state.
    * @returns {number} the global error as a percent
    */
-  reset() {
+  reset(): number {
     if (!this.gpuMath || !this.model) {
       return 0;
     }
@@ -157,7 +158,7 @@ export class DynamicSolver {
   /**
    * @description deallocate everything involved with the dynamic solver
    */
-  dealloc() {
+  dealloc(): void {
     if (this.gpuMath) {
       this.gpuMath.dealloc();
       this.gpuMath = undefined;

@@ -12,97 +12,68 @@ export class Beam {
   nodes: [SimulatorNode, SimulatorNode];
   originalLength: number;
 
-  /**
-   * @param {[SimulatorNode, SimulatorNode]} nodes
-   * @param {{ axialStiffness?: number, dampingRatio?: number}} options
-   */
   constructor(
     nodes: [SimulatorNode, SimulatorNode],
-    { axialStiffness, dampingRatio }: { axialStiffness: number, dampingRatio: number },
+    { axialStiffness, dampingRatio }: { axialStiffness: number; dampingRatio: number },
+    //{ axialStiffness, dampingRatio }: {axialStiffness?: number, dampingRatio?: number},
   ) {
-    /** @type {string} */
     this.type = "beam";
-
-    /** @type {number} */
     this.axialStiffness = axialStiffness;
-
-    /** @type {number} */
     this.dampingRatio = dampingRatio;
-
-    /** @type {[[number, number, number], [number, number, number]]} */
     this.vertices = [nodes[0].originalPosition, nodes[1].originalPosition];
-
-    /** @type {[SimulatorNode, SimulatorNode]} */
     this.nodes = nodes;
-
-    /** @type {number} */
     this.originalLength = this.getLength();
-
     nodes[0].beams.push(this);
     nodes[1].beams.push(this);
   }
 
-  /**
-   * @returns {[number, number, number]} vector
-   */
-  getVector() {
+  getVector(): [number, number, number] {
     return subtract(this.vertices[1], this.vertices[0]);
   }
 
-  /**
-   * @returns {number} distance between the original position of the two nodes
-   */
-  getLength() {
+  /** distance between the original position of the two nodes */
+  getLength(): number {
     return magnitude(this.getVector());
   }
 
-  /** @returns {void} */
-  recalcOriginalLength() {
+  recalcOriginalLength(): void {
     this.originalLength = magnitude(this.getVector());
   }
 
-  /** @returns {boolean} */
-  isFixed() {
+  isFixed(): boolean {
     return this.nodes[0].fixed && this.nodes[1].fixed;
   }
 
   // dynamic solve
-  /** @returns {number} */
-  getK() {
+  getK(): number {
     return this.axialStiffness / this.getLength();
   }
 
-  /** @returns {number} */
-  getD() {
+  getD(): number {
     return this.dampingRatio * 2 * Math.sqrt(this.getK() * this.getMinMass());
   }
 
-  /** @returns {number} */
-  getNaturalFrequency() {
+  getNaturalFrequency(): number {
     return Math.sqrt(this.getK() / this.getMinMass());
   }
 
-  /** @returns {number} */
-  getMinMass() {
+  getMinMass(): number {
     let minMass = this.nodes[0].simMass;
     if (this.nodes[1].simMass < minMass) minMass = this.nodes[1].simMass;
     return minMass;
   }
 
-  /**
-   * @param {SimulatorNode} node a node that is a member of this beam
-   * @returns {SimulatorNode} the other node
-   */
-  getOtherNode(node) {
+  /** given a node in this beam, get the other node */
+  getOtherNode(node: SimulatorNode): SimulatorNode {
     if (this.nodes[0] === node) return this.nodes[1];
     return this.nodes[0];
   }
 
   // deallocate
-  destroy() {
-    const self = this;
+  destroy(): void {
+    const that = this;
     this.nodes.forEach((node) => {
-      const index = node.beams.indexOf(self);
+      const index = node.beams.indexOf(that);
       if (index >= 0) node.beams.splice(index, 1);
     });
     this.vertices = [

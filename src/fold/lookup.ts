@@ -9,19 +9,24 @@ import type { FOLD } from "../types.ts";
  * @param {number[]} subsetIndices
  * @returns {{[key: string]: number}}
  */
-const makePairsMap = (array, subsetIndices?: number[]) => {
-  /** @type {{ [key: string]: number }} */
-  const map = {};
-  const indices = !subsetIndices
-    ? array.map((_, i) => i)
-    : subsetIndices;
-  indices
-    .forEach(i => array[i]
-      .map((_, j, arr) => [0, 1]
-        .map(offset => (j + offset) % arr.length)
-        .map(n => arr[n])
-        .join(" "))
-      .forEach(key => { map[key] = i; }));
+const makePairsMap = (
+  array: number[][],
+  subsetIndices?: number[],
+): { [key: string]: number } => {
+  const map: { [key: string]: number } = {};
+  const indices = !subsetIndices ? array.map((_, i) => i) : subsetIndices;
+  indices.forEach((i) =>
+    array[i]
+      .map((_, j, arr) =>
+        [0, 1]
+          .map((offset) => (j + offset) % arr.length)
+          .map((n) => arr[n])
+          .join(" "),
+      )
+      .forEach((key) => {
+        map[key] = i;
+      }),
+  );
   return map;
 };
 
@@ -37,6 +42,7 @@ const makePairsMap = (array, subsetIndices?: number[]) => {
  * @returns {{[key: string]: number}} object mapping a space-separated
  * vertex pair to an edge index
  */
-export const makeVerticesToEdge = ({ edges_vertices }: FOLD, edges?: number[]) => (
-  makePairsMap(edges_vertices, edges)
-);
+export const makeVerticesToEdge = (
+  { edges_vertices = [] }: FOLD,
+  edges?: number[],
+): { [key: string]: number } => makePairsMap(edges_vertices, edges);
