@@ -1,17 +1,25 @@
 /**
  * Created by ghassaei on 9/16/16.
  */
-import {
-  magnitude,
-  subtract,
-} from "../general/math.ts";
+import type { SimulatorNode } from "../types.ts";
+import { magnitude, subtract } from "../general/math.ts";
 
-class Beam {
+export class Beam {
+  type: string;
+  axialStiffness: number;
+  dampingRatio: number;
+  vertices: [[number, number, number], [number, number, number]];
+  nodes: [SimulatorNode, SimulatorNode];
+  originalLength: number;
+
   /**
    * @param {[SimulatorNode, SimulatorNode]} nodes
    * @param {{ axialStiffness?: number, dampingRatio?: number}} options
    */
-  constructor(nodes, { axialStiffness, dampingRatio }) {
+  constructor(
+    nodes: [SimulatorNode, SimulatorNode],
+    { axialStiffness, dampingRatio }: { axialStiffness: number, dampingRatio: number },
+  ) {
     /** @type {string} */
     this.type = "beam";
 
@@ -93,13 +101,14 @@ class Beam {
   // deallocate
   destroy() {
     const self = this;
-    this.nodes.forEach(node => {
+    this.nodes.forEach((node) => {
       const index = node.beams.indexOf(self);
       if (index >= 0) node.beams.splice(index, 1);
-    })
-    this.vertices = [[0, 0, 0], [0, 0, 0]];
+    });
+    this.vertices = [
+      [0, 0, 0],
+      [0, 0, 0],
+    ];
     this.nodes = undefined;
   }
 }
-
-export default Beam;

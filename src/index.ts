@@ -58,6 +58,7 @@ const OrigamiSimulator = ({
    * @description Activate three.js shadows on the materials.
    */
   let shadows = false;
+
   /**
    * @param {boolean} newShadows
    */
@@ -68,11 +69,13 @@ const OrigamiSimulator = ({
     // model.backMesh.castShadow = shadows;
     model.backMesh.receiveShadow = shadows;
   };
+
   /**
    * @description When the user pulls on a node, call this method, it will
    * relay the information to the solver
    */
   const nodeDidMove = () => solver.nodeDidMove();
+
   /**
    * @description One call to origami simulator's solver
    */
@@ -84,6 +87,7 @@ const OrigamiSimulator = ({
     model.needsUpdate();
     // reset single loop variables
   };
+
   /**
    * @description Start a loop with window.requestAnimationFrame
    * which will call the compute method on every frame.
@@ -96,6 +100,7 @@ const OrigamiSimulator = ({
       onCompute({ error });
     }
   };
+
   /**
    * @description Activate origami simulator's compute loop.
    */
@@ -111,6 +116,7 @@ const OrigamiSimulator = ({
       computeLoop();
     }
   };
+
   /**
    * @description this load method can throw an error. wrap it in a try catch
    * and deliver the error to the end user.
@@ -119,6 +125,7 @@ const OrigamiSimulator = ({
     model.load(fold);
     solver.setModel(model, { creasePercent: foldAmount });
   };
+
   /**
    * @description various solver settings
    */
@@ -146,10 +153,12 @@ const OrigamiSimulator = ({
     model.setDampingRatio(value);
     solver.update();
   };
+
   /**
    * @description Reset the vertices of the model to their original position
    */
   const reset = () => solver.reset();
+
   /**
    * @description Stop the compute loop and free all associated memory
    */
@@ -158,6 +167,7 @@ const OrigamiSimulator = ({
     model.dealloc();
     solver.dealloc();
   };
+
   /**
    * @description Origami Simulator
    */
@@ -206,6 +216,7 @@ const OrigamiSimulator = ({
     setMaterialLine: (material, assignments) =>
       model.setMaterialLine(material, assignments),
   };
+
   // getters and setters
   Object.defineProperty(app, "active", { get: () => active, set: setActive });
   Object.defineProperty(app, "foldAmount", { get: () => foldAmount, set: setFoldAmount });

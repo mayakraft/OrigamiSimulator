@@ -4,10 +4,10 @@
     "allowJs": true,
     "checkJs": true,
     "allowImportingTsExtensions": true,
-    "moduleResolution": "nodenext",
     "noEmit": true,
     "target": "ESNext", // which level of JS support to target
-    "module": "ESNext", // which system for the program AMD, UMD, System, CommonJS
+    "module": "UMD", // which system for the program AMD, UMD, System, CommonJS
+    "moduleResolution": "bundler",
     // Types should go into this directory.
     // Removing this would place the .d.ts files
     // next to the .js files

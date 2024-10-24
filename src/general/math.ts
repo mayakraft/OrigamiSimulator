@@ -3,23 +3,25 @@
  * @param {[number, number, number]} v one 3D vector
  * @returns {number} one scalar
  */
-export const magnitude = v => Math.sqrt(v[0] * v[0] + v[1] * v[1] + v[2] * v[2]);
+export const magnitude = (v: [number, number, number]): number =>
+  Math.sqrt(v[0] * v[0] + v[1] * v[1] + v[2] * v[2]);
 
 /**
  * @description compute the square-magnitude a 3D vector.
  * @param {[number, number, number]} v one 3D vector
  * @returns {number} one scalar
  */
-export const magSquared = v => v[0] * v[0] + v[1] * v[1] + v[2] * v[2];
+export const magSquared = (v: [number, number, number]): number =>
+  v[0] * v[0] + v[1] * v[1] + v[2] * v[2];
 
 /**
  * @description normalize the input vector and return a new vector as a copy.
  * @param {[number, number, number]} v one 3D vector
  * @returns {[number, number, number]} one 3D vector
  */
-export const normalize = (v) => {
-	const m = magnitude(v);
-	return m === 0 ? v : [v[0] / m, v[1] / m, v[2] / m];
+export const normalize = (v: [number, number, number]): [number, number, number] => {
+  const m = magnitude(v);
+  return m === 0 ? v : [v[0] / m, v[1] / m, v[2] / m];
 };
 
 /**
@@ -28,7 +30,10 @@ export const normalize = (v) => {
  * @param {number} s one scalar
  * @returns {[number, number, number]} one 3D vector
  */
-export const scale = (v, s) => [v[0] * s, v[1] * s, v[2] * s];
+export const scale = (
+  v: [number, number, number],
+  s: number,
+): [number, number, number] => [v[0] * s, v[1] * s, v[2] * s];
 
 /**
  * @description add two vectors and return the sum as another vector,
@@ -37,7 +42,10 @@ export const scale = (v, s) => [v[0] * s, v[1] * s, v[2] * s];
  * @param {[number, number, number]} u one 3D vector
  * @returns {[number, number, number]} one 3D vector
  */
-export const add = (v, u) => [v[0] + u[0], v[1] + u[1], v[2] + u[2]];
+export const add = (
+  v: [number, number, number],
+  u: [number, number, number],
+): [number, number, number] => [v[0] + u[0], v[1] + u[1], v[2] + u[2]];
 
 /**
  * @description subtract the second vector from the first,
@@ -46,7 +54,10 @@ export const add = (v, u) => [v[0] + u[0], v[1] + u[1], v[2] + u[2]];
  * @param {[number, number]} u one 2D vector
  * @returns {[number, number]} one 2D vector
  */
-export const subtract2 = (v, u) => [v[0] - u[0], v[1] - u[1]];
+export const subtract2 = (v: [number, number], u: [number, number]): [number, number] => [
+  v[0] - u[0],
+  v[1] - u[1],
+];
 
 /**
  * @description subtract the second vector from the first,
@@ -55,7 +66,10 @@ export const subtract2 = (v, u) => [v[0] - u[0], v[1] - u[1]];
  * @param {[number, number, number]} u one 3D vector
  * @returns {[number, number, number]} one 3D vector
  */
-export const subtract = (v, u) => [v[0] - u[0], v[1] - u[1], v[2] - u[2]];
+export const subtract = (
+  v: [number, number, number],
+  u: [number, number, number],
+): [number, number, number] => [v[0] - u[0], v[1] - u[1], v[2] - u[2]];
 
 /**
  * @description compute the dot product of two 3D vectors.
@@ -63,7 +77,8 @@ export const subtract = (v, u) => [v[0] - u[0], v[1] - u[1], v[2] - u[2]];
  * @param {[number, number, number]} u one 3D vector
  * @returns {number} one scalar
  */
-export const dot = (v, u) => v[0] * u[0] + v[1] * u[1] + v[2] * u[2];
+export const dot = (v: [number, number, number], u: [number, number, number]): number =>
+  v[0] * u[0] + v[1] * u[1] + v[2] * u[2];
 
 /**
  * @description compute the midpoint of two 3D vectors.
@@ -71,7 +86,10 @@ export const dot = (v, u) => v[0] * u[0] + v[1] * u[1] + v[2] * u[2];
  * @param {[number, number, number]} u one 3D vector
  * @returns {[number, number, number]} one 3D vector
  */
-export const midpoint = (v, u) => scale(add(v, u), 0.5);
+export const midpoint = (
+  v: [number, number, number],
+  u: [number, number, number],
+): [number, number, number] => scale(add(v, u), 0.5);
 
 /**
  * @description the 3D cross product of two 3D vectors
@@ -79,11 +97,14 @@ export const midpoint = (v, u) => scale(add(v, u), 0.5);
  * @param {[number, number, number]} u one 3D vector
  * @returns {[number, number, number]} one 3D vector
  */
-export const cross = (v, u) => [
-	v[1] * u[2] - v[2] * u[1],
-	v[2] * u[0] - v[0] * u[2],
-	v[0] * u[1] - v[1] * u[0],
-];
+export const cross = (
+  v: [number, number, number],
+  u: [number, number, number],
+): [number, number, number] => [
+    v[1] * u[2] - v[2] * u[1],
+    v[2] * u[0] - v[0] * u[2],
+    v[0] * u[1] - v[1] * u[0],
+  ];
 
 /**
  * @description compute the distance between two 3D vectors
@@ -91,11 +112,14 @@ export const cross = (v, u) => [
  * @param {[number, number, number]} u one 3D vector
  * @returns {number} one scalar
  */
-export const distance = (v, u) => {
-	const a = v[0] - u[0];
-	const b = v[1] - u[1];
-	const c = v[2] - u[2];
-	return Math.sqrt((a * a) + (b * b) + (c * c));
+export const distance = (
+  v: [number, number, number],
+  u: [number, number, number],
+): number => {
+  const a = v[0] - u[0];
+  const b = v[1] - u[1];
+  const c = v[2] - u[2];
+  return Math.sqrt(a * a + b * b + c * c);
 };
 
 /**
@@ -104,21 +128,32 @@ export const distance = (v, u) => {
  * @param {[number, number, number]} v one 3D vector
  * @returns {[number, number, number]} one 3D vector
  */
-export const flip = v => [-v[0], -v[1], -v[2]];
+export const flip = (v: [number, number, number]): [number, number, number] => [
+  -v[0],
+  -v[1],
+  -v[2],
+];
 
 /**
  * @description Resize a vector to 2D, filling any missing values with 0.
  * @param {number[]} vector the vector to resize
  * @returns {[number, number]} a copy of the vector in 2D.
  */
-export const resize2 = (vector) => [vector[0] || 0, vector[1] || 0];
+export const resize2 = (vector: number[]): [number, number] => [
+  vector[0] || 0,
+  vector[1] || 0,
+];
 
 /**
  * @description Resize a vector to 3D, filling any missing values with 0.
  * @param {number[]} vector the vector to resize
  * @returns {[number, number, number]} a copy of the vector in 3D.
  */
-export const resize3 = (vector) => [vector[0] || 0, vector[1] || 0, vector[2] || 0];
+export const resize3 = (vector: number[]): [number, number, number] => [
+  vector[0] || 0,
+  vector[1] || 0,
+  vector[2] || 0,
+];
 
 /**
  * @description Convert hue-saturation-lightness values into
@@ -130,17 +165,20 @@ export const resize3 = (vector) => [vector[0] || 0, vector[1] || 0, vector[2] ||
  * @returns {number[]} three values between 0 and 255, or four
  * if an alpha value is provided, where the fourth is between 0 and 1.
  */
-export const hslToRgb = (hue, saturation, lightness, alpha) => {
-	const s = saturation / 100;
-	const l = lightness / 100;
-	/** @param {number} n @returns {number} */
-	const k = n => (n + hue / 30) % 12;
-	const a = s * Math.min(l, 1 - l);
-	/** @param {number} n @returns {number} */
-	const f = n => (
-		l - a * Math.max(-1, Math.min(k(n) - 3, Math.min(9 - k(n), 1)))
-	);
-	return alpha === undefined
-		? [f(0) * 255, f(8) * 255, f(4) * 255]
-		: [f(0) * 255, f(8) * 255, f(4) * 255, alpha];
+export const hslToRgb = (
+  hue: number,
+  saturation: number,
+  lightness: number,
+  alpha: number,
+): number[] => {
+  const s = saturation / 100;
+  const l = lightness / 100;
+  /** @param {number} n @returns {number} */
+  const k = (n) => (n + hue / 30) % 12;
+  const a = s * Math.min(l, 1 - l);
+  /** @param {number} n @returns {number} */
+  const f = (n) => l - a * Math.max(-1, Math.min(k(n) - 3, Math.min(9 - k(n), 1)));
+  return alpha === undefined
+    ? [f(0) * 255, f(8) * 255, f(4) * 255]
+    : [f(0) * 255, f(8) * 255, f(4) * 255, alpha];
 };

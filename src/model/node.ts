@@ -2,7 +2,7 @@
  * Created by ghassaei on 9/16/16.
  */
 
-import type { SimulatorNode } from "../types.d.ts";
+import type { SimulatorNode } from "../types.ts";
 
 /**
  * @param {[number, number, number]} coords the node's coordinates

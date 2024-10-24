@@ -7,7 +7,7 @@ import type { Model } from "./index.ts";
  * but build using the Origami Simulator Model type as input.
  */
 const verticesFaces = (model: Model) => {
-  const vertices_faces = model.nodes.map(() => []);
+  const vertices_faces: number[][] = model.nodes.map(() => []);
   // iterate over every face, then iterate over each of the face's vertices
   model.faces_vertices.forEach((face, f) => {
     // in the case that one face visits the same vertex multiple times,

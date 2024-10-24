@@ -2,12 +2,13 @@
  * Created by amandaghassaei on 2/24/17.
  */
 import * as THREE from "three";
+import type { SimulatorNode } from "../types.ts";
 import {
   makeNode,
   destroyNode,
 } from "./node.ts";
-import Beam from "./beam.ts";
-import Crease from "./crease.ts";
+import { Beam } from "./beam.ts";
+import { Crease } from "./crease.ts";
 import * as Materials from "./materials.ts";
 import { makeCreasesParams } from "../fold/creaseParams.ts";
 import prepare from "../fold/prepare.ts";
@@ -65,7 +66,7 @@ export class Model {
   /**
    * @param {{ scene: THREE.Scene }} options
    */
-  constructor({ scene }: { scene: THREE.Scene }) {
+  constructor({ scene }: { scene: THREE.Scene | undefined }) {
     // if the user chooses to export the 3D model, we need to reference
     // the original FOLD data. "this.fold" contains triangulated faces.
     this.fold = {};

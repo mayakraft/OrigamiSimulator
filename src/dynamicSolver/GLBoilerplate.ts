@@ -13,10 +13,10 @@ export const initializeWebGL = (
   gl: WebGLRenderingContext | WebGL2RenderingContext | undefined;
   version: number | undefined;
 } => {
-  const gl2 = canvas.getContext("webgl2", { antialias: false });
-  if (gl2) {
-    return { gl: gl2, version: 2 };
-  }
+  //const gl2 = canvas.getContext("webgl2", { antialias: false });
+  //if (gl2) {
+  //  return { gl: gl2, version: 2 };
+  //}
   const gl1 = canvas.getContext("webgl", { antialias: false });
   if (gl1) {
     return { gl: gl1, version: 1 };
@@ -37,9 +37,10 @@ const compileShader = (
   gl: WebGLRenderingContext | WebGL2RenderingContext,
   shaderSource: string,
   shaderType: number,
-) => {
+): WebGLShader | null => {
   // Create the shader object
   const shader = gl.createShader(shaderType);
+  if (!shader) { return shader; }
   // Set the shader source code.
   gl.shaderSource(shader, shaderSource);
   // Compile the shader
@@ -97,7 +98,7 @@ const createShaderFromSource = (
   gl: WebGLRenderingContext | WebGL2RenderingContext,
   shaderSource: string,
   shaderType: number,
-) => compileShader(gl, shaderSource, shaderType);
+): WebGLShader | null => compileShader(gl, shaderSource, shaderType);
 
 /**
  * Creates a program from 2 script tags.
@@ -118,7 +119,9 @@ export const createProgramFromSource = (
     fragmentShaderSrc,
     gl.FRAGMENT_SHADER,
   );
-  return createProgram(gl, vertexShader, fragmentShader);
+  return !vertexShader || !fragmentShader
+    ? null
+    : createProgram(gl, vertexShader, fragmentShader);
 };
 
 /**

@@ -50,6 +50,7 @@
 			try {
 				origami = JSON.parse(event.target.result);
 			} catch (error) {
+				console.error(error);
 				window.alert(error);
 			}
 		};

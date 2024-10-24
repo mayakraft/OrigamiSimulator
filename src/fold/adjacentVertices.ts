@@ -1,9 +1,8 @@
 /**
  * Rabbit Ear (c) Kraft
  */
-import {
-  subtract2,
-} from "../general/math.ts";
+import type { FOLD } from "../types.ts";
+import { resize2, subtract2 } from "../general/math.ts";
 
 /**
  * @description This is a subroutine for building vertices_vertices. This will
@@ -14,18 +13,22 @@ import {
  * @param {number} vertex the origin vertex, around which the vertices will be sorted
  * @returns {number[]} indices of vertices, in sorted order
  */
-const sortVerticesCounterClockwise = ({ vertices_coords }, vertices, vertex) => (
+const sortVerticesCounterClockwise = (
+  { vertices_coords = [] }: FOLD,
+  vertices: number[],
+  vertex: number,
+) =>
   vertices
-    .map(v => vertices_coords[v])
-    .map(coord => subtract2(coord, vertices_coords[vertex]))
-    .map(vec => Math.atan2(vec[1], vec[0]))
+    .map((v) => vertices_coords[v])
+    .map(resize2)
+    .map((coord) => subtract2(coord, vertices_coords[vertex]))
+    .map((vec) => Math.atan2(vec[1], vec[0]))
     // optional line, this makes the cycle loop start/end along the +X axis
-    .map(angle => (angle > -1e-6 ? angle : angle + Math.PI * 2))
+    .map((angle) => (angle > -1e-6 ? angle : angle + Math.PI * 2))
     .map((a, i) => ({ a, i }))
     .sort((a, b) => a.a - b.a)
-    .map(el => el.i)
-    .map(i => vertices[i])
-);
+    .map((el) => el.i)
+    .map((i) => vertices[i]);
 
 /**
  * @description Make `vertices_edges` from `edges_vertices`, unsorted, which should
@@ -34,18 +37,19 @@ const sortVerticesCounterClockwise = ({ vertices_coords }, vertices, vertex) => 
  * @returns {number[][]} array of array of numbers, where each row corresponds to a
  * vertex index and the values in the inner array are edge indices.
  */
-const makeVerticesEdgesUnsorted = ({ edges_vertices }) => {
-  const vertices_edges = [];
+const makeVerticesEdgesUnsorted = ({ edges_vertices = [] }: FOLD) => {
+  const vertices_edges: number[][] = [];
   // iterate over edges_vertices and swap the index for each of the contents
   // each edge (index 0: [3, 4]) will be converted into (index 3: [0], index 4: [0])
   // repeat. append to each array.
-  edges_vertices.forEach((ev, i) => ev
-    .forEach((v) => {
+  edges_vertices.forEach((ev, i) =>
+    ev.forEach((v) => {
       if (vertices_edges[v] === undefined) {
         vertices_edges[v] = [];
       }
       vertices_edges[v].push(i);
-    }));
+    }),
+  );
   return vertices_edges;
 };
 
@@ -57,14 +61,18 @@ const makeVerticesEdgesUnsorted = ({ edges_vertices }) => {
  * @param {FOLD} graph a FOLD object, containing edges_vertices
  * @returns {object} space-separated vertex pair keys, edge indices values
  */
-const makeVerticesToEdgeBidirectional = ({ edges_vertices }) => {
+const makeVerticesToEdgeBidirectional = ({ edges_vertices = [] }: FOLD) => {
   const map = {};
   edges_vertices
-    .map(ev => ev.join(" "))
-    .forEach((key, i) => { map[key] = i; });
+    .map((ev) => ev.join(" "))
+    .forEach((key, i) => {
+      map[key] = i;
+    });
   edges_vertices
-    .map(ev => `${ev[1]} ${ev[0]}`)
-    .forEach((key, i) => { map[key] = i; });
+    .map((ev) => `${ev[1]} ${ev[0]}`)
+    .forEach((key, i) => {
+      map[key] = i;
+    });
   return map;
 };
 
@@ -75,31 +83,34 @@ const makeVerticesToEdgeBidirectional = ({ edges_vertices }) => {
  * @returns {number[][]} array of array of numbers, where each row corresponds to a
  * vertex index and the values in the inner array are edge indices.
  */
-export const makeVerticesEdges = ({ edges_vertices, vertices_vertices }) => {
+export const makeVerticesEdges = ({ edges_vertices, vertices_vertices = [] }: FOLD) => {
   const edge_map = makeVerticesToEdgeBidirectional({ edges_vertices });
-  return vertices_vertices
-    .map((verts, i) => verts
-      .map(v => edge_map[`${i} ${v}`]));
+  return vertices_vertices.map((verts, i) => verts.map((v) => edge_map[`${i} ${v}`]));
 };
 
 /**
  * @description Make `vertices_vertices` sorted radially counter-clockwise.
- * @param {FOLD} graph a FOLD object, containing vertices_coords, vertices_edges, edges_vertices
+ * @param {FOLD} graph a FOLD object w/ vertices_coords, vertices_edges, edges_vertices
  * @returns {number[][]} array of array of numbers, where each row corresponds to a
  * vertex index and the values in the inner array are vertex indices.
  */
-export const makeVerticesVertices2D = ({ vertices_coords, edges_vertices }) => {
+export const makeVerticesVertices2D = ({
+  vertices_coords,
+  edges_vertices = [],
+}: FOLD) => {
   // use adjacent edges to find adjacent vertices
-  const vertices_vertices = makeVerticesEdgesUnsorted({ edges_vertices })
-    .map((edges, v) => edges
-      // the adjacent edge's edges_vertices also contains this vertex,
-      // filter it out and we're left with the adjacent vertices
-      .flatMap(edge => edges_vertices[edge]
-        .filter(i => i !== v)));
+  const vertices_vertices = makeVerticesEdgesUnsorted({ edges_vertices }).map(
+    (edges, v) =>
+      edges
+        // the adjacent edge's edges_vertices also contains this vertex,
+        // filter it out and we're left with the adjacent vertices
+        .flatMap((edge) => edges_vertices[edge].filter((i) => i !== v)),
+  );
   return vertices_coords === undefined
     ? vertices_vertices
-    : vertices_vertices
-      .map((verts, i) => sortVerticesCounterClockwise({ vertices_coords }, verts, i));
+    : vertices_vertices.map((verts, i) =>
+      sortVerticesCounterClockwise({ vertices_coords }, verts, i),
+    );
 };
 
 /**
@@ -109,18 +120,25 @@ export const makeVerticesVertices2D = ({ vertices_coords, edges_vertices }) => {
  * @returns {number[][]} array of array of numbers, where each row corresponds to a
  * vertex index and the values in the inner array are face indices.
  */
-export const makeVerticesFacesUnsorted = ({ vertices_coords, faces_vertices }) => {
-  if (!faces_vertices) { return vertices_coords.map(() => []); }
+export const makeVerticesFacesUnsorted = ({
+  vertices_coords = [],
+  faces_vertices = [],
+}: FOLD) => {
+  if (!faces_vertices) {
+    return vertices_coords.map(() => []);
+  }
   // instead of initializing the array ahead of time (we would need to know
   // the length of something like vertices_coords)
-  const vertices_faces = vertices_coords.map(() => []);
+  const vertices_faces: number[][] = vertices_coords.map(() => []);
   // iterate over every face, then iterate over each of the face's vertices
   faces_vertices.forEach((face, f) => {
     // in the case that one face visits the same vertex multiple times,
     // this hash acts as an intermediary, basically functioning like a set,
     // and only allow one occurence of each vertex index.
-    const hash = [];
-    face.forEach((vertex) => { hash[vertex] = f; });
+    const hash: number[] = [];
+    face.forEach((vertex) => {
+      hash[vertex] = f;
+    });
     hash.forEach((fa, v) => vertices_faces[v].push(fa));
   });
   return vertices_faces;
@@ -128,52 +146,61 @@ export const makeVerticesFacesUnsorted = ({ vertices_coords, faces_vertices }) =
 
 /**
  * @description Make `vertices_vertices` sorted radially counter-clockwise.
- * @param {FOLD} graph a FOLD object, containing vertices_coords, vertices_edges, edges_vertices
+ * @param {FOLD} graph a FOLD object w/ vertices_coords, vertices_edges, edges_vertices
  * @returns {number[][]} array of array of numbers, where each row corresponds to a
  * vertex index and the values in the inner array are vertex indices.
  */
 export const makeVerticesVerticesFromFaces = ({
-  vertices_coords, vertices_faces, faces_vertices,
-}) => {
+  vertices_coords,
+  vertices_faces,
+  faces_vertices = [],
+}: FOLD) => {
   if (!vertices_faces) {
     vertices_faces = makeVerticesFacesUnsorted({ vertices_coords, faces_vertices });
   }
   // every iterate through every vertices_faces's faces_vertices
-  const vertices_faces_vertices = vertices_faces
-    .map(faces => faces.map(f => faces_vertices[f]));
+  const vertices_faces_vertices = vertices_faces.map((faces) =>
+    faces.map((f) => faces_vertices[f]),
+  );
   // for every vertex, find its index in its faces_vertices array.
-  const vertices_faces_indexOf = vertices_faces_vertices
-    .map((faces, vertex) => faces.map(verts => verts.indexOf(vertex)));
+  const vertices_faces_indexOf = vertices_faces_vertices.map((faces, vertex) =>
+    faces.map((verts) => verts.indexOf(vertex)),
+  );
   // get the three vertices (before, this vertex, after) in this vertex's
   // faces_vertices array maintaining the counter clockwise order.
-  const vertices_faces_threeIndices = vertices_faces_vertices
-    .map((faces, vertex) => faces.map((verts, j) => [
+  const vertices_faces_threeIndices = vertices_faces_vertices.map((faces, vertex) =>
+    faces.map((verts, j) => [
       (vertices_faces_indexOf[vertex][j] + verts.length - 1) % verts.length,
       vertices_faces_indexOf[vertex][j],
       (vertices_faces_indexOf[vertex][j] + 1) % verts.length,
-    ]));
+    ]),
+  );
   // conver these three indices in face_vertices arrays into absolute
   // indices to vertices, so that we have three consecutive vertex indices.
   // for example, vertex #7's entry might be an array containing:
   // [141, 7, 34]
   // [34, 7, 120]
   // [120, 7, 141]
-  const vertices_faces_threeVerts = vertices_faces_threeIndices
-    .map((faces, vertex) => faces
-      .map((indices, j) => indices
-        .map(index => vertices_faces_vertices[vertex][j][index])));
+  const vertices_faces_threeVerts = vertices_faces_threeIndices.map((faces, vertex) =>
+    faces.map((indices, j) =>
+      indices.map((index) => vertices_faces_vertices[vertex][j][index]),
+    ),
+  );
   // convert the three neighbor vertices into two pairs, maintaining order,
   // which include the vertex in the middle, these represent the pairs of
   // vertices which make up the edge of the face, for all faces, in counter-
   // clockwise order around this vertex.
-  const vertices_verticesLookup = vertices_faces_threeVerts.map(faces => {
+  const vertices_verticesLookup = vertices_faces_threeVerts.map((faces) => {
     // facesVerts matches the order in this vertex's faces_vertices array.
     // it contains vertex pair keys ([141, 7, 34] becomes ["141 7", "7 34"])
     // which represent this face's adjacent vertices to our vertex
     // coming to and from this vertex.
-    const facesVerts = faces
-      .map(verts => [[0, 1], [1, 2]]
-        .map(p => p.map(x => verts[x]).join(" ")));
+    const facesVerts = faces.map((verts) =>
+      [
+        [0, 1],
+        [1, 2],
+      ].map((p) => p.map((x) => verts[x]).join(" ")),
+    );
     const from = {};
     const to = {};
     facesVerts.forEach((keys, i) => {
@@ -191,16 +218,14 @@ export const makeVerticesVerticesFromFaces = ({
   // care needs to be taken because this vertex may be adjacent to holes.
   // a solution is possible if there are up to two holes, but a vertex
   // with more than two holes is technically unsolvable.
-  return vertices_verticesLookup.map(lookup => {
+  return vertices_verticesLookup.map((lookup) => {
     // locate any holes if they exist, holes are when the inverse of
     // a "to" key does not exist in the "from" lookup, or visa versa.
     const toKeys = Object.keys(lookup.to);
-    const toKeysInverse = toKeys
-      .map(key => key.split(" ").reverse().join(" "));
+    const toKeysInverse = toKeys.map((key) => key.split(" ").reverse().join(" "));
     // hole keys are made from "from" indices, so each one can be
     // the start of a counter clockwise walk path
-    const holeKeys = toKeys
-      .filter((_, i) => !(toKeysInverse[i] in lookup.from));
+    const holeKeys = toKeys.filter((_, i) => !(toKeysInverse[i] in lookup.from));
     // console.log("holeKeys", holeKeys);
     if (holeKeys.length > 2) {
       console.warn("vertices_vertices found an unsolvable vertex");
@@ -208,11 +233,9 @@ export const makeVerticesVerticesFromFaces = ({
     }
     // the start keys will be either each hole key, or just pick a key
     // if no holes exist
-    const startKeys = holeKeys.length
-      ? holeKeys
-      : [toKeys[0]];
+    const startKeys = holeKeys.length ? holeKeys : [toKeys[0]];
     // vertex_vertices is each vertex's vertices_vertices
-    const vertex_vertices = [];
+    const vertex_vertices: number[] = [];
     // in the case of no holes, "visited" will indicate we finished.
     const visited = {};
     for (let s = 0; s < startKeys.length; s += 1) {
@@ -224,7 +247,9 @@ export const makeVerticesVerticesFromFaces = ({
         const prev = walk[walk.length - 1];
         const faceIndex = lookup.to[prev];
         // this indicates the end of a walk which ended at a hole
-        if (!(faceIndex in lookup.facesVerts)) { break; }
+        if (!(faceIndex in lookup.facesVerts)) {
+          break;
+        }
         let nextKey;
         if (lookup.facesVerts[faceIndex][0] === prev) {
           nextKey = lookup.facesVerts[faceIndex][1];
@@ -232,12 +257,17 @@ export const makeVerticesVerticesFromFaces = ({
         if (lookup.facesVerts[faceIndex][1] === prev) {
           nextKey = lookup.facesVerts[faceIndex][0];
         }
-        if (nextKey === undefined) { walk = []; break; }
+        if (nextKey === undefined) {
+          walk = [];
+          break;
+        }
         const nextKeyFlipped = nextKey.split(" ").reverse().join(" ");
         walk.push(nextKey);
         // this indicates the end of a walk which completed a cycle
-        isDone = (nextKeyFlipped in visited);
-        if (!isDone) { walk.push(nextKeyFlipped); }
+        isDone = nextKeyFlipped in visited;
+        if (!isDone) {
+          walk.push(nextKeyFlipped);
+        }
         // update the visited dictionary
         visited[nextKey] = true;
         visited[nextKeyFlipped] = true;
@@ -248,8 +278,8 @@ export const makeVerticesVerticesFromFaces = ({
       // one vertex which isn't our vertex. now we have our vertices_vertices
       const vertexKeys = walk
         .filter((_, i) => i % 2 === 0)
-        .map(key => key.split(" ")[1])
-        .map(str => parseInt(str, 10));
+        .map((key) => key.split(" ")[1])
+        .map((str) => parseInt(str, 10));
       vertex_vertices.push(...vertexKeys);
     }
     return vertex_vertices;
@@ -258,12 +288,14 @@ export const makeVerticesVerticesFromFaces = ({
 
 /**
  * @description Make `vertices_vertices` sorted radially counter-clockwise.
- * @param {FOLD} graph a FOLD object, containing vertices_coords, vertices_edges, edges_vertices
+ * @param {FOLD} graph a FOLD object w/ vertices_coords, vertices_edges, edges_vertices
  * @returns {number[][]} array of array of numbers, where each row corresponds to a
  * vertex index and the values in the inner array are vertex indices.
  */
-export const makeVerticesVertices = (graph) => {
-  if (!graph.vertices_coords || !graph.vertices_coords.length) { return []; }
+export const makeVerticesVertices = (graph: FOLD) => {
+  if (!graph.vertices_coords || !graph.vertices_coords.length) {
+    return [];
+  }
   switch (graph.vertices_coords[0].length) {
     case 3:
       return makeVerticesVerticesFromFaces(graph);
