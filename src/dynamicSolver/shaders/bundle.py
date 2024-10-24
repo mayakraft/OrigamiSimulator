@@ -43,5 +43,5 @@ for [name, path] in files:
 	bundle += "export const " + name + " = `" + f.read() + "`;\n\n"
 	f.close()
 
-with open('shaders.js', 'w') as f:
+with open('shaders.ts', 'w') as f:
 	f.write(bundle)
