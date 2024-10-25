@@ -1,29 +1,28 @@
+// tsconfig.json
 {
-	"include": ["src/**/*"],
-	"compilerOptions": {
-		// changes the first line of index.d.ts to declare a module name
-		"esModuleInterop": true,
-		"target": "ES2022", // "ES2015",
-		"module": "nodenext", // "es2015",
-		"lib": ["ES2022", "DOM"], // ["es2015", "DOM"],
-		"moduleResolution": "nodenext", // "node",
-		// Tells TypeScript to read JS files, as
-		// normally they are ignored as source files
-		"allowJs": true,
-		"checkJs": true,
-		// Generate d.ts files
-		"declaration": true,
-		// Types should go into this directory.
-		// Removing this would place the .d.ts files
-		// next to the .js files
-		"declarationDir": "./types",
-		"outDir": "./types",
-		"rootDir": "./src",
-		// This compiler run should
-		// only output d.ts files
-		"emitDeclarationOnly": true,
-		// go to js file when using IDE functions like
-		// "Go to Definition" in VSCode
-		"declarationMap": true
-	}
+  "compilerOptions": {
+    "allowJs": true,
+    "checkJs": true,
+    "allowImportingTsExtensions": true,
+    "noEmit": true,
+    "target": "ESNext", // which level of JS support to target
+    "module": "UMD", // which system for the program AMD, UMD, System, CommonJS
+    "moduleResolution": "bundler",
+    // Types should go into this directory.
+    // Removing this would place the .d.ts files
+    // next to the .js files
+    "declarationDir": "./types",
+    "outDir": "./types",
+    "rootDir": "./src",
+
+    // Recommended: Compiler complains about expressions implicitly typed as 'any'
+    "noImplicitAny": true,
+    "lib": [
+      "ESNext",
+      "DOM",
+      "DOM.Iterable"
+    ]
+  },
+  "include": ["src/**/*"], // which files to compile
+  "exclude": ["node_modules"] // which files to skip
 }

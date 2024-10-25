@@ -145,6 +145,7 @@
 			const box = boundingBox(origami);
 			modelSize = box ? Math.max(...box.span) : 1;
 		} catch (error) {
+			console.error(error);
 			window.alert(error);
 		}
 	}

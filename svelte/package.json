@@ -10,8 +10,13 @@
 		"preview": "vite preview"
 	},
 	"devDependencies": {
+    "@types/earcut": "^2.1.4",
 		"@types/three": "^0.164.0",
-		"typescript": "^5.2.2"
+		"typescript": "^5.2.2",
+    "eslint": "^8.30.0",
+    "eslint-config-airbnb-base": "^15.0.0",
+    "eslint-plugin-import": "^2.26.0",
+    "vitest": "^1.5.2"
 	},
 	"dependencies": {
 		"@sveltejs/vite-plugin-svelte": "^2.0.0",
