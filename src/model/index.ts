@@ -33,7 +33,7 @@ const emptyMesh = (): FOLDMesh => ({
  * @param {THREE.Material} material
  * @param {string} key
  */
-const setNewFaceMaterial = (model, material, key) => {
+const setNewFaceMaterial = (model: Model, material: THREE.Material, key: string) => {
   if (model.materials[key]) {
     model.materials[key].dispose();
   }
@@ -46,8 +46,8 @@ export class Model {
   // the original FOLD data. "this.fold" contains triangulated faces.
   fold: FOLDMesh;
   foldUnmodified: FOLD;
-  geometry: any;
-  materials: { [key: string]: THREE.MeshMaterial };
+  geometry: THREE.BufferGeometry;
+  materials: { [key: string]: THREE.Material };
   //materials.line = {};
   frontMesh = new THREE.Mesh(); // front face of mesh
   backMesh = new THREE.Mesh(); // back face of mesh (different color)

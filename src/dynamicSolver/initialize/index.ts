@@ -1,14 +1,14 @@
+import type { GPUMath } from "../GPUMath.ts";
+import type { GPUMathOptions } from "./options.ts";
+import type { Model } from "../../model/index.ts";
+import type { Beam } from "../../model/beam.ts";
 import initArrays from "./initArrays.ts";
 import fillArrays from "./fillArrays.ts";
 import initGPU from "./initGPU.ts";
 
-/**
- * @param {Model} model
- * @returns {number}
- */
-const calcDt = (model) => {
+const calcDt = (model: Model): number => {
   let maxFreqNat = 0;
-  model.edges.forEach((beam) => {
+  model.edges.forEach((beam: Beam) => {
     if (beam.getNaturalFrequency() > maxFreqNat) {
       maxFreqNat = beam.getNaturalFrequency();
     }
@@ -17,11 +17,7 @@ const calcDt = (model) => {
   return (1 / (2 * Math.PI * maxFreqNat)) * 0.9;
 };
 
-/**
- * @param {GPUMath} gpuMath
- * @param {Model} model
- */
-const setSolveParams = (gpuMath, model) => {
+const setSolveParams = (gpuMath: GPUMath, model: Model) => {
   const dt = calcDt(model);
   // $("#deltaT").html(dt);
   gpuMath.setProgram("thetaCalc");
@@ -37,12 +33,7 @@ const setSolveParams = (gpuMath, model) => {
   // options.controls.setDeltaT(dt);
 };
 
-/**
- * @param {GPUMath} gpuMath
- * @param {Model} model
- * @param {object} options
- */
-const initialize = (gpuMath, model, options) => {
+const initialize = (gpuMath: GPUMath, model: Model, options: GPUMathOptions) => {
   const arrays = initArrays(gpuMath, model);
   const moreArrays = fillArrays(gpuMath, model, arrays);
   initGPU(gpuMath, arrays, options);

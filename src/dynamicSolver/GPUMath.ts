@@ -16,9 +16,14 @@ export class GPUMath {
   canvas: HTMLCanvasElement;
   gl: WebGLRenderingContext | WebGL2RenderingContext;
   version: number;
-  programs: { [key: string]: { program: WebGLProgram; uniforms: object } };
-  frameBuffers: any;
-  textures: any;
+  programs: {
+    [key: string]: {
+      program: WebGLProgram;
+      uniforms: { [key: string]: WebGLUniformLocation };
+    };
+  };
+  frameBuffers: { [key: string]: WebGLFramebuffer };
+  textures: { [key: string]: WebGLTexture };
   index: number;
 
   constructor() {
@@ -157,16 +162,22 @@ export class GPUMath {
     }
     switch (type) {
       case "1f":
-        this.gl.uniform1f(location, val);
+        this.gl.uniform1f(location, val as number);
         break;
       case "2f":
-        this.gl.uniform2f(location, val[0], val[1]);
+        {
+          const [a, b]: [number, number] = val as [number, number];
+          this.gl.uniform2f(location, a, b);
+        }
         break;
       case "3f":
-        this.gl.uniform3f(location, val[0], val[1], val[2]);
+        {
+          const [a, b, c]: [number, number, number] = val as [number, number, number];
+          this.gl.uniform3f(location, a, b, c);
+        }
         break;
       case "1i":
-        this.gl.uniform1i(location, val);
+        this.gl.uniform1i(location, val as number);
         break;
       default:
         console.warn(`no uniform for type ${type}`);

@@ -2,6 +2,7 @@
  * Created by ghassaei on 10/7/16.
  */
 import { GPUMath } from "./GPUMath.ts";
+import { GPUMathOptions } from "./initialize/options.ts";
 import type { Model } from "../model/index.ts";
 import initialize from "./initialize/index.ts";
 import { updateMaterials, updateCreasesMeta, updateLastPosition } from "./update.ts";
@@ -15,7 +16,9 @@ import { solveStep, render } from "./solve.ts";
  * @param {Model} model
  */
 const modelCenter = (model: Model): [number, number, number] => {
-  if (!model.positions) { return [0, 0, 0]; }
+  if (!model.positions) {
+    return [0, 0, 0];
+  }
   const min = Array(3).fill(Infinity);
   const max = Array(3).fill(-Infinity);
   for (let i = 0; i < model.positions.length; i += 3) {
@@ -30,14 +33,14 @@ const modelCenter = (model: Model): [number, number, number] => {
 export class DynamicSolver {
   gpuMath: GPUMath | undefined;
   model: Model | null;
-  textureDim;
-  textureDimCreases;
-  textureDimFaces;
-  textureDimEdges;
-  meta;
-  beamMeta;
-  creaseMeta;
-  lastPosition;
+  textureDim: number;
+  textureDimCreases: number;
+  textureDimFaces: number;
+  textureDimEdges: number;
+  meta: Float32Array;
+  beamMeta: Float32Array;
+  creaseMeta: Float32Array;
+  lastPosition: Float32Array;
   integrationType: string;
 
   constructor() {
@@ -112,7 +115,7 @@ export class DynamicSolver {
    * - faceStiffness (number)
    * - calcFaceStrain (bool)
    */
-  setModel(newModel: Model, options = {}): void {
+  setModel(newModel: Model, options: GPUMathOptions = {}): void {
     // these next 2 might be unnecessary
     // dealloc();
     // gpuMath = new GPUMath();
@@ -247,19 +250,4 @@ export class DynamicSolver {
     // { meta, beamMeta, textureDimEdges }
     updateMaterials(this.gpuMath, this.model, this);
   }
-
-  // return {
-  // 	solve,
-  // 	setModel,
-  // 	nodeDidMove,
-  // 	reset,
-  // 	dealloc,
-  // 	setIntegration,
-  // 	setCreasePercent,
-  // 	setAxialStiffness,
-  // 	setFaceStiffness,
-  // 	setFaceStrain,
-  // 	update,
-  // };
-  // };
 }

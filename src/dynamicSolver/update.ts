@@ -1,4 +1,5 @@
 import type { GPUMath } from "./GPUMath.ts";
+import type { Model } from "../model/index.ts";
 import { float_type } from "./constants.ts";
 import { subtract } from "../general/math.ts";
 
@@ -9,7 +10,7 @@ import { subtract } from "../general/math.ts";
  */
 export const updateMaterials = (
   gpuMath: GPUMath,
-  model,
+  model: Model,
   { meta, beamMeta, textureDimEdges },
   initing = false,
 ) => {
@@ -47,7 +48,11 @@ export const updateMaterials = (
  * @param {GPUMath} gpuMath
  * @param {Model} model
  */
-export const updateExternalForces = (gpuMath, model, { externalForces, textureDim }) => {
+export const updateExternalForces = (
+  gpuMath: GPUMath,
+  model: Model,
+  { externalForces, textureDim },
+) => {
   for (let i = 0; i < model.nodes.length; i += 1) {
     // external forces is always 0, 0, 0
     const [x, y, z] = model.nodes[i].externalForce;
@@ -70,7 +75,7 @@ export const updateExternalForces = (gpuMath, model, { externalForces, textureDi
  * @param {GPUMath} gpuMath
  * @param {Model} model
  */
-export const updateFixed = (gpuMath, model, { mass, textureDim }) => {
+export const updateFixed = (gpuMath: GPUMath, model: Model, { mass, textureDim }) => {
   for (let i = 0; i < model.nodes.length; i += 1) {
     mass[4 * i + 1] = model.nodes[i].fixed ? 1 : 0;
   }
@@ -83,8 +88,8 @@ export const updateFixed = (gpuMath, model, { mass, textureDim }) => {
  * @param {Model} model
  */
 export const updateOriginalPosition = (
-  gpuMath,
-  model,
+  gpuMath: GPUMath,
+  model: Model,
   { originalPosition, textureDim },
 ) => {
   for (let i = 0; i < model.nodes.length; i += 1) {
@@ -109,8 +114,8 @@ export const updateOriginalPosition = (
  * @param {Model} model
  */
 export const updateCreaseVectors = (
-  gpuMath,
-  model,
+  gpuMath: GPUMath,
+  model: Model,
   { creaseVectors, textureDimCreases },
 ) => {
   for (let i = 0; i < model.creases.length; i += 1) {
@@ -136,8 +141,8 @@ export const updateCreaseVectors = (
  * @param {Model} model
  */
 export const updateCreasesMeta = (
-  gpuMath,
-  model,
+  gpuMath: GPUMath,
+  model: Model,
   { creaseMeta, textureDimCreases },
   initing = false,
 ) => {
@@ -167,7 +172,11 @@ export const updateCreasesMeta = (
  * @param {GPUMath} gpuMath
  * @param {Model} model
  */
-export const updateLastPosition = (gpuMath, model, { lastPosition, textureDim }) => {
+export const updateLastPosition = (
+  gpuMath: GPUMath,
+  model: Model,
+  { lastPosition, textureDim },
+) => {
   for (let i = 0; i < model.nodes.length; i += 1) {
     // const [x, y, z] = model.nodes[i].getRelativePosition();
     /** @type {[number, number, number]} */

@@ -1,3 +1,6 @@
+import type { GPUMath } from "../GPUMath.ts";
+import type { Model } from "../../model/index.ts";
+import type { GPUMathSettings } from "./initGPU.ts";
 import verticesFaces from "../../model/verticesFaces.ts";
 import {
   updateMaterials,
@@ -16,8 +19,8 @@ import { normalize, dot, subtract } from "../../general/math.ts";
  *
  */
 const fillArrays = (
-  gpuMath,
-  model,
+  gpuMath: GPUMath,
+  model: Model,
   {
     textureDim,
     textureDimEdges,
@@ -30,7 +33,7 @@ const fillArrays = (
     nodeCreaseMeta,
     creaseMeta2,
     lastTheta,
-  },
+  }: GPUMathSettings,
 ) => {
   const numCreases = model.creases.length;
   const nodeFaces = verticesFaces(model);

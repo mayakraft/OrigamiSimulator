@@ -1,15 +1,22 @@
+import type { GPUMath } from "./GPUMath.ts";
+import type { Model } from "../model/index.ts";
 import { add, hslToRgb } from "../general/math.ts";
 
 const strainClip = 0.5;
 
-/**
- * @description todo
- * @param {GPUMath} gpuMath
- * @param {object} options
- */
 export const solveStep = (
-  gpuMath,
-  { textureDim, textureDimCreases, textureDimFaces, integrationType },
+  gpuMath: GPUMath,
+  {
+    textureDim,
+    textureDimCreases,
+    textureDimFaces,
+    integrationType,
+  }: {
+    textureDim: number;
+    textureDimCreases: number;
+    textureDimFaces: number;
+    integrationType: string;
+  },
 ) => {
   gpuMath.setProgram("normalCalc");
   gpuMath.setSize(textureDimFaces, textureDimFaces);
@@ -115,7 +122,11 @@ export const solveStep = (
  * @param {object} options
  * @returns {number} the global error as a percent
  */
-export const render = (gpuMath, model, { textureDim, axialStrain }) => {
+export const render = (
+  gpuMath: GPUMath,
+  model: Model,
+  { textureDim, axialStrain }: { textureDim: number; axialStrain: boolean },
+) => {
   if (!gpuMath) {
     return 0;
   }
@@ -144,8 +155,7 @@ export const render = (gpuMath, model, { textureDim, axialStrain }) => {
     const rgbaIndex = i * vectorLength;
     let nodeError = parsedPixels[rgbaIndex + 3] * 100;
     globalError += nodeError;
-    /** @type {[number, number, number]} */
-    const nodePosition = [
+    const nodePosition: [number, number, number] = [
       parsedPixels[rgbaIndex],
       parsedPixels[rgbaIndex + 1],
       parsedPixels[rgbaIndex + 2],

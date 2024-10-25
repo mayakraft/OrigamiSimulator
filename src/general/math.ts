@@ -169,15 +169,14 @@ export const hslToRgb = (
   hue: number,
   saturation: number,
   lightness: number,
-  alpha: number,
+  alpha?: number,
 ): number[] => {
   const s = saturation / 100;
   const l = lightness / 100;
-  /** @param {number} n @returns {number} */
-  const k = (n) => (n + hue / 30) % 12;
+  const k = (n: number): number => (n + hue / 30) % 12;
   const a = s * Math.min(l, 1 - l);
-  /** @param {number} n @returns {number} */
-  const f = (n) => l - a * Math.max(-1, Math.min(k(n) - 3, Math.min(9 - k(n), 1)));
+  const f = (n: number): number =>
+    l - a * Math.max(-1, Math.min(k(n) - 3, Math.min(9 - k(n), 1)));
   return alpha === undefined
     ? [f(0) * 255, f(8) * 255, f(4) * 255]
     : [f(0) * 255, f(8) * 255, f(4) * 255, alpha];

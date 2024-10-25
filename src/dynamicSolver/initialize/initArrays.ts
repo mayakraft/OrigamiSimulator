@@ -1,10 +1,9 @@
+import type { GPUMath } from "../GPUMath.ts";
+import type { Model } from "../../model/index.ts";
+import type { GPUMathSettings } from "./initGPU.ts";
 import verticesFaces from "../../model/verticesFaces.ts";
 
-/**
- * @param {number} numNodes
- * @returns {number}
- */
-const calcTextureSize = (numNodes) => {
+const calcTextureSize = (numNodes: number): number => {
   if (numNodes === 1) return 2;
   for (let i = 0; i < numNodes; i += 1) {
     if (2 ** (2 * i) >= numNodes) {
@@ -17,11 +16,7 @@ const calcTextureSize = (numNodes) => {
   return 2;
 };
 
-/**
- * @param {GPUMath} gpuMath
- * @param {Model} model
- */
-const initArrays = (gpuMath, model) => {
+const initArrays = (gpuMath: GPUMath, model: Model): GPUMathSettings => {
   const numNodeFaces = verticesFaces(model).reduce((a, b) => a + b.length, 0);
   const numEdges = model.nodes
     .map((node) => node.beams.length)

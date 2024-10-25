@@ -21,25 +21,35 @@ const exportFold = (
   foldTriangulated: FOLDMesh,
   { triangulated, angles }: { triangulated?: boolean; angles?: boolean } = {},
 ) => {
-  const verticesMatch =
-    foldUnmodified.vertices_coords.length === model.positions.length / 3;
-  if (!verticesMatch) {
+  //
+  if (!model.positions || !foldUnmodified.vertices_coords) {
     triangulated = true;
-    console.warn("vertex count mismatch. reverting to triangulated model");
+  } else {
+    const verticesMatch =
+      model.positions?.length &&
+      foldUnmodified.vertices_coords?.length &&
+      foldUnmodified.vertices_coords.length === model.positions.length / 3;
+    if (!verticesMatch) {
+      triangulated = true;
+      console.warn("vertex count mismatch. reverting to triangulated model");
+    }
   }
 
   // shallow copy is good enough for this purpose
-  const fold = triangulated ? { ...foldTriangulated } : { ...foldUnmodified };
+  const fold: FOLD = triangulated ? { ...foldTriangulated } : { ...foldUnmodified };
   fold.file_creator =
     "Origami Simulator: http://git.amandaghassaei.com/OrigamiSimulator/";
   fold.file_classes = ["singleModel"];
   fold.frame_classes = ["foldedForm"];
   fold.frame_attributes = ["3D"];
-  fold.vertices_coords = fold.vertices_coords.map((_, i) => [
-    model.positions[i * 3 + 0],
-    model.positions[i * 3 + 1],
-    model.positions[i * 3 + 2],
-  ]);
+  fold.vertices_coords = (fold.vertices_coords || []).map(
+    (_, i) =>
+      [
+        model.positions?.[i * 3 + 0] || 0,
+        model.positions?.[i * 3 + 1] || 0,
+        model.positions?.[i * 3 + 2] || 0,
+      ] as [number, number, number],
+  );
   // if (globals.exportFoldAngle) {
   // 	json.edges_foldAngle = fold.edges_foldAngle;
   // }

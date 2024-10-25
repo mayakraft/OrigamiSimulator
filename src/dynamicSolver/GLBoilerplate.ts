@@ -40,7 +40,9 @@ const compileShader = (
 ): WebGLShader | null => {
   // Create the shader object
   const shader = gl.createShader(shaderType);
-  if (!shader) { return shader; }
+  if (!shader) {
+    return shader;
+  }
   // Set the shader source code.
   gl.shaderSource(shader, shaderSource);
   // Compile the shader

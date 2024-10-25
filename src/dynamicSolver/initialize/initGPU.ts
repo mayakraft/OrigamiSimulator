@@ -1,4 +1,5 @@
-import DEFAULTS from "./defaults.ts";
+import type { GPUMath } from "../GPUMath.ts";
+import { defaults as DEFAULTS, type GPUMathOptions } from "./options.ts";
 import { float_type } from "../constants.ts";
 import {
   vertexShader,
@@ -15,6 +16,32 @@ import {
   copyTexture,
   updateCreaseGeo,
 } from "../shaders/shaders.ts";
+
+export type GPUMathSettings = {
+  textureDim: number;
+  textureDimEdges: number;
+  textureDimFaces: number;
+  textureDimCreases: number;
+  textureDimNodeFaces: number;
+  textureDimNodeCreases: number;
+  position: Float32Array;
+  lastPosition: Float32Array;
+  lastLastPosition: Float32Array;
+  velocity: Float32Array;
+  lastVelocity: Float32Array;
+  meta: Float32Array;
+  meta2: Float32Array;
+  normals: Float32Array;
+  faceVertexIndices: Float32Array;
+  nodeFaceMeta: Float32Array;
+  nominalTriangles: Float32Array;
+  nodeCreaseMeta: Float32Array;
+  creaseMeta2: Float32Array;
+  creaseGeo: Float32Array;
+  theta: Float32Array;
+  lastTheta: Float32Array;
+};
+
 /**
  * @description This method is called when a new model is loaded.
  * This allocates all space needed for communication back and forth
@@ -24,7 +51,7 @@ import {
  * will default to origami simulator's default settings.
  */
 const initGPU = (
-  gpuMath,
+  gpuMath: GPUMath,
   {
     textureDim,
     textureDimEdges,
@@ -48,10 +75,10 @@ const initGPU = (
     creaseGeo,
     theta,
     lastTheta,
-  },
-  options = {},
+  }: GPUMathSettings,
+  options: GPUMathOptions = {},
 ) => {
-  const defaults = { ...DEFAULTS, ...options };
+  const defaults: GPUMathOptions = { ...DEFAULTS, ...options };
 
   gpuMath.initTextureFromData(
     "u_position",

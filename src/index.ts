@@ -2,6 +2,7 @@
  * Created by ghassaei on 2/22/17.
  */
 import type { FOLD } from "./types.ts";
+import type { GPUMathOptions } from "./dynamicSolver/initialize/options.ts";
 import * as THREE from "three";
 import { Model } from "./model/index.ts";
 import { DynamicSolver } from "./dynamicSolver/index.ts";
