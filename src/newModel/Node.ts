@@ -6,7 +6,7 @@ import type { Crease } from "./Crease.ts";
 
 export type Node = {
   // this is moved to fold.vertices_coordsInitial
-  //originalPosition: [number, number, number];
+  originalPosition: [number, number, number];
   index: number;
   // Beams are edges_ (edges_vertices)
   beams: Beam[]; // vertices_edges
@@ -33,7 +33,7 @@ export const makeNode = (
   [x, y, z]: [number, number, number],
   index: number,
 ): Node => ({
-  //originalPosition: [x, y, z],
+  originalPosition: [x, y, z],
   index: index,
 
   beams: [],

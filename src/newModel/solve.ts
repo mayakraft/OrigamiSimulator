@@ -1,5 +1,5 @@
 import type { GPUMath } from "./GPUMath.ts";
-import type { Model } from "../model/index.ts";
+import type { NewModel } from "./NewModel.ts";
 import { add, hslToRgb } from "../general/math.ts";
 
 const strainClip = 0.5;
@@ -122,11 +122,7 @@ export const solveStep = (
  * @param {object} options
  * @returns {number} the global error as a percent
  */
-export const render = (
-  gpuMath: GPUMath,
-  model: Model,
-  { textureDim, axialStrain }: { textureDim: number; axialStrain: boolean },
-) => {
+export const render = (gpuMath: GPUMath, model: NewModel, axialStrain: boolean) => {
   if (!gpuMath) {
     return 0;
   }
@@ -136,19 +132,19 @@ export const render = (
   gpuMath.setUniformForProgram(
     "packToBytes",
     "u_floatTextureDim",
-    [textureDim, textureDim],
+    [gpuMath.textureDim, gpuMath.textureDim],
     "2f",
   );
-  gpuMath.setSize(textureDim * vectorLength, textureDim);
+  gpuMath.setSize(gpuMath.textureDim * vectorLength, gpuMath.textureDim);
   gpuMath.step("packToBytes", ["u_lastPosition"], "outputBytes");
 
   if (!gpuMath.readyToRead()) {
     return 0;
   }
   const numPixels = model.nodes.length * vectorLength;
-  const height = Math.ceil(numPixels / (textureDim * vectorLength));
-  const pixels = new Uint8Array(height * textureDim * 4 * vectorLength);
-  gpuMath.readPixels(0, 0, textureDim * vectorLength, height, pixels);
+  const height = Math.ceil(numPixels / (gpuMath.textureDim * vectorLength));
+  const pixels = new Uint8Array(height * gpuMath.textureDim * 4 * vectorLength);
+  gpuMath.readPixels(0, 0, gpuMath.textureDim * vectorLength, height, pixels);
   const parsedPixels = new Float32Array(pixels.buffer);
   let globalError = 0;
   for (let i = 0; i < model.nodes.length; i += 1) {

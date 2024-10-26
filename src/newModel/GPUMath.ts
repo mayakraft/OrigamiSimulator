@@ -1,33 +1,83 @@
 /**
  * Created by ghassaei on 2/24/16.
  */
+import type { NewModel } from "./NewModel.ts";
+import type { Beam } from "./Beam.ts";
 import {
   createProgramFromSource,
   loadVertexData,
   makeTexture,
   initializeWebGL,
 } from "./WebGL.ts";
+import { fitToPow2 } from "./math.ts";
+import { initGPU } from "./initGPU.ts";
+import { normalize, dot, subtract } from "../general/math.ts";
+import { verticesFaces } from "./verticesFaces.ts";
+
+const calcDt = (model: NewModel): number => {
+  let maxFreqNat = 0;
+  model.edges.forEach((beam: Beam) => {
+    if (beam.getNaturalFrequency() > maxFreqNat) {
+      maxFreqNat = beam.getNaturalFrequency();
+    }
+  });
+  // 0.9 of max delta t for good measure
+  return (1 / (2 * Math.PI * maxFreqNat)) * 0.9;
+};
 
 function notSupported() {
   console.warn("floating point textures are not supported on your system");
 }
 
-export type GPUMathOptions = {
+export type SolverOptions = {
   creasePercent?: number;
   axialStiffness?: number;
   faceStiffness?: number;
+  joinStiffness?: number;
+  creaseStiffness?: number;
+  dampingRatio?: number;
   calcFaceStrain?: boolean;
 };
 
 // default settings for origami simulator
-export const defaults: GPUMathOptions = Object.freeze({
+export const defaultSolverOptions: SolverOptions = Object.freeze({
   creasePercent: 0.0,
   axialStiffness: 20,
   faceStiffness: 0.2,
+  joinStiffness: 0.7,
+  creaseStiffness: 0.7,
+  dampingRatio: 0.45,
   calcFaceStrain: false,
 });
 
-export class GPUMath {
+export type GPUMathSettings = {
+  textureDim: number;
+  textureDimEdges: number;
+  textureDimFaces: number;
+  textureDimCreases: number;
+  textureDimNodeFaces: number;
+  textureDimNodeCreases: number;
+  position: Float32Array;
+  lastPosition: Float32Array;
+  lastLastPosition: Float32Array;
+  velocity: Float32Array;
+  lastVelocity: Float32Array;
+  meta: Float32Array;
+  meta2: Float32Array;
+  normals: Float32Array;
+  faceVertexIndices: Float32Array;
+  nodeFaceMeta: Float32Array;
+  nominalTriangles: Float32Array;
+  nodeCreaseMeta: Float32Array;
+  creaseMeta2: Float32Array;
+  creaseGeo: Float32Array;
+  theta: Float32Array;
+  lastTheta: Float32Array;
+};
+
+export class GPUMath implements GPUMathSettings {
+  float_type: string = "FLOAT";
+
   canvas: HTMLCanvasElement;
   gl: WebGLRenderingContext | WebGL2RenderingContext;
   version: number;
@@ -41,7 +91,52 @@ export class GPUMath {
   textures: { [key: string]: WebGLTexture };
   index: number;
 
-  constructor() {
+  integrationType: string = "euler";
+
+  textureDim: number;
+  textureDimEdges: number;
+  textureDimFaces: number;
+  textureDimCreases: number;
+  textureDimNodeFaces: number;
+  textureDimNodeCreases: number;
+  position: Float32Array;
+  lastPosition: Float32Array;
+  lastLastPosition: Float32Array;
+  velocity: Float32Array;
+  lastVelocity: Float32Array;
+  meta: Float32Array;
+  meta2: Float32Array;
+  normals: Float32Array;
+  faceVertexIndices: Float32Array;
+  nodeFaceMeta: Float32Array;
+  nominalTriangles: Float32Array;
+  nodeCreaseMeta: Float32Array;
+  creaseMeta2: Float32Array;
+  creaseGeo: Float32Array;
+  theta: Float32Array;
+  lastTheta: Float32Array;
+
+  originalPosition: Float32Array;
+  externalForces: Float32Array;
+  mass: Float32Array;
+  beamMeta: Float32Array;
+  creaseVectors: Float32Array;
+  creaseMeta: Float32Array;
+
+  // options like "creasePercent" will start off the model in a folded state.
+  constructor(model: NewModel, options: SolverOptions = {}) {
+    this.programs = {};
+    this.frameBuffers = {};
+    this.textures = {};
+    this.index = 0;
+    this.initCanvas();
+    this.initArrays(model);
+    initGPU(this, this, options);
+    this.fillArrays(model);
+    this.setSolveParams(model);
+  }
+
+  initCanvas() {
     this.canvas = window.document.createElement("canvas");
     this.canvas.setAttribute("style", "display:none;");
     this.canvas.setAttribute("class", "gpu-canvas");
@@ -50,20 +145,187 @@ export class GPUMath {
     this.gl = gl;
     this.version = version;
     console.log(`initializing webgl version ${version}`);
-    if (version === 1) {
-      if (!gl.getExtension("OES_texture_float")) {
-        notSupported();
+    if (version === 1 && !this.gl.getExtension("OES_texture_float")) {
+      notSupported();
+    }
+    this.gl.disable(this.gl.DEPTH_TEST);
+  }
+
+  initArrays(model: NewModel): void {
+    //const numNodeFaces = verticesFaces(model).reduce((a, b) => a + b.length, 0);
+    const numNodeFaces = model.fold.vertices_faces.reduce((a, b) => a + b.length, 0);
+
+    // this is not the number of edges, rather the number of vertices_edges
+    // (individual edges will appear more than once)
+    const numEdges = model.nodes
+      .map((node) => node.beams.length)
+      .reduce((a, b) => a + b, 0);
+    const numFaces = model.fold.faces_vertices.length;
+    const numCreases = model.creases.length;
+
+    // numNodeCreases + reactions
+    const numNodeCreases =
+      numCreases * 2 +
+      model.nodes.map((node) => node.creases.length).reduce((a, b) => a + b, 0);
+    const textureDim = fitToPow2(model.nodes.length);
+    const textureDimEdges = fitToPow2(numEdges);
+    const textureDimFaces = fitToPow2(numFaces);
+    const textureDimCreases = fitToPow2(numCreases);
+    const textureDimNodeFaces = fitToPow2(numNodeFaces);
+    const textureDimNodeCreases = fitToPow2(numNodeCreases);
+    this.textureDim = textureDim;
+    this.textureDimEdges = textureDimEdges;
+    this.textureDimFaces = textureDimFaces;
+    this.textureDimCreases = textureDimCreases;
+    this.textureDimNodeFaces = textureDimNodeFaces;
+    this.textureDimNodeCreases = textureDimNodeCreases;
+
+    this.position = new Float32Array(textureDim * textureDim * 4);
+    this.lastPosition = new Float32Array(textureDim * textureDim * 4);
+    this.lastLastPosition = new Float32Array(textureDim * textureDim * 4);
+    this.velocity = new Float32Array(textureDim * textureDim * 4);
+    this.lastVelocity = new Float32Array(textureDim * textureDim * 4);
+    this.meta = new Float32Array(textureDim * textureDim * 4);
+    this.meta2 = new Float32Array(textureDim * textureDim * 4);
+    this.normals = new Float32Array(textureDimFaces * textureDimFaces * 4);
+    this.faceVertexIndices = new Float32Array(textureDimFaces * textureDimFaces * 4);
+    this.nodeFaceMeta = new Float32Array(textureDimNodeFaces * textureDimNodeFaces * 4);
+    this.nominalTriangles = new Float32Array(textureDimFaces * textureDimFaces * 4);
+    this.nodeCreaseMeta = new Float32Array(
+      textureDimNodeCreases * textureDimNodeCreases * 4,
+    );
+    this.creaseMeta2 = new Float32Array(textureDimCreases * textureDimCreases * 4);
+    this.creaseGeo = new Float32Array(textureDimCreases * textureDimCreases * 4);
+    this.theta = new Float32Array(textureDimCreases * textureDimCreases * 4);
+    this.lastTheta = new Float32Array(textureDimCreases * textureDimCreases * 4);
+
+    this.originalPosition = new Float32Array(textureDim * textureDim * 4);
+    this.externalForces = new Float32Array(textureDim * textureDim * 4);
+    this.mass = new Float32Array(textureDim * textureDim * 4);
+    this.beamMeta = new Float32Array(textureDimEdges * textureDimEdges * 4);
+    this.creaseVectors = new Float32Array(textureDimCreases * textureDimCreases * 4);
+    this.creaseMeta = new Float32Array(textureDimCreases * textureDimCreases * 4);
+  }
+
+  setSolveParams(model: NewModel) {
+    const dt = calcDt(model);
+    // $("#deltaT").html(dt);
+    this.setProgram("thetaCalc");
+    this.setUniformForProgram("thetaCalc", "u_dt", dt, "1f");
+    this.setProgram("velocityCalc");
+    this.setUniformForProgram("velocityCalc", "u_dt", dt, "1f");
+    this.setProgram("positionCalcVerlet");
+    this.setUniformForProgram("positionCalcVerlet", "u_dt", dt, "1f");
+    this.setProgram("positionCalc");
+    this.setUniformForProgram("positionCalc", "u_dt", dt, "1f");
+    this.setProgram("velocityCalcVerlet");
+    this.setUniformForProgram("velocityCalcVerlet", "u_dt", dt, "1f");
+    // options.controls.setDeltaT(dt);
+  }
+
+  fillArrays(model: NewModel) {
+    // array initialization was cut from here
+    const numCreases = model.creases.length;
+    const nodeFaces = verticesFaces(model);
+
+    for (let i = 0; i < model.fold.faces_vertices.length; i += 1) {
+      const face = model.fold.faces_vertices[i];
+      this.faceVertexIndices[4 * i + 0] = face[0];
+      this.faceVertexIndices[4 * i + 1] = face[1];
+      this.faceVertexIndices[4 * i + 2] = face[2];
+      //const a = model.nodes[face[0]].originalPosition;
+      //const b = model.nodes[face[1]].originalPosition;
+      //const c = model.nodes[face[2]].originalPosition;
+      const a = model.fold.vertices_coordsInitial[face[0]];
+      const b = model.fold.vertices_coordsInitial[face[1]];
+      const c = model.fold.vertices_coordsInitial[face[2]];
+      const ab = normalize(subtract(b, a));
+      const ac = normalize(subtract(c, a));
+      const bc = normalize(subtract(c, b));
+      this.nominalTriangles[4 * i + 0] = Math.acos(dot(ab, ac));
+      this.nominalTriangles[4 * i + 1] = Math.acos(-1 * dot(ab, bc));
+      this.nominalTriangles[4 * i + 2] = Math.acos(dot(ac, bc));
+      if (
+        Math.abs(
+          this.nominalTriangles[4 * i] +
+          this.nominalTriangles[4 * i + 1] +
+          this.nominalTriangles[4 * i + 2] -
+          Math.PI,
+        ) > 0.1
+      ) {
+        console.warn("bad angles");
       }
     }
-    this.programs = {};
-    this.frameBuffers = {};
-    this.textures = {};
-    this.index = 0;
 
-    gl.disable(gl.DEPTH_TEST);
+    for (let i = 0; i < this.textureDim * this.textureDim; i += 1) {
+      this.mass[4 * i + 1] = 1; // set all fixed by default
+    }
 
-    // const maxTexturesInFragmentShader = gl.getParameter(gl.MAX_TEXTURE_IMAGE_UNITS);
-    // console.log(`${maxTexturesInFragmentShader} textures max`);
+    for (let i = 0; i < this.textureDimCreases * this.textureDimCreases; i += 1) {
+      if (i >= numCreases) {
+        this.lastTheta[i * 4 + 2] = -1;
+        this.lastTheta[i * 4 + 3] = -1;
+        continue;
+      }
+      this.lastTheta[i * 4 + 2] = model.creases[i].faces[0];
+      this.lastTheta[i * 4 + 3] = model.creases[i].faces[1];
+    }
+
+    let index = 0;
+    for (let i = 0; i < model.nodes.length; i += 1) {
+      this.meta2[4 * i] = index;
+      const num = nodeFaces[i].length;
+      this.meta2[4 * i + 1] = num;
+      for (let j = 0; j < num; j += 1) {
+        const _index = (index + j) * 4;
+        const face = model.fold.faces_vertices[nodeFaces[i][j]];
+        this.nodeFaceMeta[_index] = nodeFaces[i][j];
+        this.nodeFaceMeta[_index + 1] = face[0] === i ? -1 : face[0];
+        this.nodeFaceMeta[_index + 2] = face[1] === i ? -1 : face[1];
+        this.nodeFaceMeta[_index + 3] = face[2] === i ? -1 : face[2];
+      }
+      index += num;
+    }
+
+    index = 0;
+    for (let i = 0; i < model.nodes.length; i += 1) {
+      this.mass[4 * i] = model.nodes[i].simMass;
+      this.meta[i * 4 + 2] = index;
+      const nodeCreases = model.nodes[i].creases;
+      // nodes attached to crease move in opposite direction
+      const nodeInvCreases = model.nodes[i].invCreases;
+      this.meta[i * 4 + 3] = nodeCreases.length + nodeInvCreases.length;
+      for (let j = 0; j < nodeCreases.length; j += 1) {
+        this.nodeCreaseMeta[index * 4] = nodeCreases[j].index;
+        // type 1, 2, 3, 4
+        this.nodeCreaseMeta[index * 4 + 1] = nodeCreases[j].getNodeIndex(model.nodes[i]);
+        index += 1;
+      }
+      for (let j = 0; j < nodeInvCreases.length; j += 1) {
+        this.nodeCreaseMeta[index * 4] = nodeInvCreases[j].index;
+        // type 1, 2, 3, 4
+        this.nodeCreaseMeta[index * 4 + 1] = nodeInvCreases[j].getNodeIndex(
+          model.nodes[i],
+        );
+        index += 1;
+      }
+    }
+
+    for (let i = 0; i < model.creases.length; i += 1) {
+      const crease = model.creases[i];
+      this.creaseMeta2[i * 4 + 0] = crease.nodes[0].index;
+      this.creaseMeta2[i * 4 + 1] = crease.nodes[1].index;
+      this.creaseMeta2[i * 4 + 2] = crease.edge.nodes[0].index;
+      this.creaseMeta2[i * 4 + 3] = crease.edge.nodes[1].index;
+      index += 1;
+    }
+
+    this.updateOriginalPosition(model);
+    this.updateMaterials(model, true);
+    this.updateFixed(model);
+    this.updateExternalForces(model);
+    this.updateCreasesMeta(model, true);
+    this.updateCreaseVectors(model);
   }
 
   /**
@@ -306,6 +568,169 @@ export class GPUMath {
       this.gl.UNSIGNED_BYTE,
       array,
     );
+  }
+
+  updateMaterials(model: NewModel, initing = false) {
+    let index = 0;
+    for (let i = 0; i < model.nodes.length; i += 1) {
+      if (initing) {
+        this.meta[4 * i] = index;
+        this.meta[4 * i + 1] = model.nodes[i].beams.length;
+      }
+      for (let j = 0; j < model.nodes[i].beams.length; j += 1) {
+        const beam = model.nodes[i].beams[j];
+        this.beamMeta[4 * index] = beam.getK();
+        this.beamMeta[4 * index + 1] = beam.getD();
+        if (initing) {
+          this.beamMeta[4 * index + 2] = beam.getLength();
+          this.beamMeta[4 * index + 3] = beam.getOtherNode(model.nodes[i]).index;
+        }
+        index += 1;
+      }
+    }
+    this.initTextureFromData(
+      "u_beamMeta",
+      this.textureDimEdges,
+      this.textureDimEdges,
+      this.float_type,
+      this.beamMeta,
+      true,
+    );
+  }
+
+  updateExternalForces(model: NewModel) {
+    for (let i = 0; i < model.nodes.length; i += 1) {
+      // external forces is always 0, 0, 0
+      const [x, y, z] = model.nodes[i].externalForce;
+      this.externalForces[i * 4 + 0] = x;
+      this.externalForces[i * 4 + 1] = y;
+      this.externalForces[i * 4 + 2] = z;
+    }
+    this.initTextureFromData(
+      "u_externalForces",
+      this.textureDim,
+      this.textureDim,
+      this.float_type,
+      this.externalForces,
+      true,
+    );
+  }
+
+  updateFixed(model: NewModel) {
+    for (let i = 0; i < model.nodes.length; i += 1) {
+      this.mass[4 * i + 1] = model.nodes[i].fixed ? 1 : 0;
+    }
+    this.initTextureFromData(
+      "u_mass",
+      this.textureDim,
+      this.textureDim,
+      this.float_type,
+      this.mass,
+      true,
+    );
+  }
+
+  /**
+   * @description todo
+   * @param {GPUMath} gpuMath
+   * @param {Model} model
+   */
+  updateOriginalPosition(model: NewModel) {
+    for (let i = 0; i < model.fold.vertices_coordsInitial.length; i += 1) {
+      //const [x, y, z] = model.nodes[i].originalPosition;
+      const [x, y, z] = model.fold.vertices_coordsInitial[i];
+      this.originalPosition[i * 4 + 0] = x;
+      this.originalPosition[i * 4 + 1] = y;
+      this.originalPosition[i * 4 + 2] = z;
+    }
+    this.initTextureFromData(
+      "u_originalPosition",
+      this.textureDim,
+      this.textureDim,
+      this.float_type,
+      this.originalPosition,
+      true,
+    );
+  }
+
+  /**
+   * @description todo
+   * @param {GPUMath} gpuMath
+   * @param {Model} model
+   */
+  updateCreaseVectors(model: NewModel) {
+    for (let i = 0; i < model.creases.length; i += 1) {
+      const rgbaIndex = i * 4;
+      const nodes = model.creases[i].edge.nodes;
+      // this.vertices[1].clone().sub(this.vertices[0]);
+      this.creaseVectors[rgbaIndex] = nodes[0].index;
+      this.creaseVectors[rgbaIndex + 1] = nodes[1].index;
+    }
+    this.initTextureFromData(
+      "u_creaseVectors",
+      this.textureDimCreases,
+      this.textureDimCreases,
+      this.float_type,
+      this.creaseVectors,
+      true,
+    );
+  }
+
+  /**
+   * @description todo
+   * @param {GPUMath} gpuMath
+   * @param {Model} model
+   */
+  updateCreasesMeta(model: NewModel, initing = false) {
+    for (let i = 0; i < model.creases.length; i += 1) {
+      const crease = model.creases[i];
+      this.creaseMeta[i * 4] = crease.getK();
+      // creaseMeta[i * 4 + 1] = crease.getD();
+    }
+    if (initing) {
+      for (let i = 0; i < model.creases.length; i += 1) {
+        const crease = model.creases[i];
+        this.creaseMeta[i * 4 + 2] = crease.targetTheta;
+      }
+    }
+    this.initTextureFromData(
+      "u_creaseMeta",
+      this.textureDimCreases,
+      this.textureDimCreases,
+      this.float_type,
+      this.creaseMeta,
+      true,
+    );
+  }
+
+  /**
+   * @description todo
+   * @param {GPUMath} gpuMath
+   * @param {Model} model
+   */
+  updateLastPosition(model: NewModel) {
+    for (let i = 0; i < model.nodes.length; i += 1) {
+      // const [x, y, z] = model.nodes[i].getRelativePosition();
+      const position: [number, number, number] = [
+        model.positions[model.nodes[i].index * 3 + 0],
+        model.positions[model.nodes[i].index * 3 + 1],
+        model.positions[model.nodes[i].index * 3 + 2],
+      ];
+      //const [x, y, z] = subtract(position, model.nodes[i].originalPosition);
+      const [x, y, z] = subtract(position, model.fold.vertices_coordsInitial[i]);
+      this.lastPosition[i * 4 + 0] = x;
+      this.lastPosition[i * 4 + 1] = y;
+      this.lastPosition[i * 4 + 2] = z;
+    }
+    this.initTextureFromData(
+      "u_lastPosition",
+      this.textureDim,
+      this.textureDim,
+      this.float_type,
+      this.lastPosition,
+      true,
+    );
+    this.initFrameBufferForTexture("u_lastPosition", true);
   }
 
   dealloc() {

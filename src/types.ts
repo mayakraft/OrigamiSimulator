@@ -1,5 +1,6 @@
 // from THREE.js
 import type { Crease } from "./model/crease.ts";
+import type { Crease as CreaseNew } from "./newModel/Crease.ts";
 
 type BufferGeometry = import("three").BufferGeometry;
 type Material = import("three").Material;
@@ -70,7 +71,7 @@ export type FOLDMesh = {
   vertices_coordsInitial: [number, number, number][];
   // creases_ data is the imaginary perpendicular
   // to a folded edge that "pulls" two faces together
-  creases: Crease[],
+  creases: CreaseNew[],
   //creases_edge: number[],
   //creases_faces: [number, number][],
   //creases_vertices: [number, number][],

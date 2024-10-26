@@ -22,7 +22,7 @@
 	import { onDestroy } from "svelte";
 	import * as THREE from "three";
 	import TrackballView from "./ThreeJS/TrackballView.svelte";
-	import OrigamiSimulator from "../../src/index";
+	import { OrigamiSimulator } from "../../src/index";
 	import Highlights from "../../src/touches/highlights";
 	import Raycasters from "../../src/touches/raycasters";
 	import boundingBox from "../../src/fold/boundingBox";
@@ -86,7 +86,7 @@
 	// a point object for every raycasted intersection with the mesh.
 	let touches = [];
 	// origami simulator
-	let simulator = OrigamiSimulator();
+	let simulator = new OrigamiSimulator();
 	// all raycaster methods for the user interface
 	let raycasters;
 	// highlighted geometry indicating the selected vertex/face
@@ -125,8 +125,8 @@
 		scene = _scene;
 		camera = _camera;
 		// initialize origami simulator
-		simulator.setScene(scene);
-		simulator.setOnCompute(onCompute);
+		simulator.scene = (scene);
+		simulator.onCompute = (onCompute);
 		highlights.setScene(scene);
 		raycasters = Raycasters({
 			renderer,
@@ -182,25 +182,25 @@
 	/**
 	 * settings from the Simulator store
 	 */
-	$: simulator.setActive($active);
-	$: simulator.setFoldAmount($foldAmount);
-	$: simulator.setStrain($strain);
-	$: simulator.setIntegration($integration);
-	$: simulator.setAxialStiffness($axialStiffness);
-	$: simulator.setFaceStiffness($faceStiffness);
-	$: simulator.setJoinStiffness($joinStiffness);
-	$: simulator.setCreaseStiffness($creaseStiffness);
-	$: simulator.setDampingRatio($dampingRatio);
+	$: simulator.active = $active;
+	$: simulator.foldAmount = $foldAmount;
+	$: simulator.strain = $strain;
+	$: simulator.integration = $integration;
+	$: simulator.axialStiffness = $axialStiffness;
+	$: simulator.faceStiffness = $faceStiffness;
+	$: simulator.joinStiffness = $joinStiffness;
+	$: simulator.creaseStiffness = $creaseStiffness;
+	$: simulator.dampingRatio = $dampingRatio;
 	// show/hide things
-	$: simulator.setShadows($showShadows);
+	$: simulator.shadows = $showShadows;
 	$: [0, 3, 4, 7].forEach(i => {
 		lights[i % lights.length].castShadow = $showShadows;
 	});
 	$: $showTouches
 		? highlights.highlightTouch(touches[0])
 		: highlights.clear();
-	$: simulator.getModel().frontMesh.visible = $showFront;
-	$: simulator.getModel().backMesh.visible = $showBack;
+	$: simulator.meshThree.frontMesh.visible = $showFront;
+	$: simulator.meshThree.backMesh.visible = $showBack;
 	$: simulator.getLines().B.visible = $showBoundary;
 	$: simulator.getLines().M.visible = $showMountain;
 	$: simulator.getLines().V.visible = $showValley;
@@ -208,16 +208,16 @@
 	$: simulator.getLines().J.visible = $showJoin;
 	$: simulator.getLines().U.visible = $showUnassigned;
 	// colors
-	$: simulator.setFrontColor($frontColor);
-	$: simulator.setBackColor($backColor);
-	$: Object.values(simulator.getMaterials().line)
-		.forEach(m => { m.opacity = $lineOpacity; });
-	$: simulator.setBoundaryColor($boundaryColor);
-	$: simulator.setMountainColor($mountainColor);
-	$: simulator.setValleyColor($valleyColor);
-	$: simulator.setFlatColor($flatColor);
-	$: simulator.setJoinColor($joinColor);
-	$: simulator.setUnassignedColor($unassignedColor);
+	//$: simulator.setFrontColor($frontColor);
+	//$: simulator.setBackColor($backColor);
+	//$: Object.values(simulator.getMaterials().line)
+	//	.forEach(m => { m.opacity = $lineOpacity; });
+	//$: simulator.setBoundaryColor($boundaryColor);
+	//$: simulator.setMountainColor($mountainColor);
+	//$: simulator.setValleyColor($valleyColor);
+	//$: simulator.setFlatColor($flatColor);
+	//$: simulator.setJoinColor($joinColor);
+	//$: simulator.setUnassignedColor($unassignedColor);
 	$: if (scene) { scene.background = new THREE.Color($backgroundColor); }
 
 	// nitpicky. upon tool change we need raycasterPullVertex to be undefined

@@ -3,6 +3,7 @@
  */
 import type { FOLDMesh } from "../types.ts";
 import type { Beam } from "./Beam.ts";
+import { SolverOptions } from "./GPUMath.ts";
 import type { Node } from "./Node.ts";
 
 export class Crease {
@@ -32,7 +33,7 @@ export class Crease {
     faces: [number, number];
     nodes: [Node, Node];
     targetTheta: number;
-    options: { joinStiffness: number; creaseStiffness: number; dampingRatio: number; }
+    options: SolverOptions;
   }) {
 
     this.index = index;

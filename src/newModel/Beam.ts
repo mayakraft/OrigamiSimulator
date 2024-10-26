@@ -3,6 +3,7 @@
  */
 import type { Node } from "./Node.ts";
 import { magnitude, subtract } from "../general/math.ts";
+import { SolverOptions } from "./GPUMath.ts";
 
 export class Beam {
   type: string;
@@ -14,7 +15,7 @@ export class Beam {
 
   constructor(
     nodes: [Node, Node],
-    { axialStiffness, dampingRatio }: { axialStiffness: number; dampingRatio: number },
+    { axialStiffness, dampingRatio }: SolverOptions,
     //{ axialStiffness, dampingRatio }: {axialStiffness?: number, dampingRatio?: number},
   ) {
     this.type = "beam";
@@ -37,10 +38,6 @@ export class Beam {
   /** distance between the original position of the two nodes */
   getLength(): number {
     return magnitude(this.getVector());
-  }
-
-  recalcOriginalLength(): void {
-    this.originalLength = magnitude(this.getVector());
   }
 
   isFixed(): boolean {

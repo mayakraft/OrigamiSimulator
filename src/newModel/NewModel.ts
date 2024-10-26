@@ -1,4 +1,7 @@
 import type { FOLD, FOLDMesh } from "../types.ts";
+import type { SolverOptions } from "./GPUMath.ts";
+import { defaultSolverOptions } from "./GPUMath.ts";
+import { GPUMath } from "./GPUMath.ts";
 import { makeNode, destroyNode, type Node } from "./Node.ts";
 import { Beam } from "./Beam.ts";
 import { Crease } from "./Crease.ts";
@@ -6,6 +9,7 @@ import { prepare } from "../fold/prepare.ts";
 import { exportFold } from "../model/exportFOLD.ts";
 import { makeCreasesParams } from "./Crease.ts";
 import { makeTypedArrays } from "./typedArrays.ts";
+import { solveStep, render } from "./solve.ts";
 
 //const emptyMesh = (): FOLDMesh => ({
 //  vertices_coords: [],
@@ -17,10 +21,12 @@ import { makeTypedArrays } from "./typedArrays.ts";
 //});
 
 export class NewModel {
-  fold: FOLDMesh;
   initialFOLD: FOLD;
+  fold: FOLDMesh;
+  gpuMath: GPUMath;
 
   strain: boolean;
+
   axialStiffness: number;
   joinStiffness: number;
   creaseStiffness: number;
@@ -29,7 +35,8 @@ export class NewModel {
   // vertex / color buffer arrays for GPU
   positions: Float32Array;
   colors: Float32Array;
-  //indices: Uint16Array;
+  indices: Uint16Array;
+  lineIndices: { [key: string]: Uint16Array };
 
   nodes: Node[];
   edges: Beam[];
@@ -39,62 +46,162 @@ export class NewModel {
    * @description Load a new FOLD object into origami simulator.
    * Immediately following this method the solver should call .setModel()
    */
-  constructor(foldObject: FOLD) {
+  constructor(foldObject: FOLD, options?: SolverOptions) {
+    // makeObjects(fold: FOLDMesh): void
+    options = { ...defaultSolverOptions, ...options };
+
     this.initialFOLD = foldObject;
     this.fold = prepare(foldObject);
 
-    // makeObjects(fold: FOLDMesh): void
-    const options = {
-      axialStiffness: this.axialStiffness,
-      joinStiffness: this.joinStiffness,
-      creaseStiffness: this.creaseStiffness,
-      dampingRatio: this.dampingRatio,
-    };
+    this.axialStiffness = 20;
+    this.joinStiffness = 0.7;
+    this.creaseStiffness = 0.7;
+    this.dampingRatio = 0.45;
 
+    // will get rid of these eventually
     this.nodes = this.fold.vertices_coords.map(makeNode);
+
+    // will get rid of these eventually
     this.edges = this.fold.edges_vertices
       .map((ev) => ev.map((v) => this.nodes[v]))
       .map(([a, b]) => new Beam([a, b], options));
-    this.creases = makeCreasesParams(this.fold).map((param, index) =>
-      new Crease({
-        edge: this.edges[param.edge],
-        index,
-        type: param.foldAngle !== 0 ? 1 : 0, // type
-        faces: param.faces,
-        nodes: param.vertices.map((v) => this.nodes[v]) as [Node, Node],
-        targetTheta: param.foldAngle * (Math.PI / 180), // until now this was in degrees
-        options,
-      }),
+
+    // will move creases here
+    this.creases = makeCreasesParams(this.fold).map(
+      (param, index) =>
+        new Crease({
+          edge: this.edges[param.edge],
+          index,
+          type: param.foldAngle !== 0 ? 1 : 0, // type
+          faces: param.faces,
+          nodes: param.vertices.map((v) => this.nodes[v]) as [Node, Node],
+          targetTheta: param.foldAngle * (Math.PI / 180), // until now this was in degrees
+          options,
+        }),
     );
+    this.fold.creases = this.creases;
 
     const { positions, colors, indices, lineIndices } = makeTypedArrays(this.fold);
 
     // save these for the solver to modify
     this.positions = positions;
     this.colors = colors;
+    this.indices = indices;
+    this.lineIndices = lineIndices;
 
-
-    //setModel(newModel: Model, options: GPUMathOptions = {});
-    ({
-      textureDim: this.textureDim,
-      textureDimCreases: this.textureDimCreases,
-      textureDimFaces: this.textureDimFaces,
-      textureDimEdges: this.textureDimEdges,
-      meta: this.meta,
-      beamMeta: this.beamMeta,
-      creaseMeta: this.creaseMeta,
-      lastPosition: this.lastPosition,
-    } = initialize(this.gpuMath, this.model, options));
-
-
-
-
-
-
-
-
-
+    this.gpuMath = new GPUMath(this);
   }
+
+  /**
+   * @description Reset the vertices of the model back to their original state.
+   * @returns {number} the global error as a percent
+   */
+  reset(): number {
+    this.gpuMath.step("zeroTexture", [], "u_position");
+    this.gpuMath.step("zeroTexture", [], "u_lastPosition");
+    this.gpuMath.step("zeroTexture", [], "u_lastLastPosition");
+    this.gpuMath.step("zeroTexture", [], "u_velocity");
+    this.gpuMath.step("zeroTexture", [], "u_lastVelocity");
+    this.gpuMath.step("zeroThetaTexture", ["u_lastTheta"], "u_theta");
+    this.gpuMath.step("zeroThetaTexture", ["u_theta"], "u_lastTheta");
+
+    // todo: save strain
+    //return render(this.gpuMath, this, computeStrain);
+    return render(this.gpuMath, this, false);
+  }
+
+  /**
+   * @description The user will call this method when the UI is pulling on a
+   * vertex, this conveys to the solver that a node is being manually moved.
+   */
+  //nodeDidMove(): void {
+  //  if (!this.gpuMath || !this.model) {
+  //    return;
+  //  }
+  //  updateLastPosition(this.gpuMath, this.model, this);
+  //  const [x, y, z] = modelCenter(this.model);
+  //  this.gpuMath.setProgram("centerTexture");
+  //  this.gpuMath.setUniformForProgram("centerTexture", "u_center", [x, y, z], "3f");
+  //  this.gpuMath.step("centerTexture", ["u_lastPosition"], "u_position");
+  //  if (this.gpuMath.integrationType === "verlet") {
+  //    this.gpuMath.step("copyTexture", ["u_position"], "u_lastLastPosition");
+  //  }
+  //  this.gpuMath.swapTextures2("u_position", "u_lastPosition");
+  //  this.gpuMath.step("zeroTexture", [], "u_lastVelocity");
+  //  this.gpuMath.step("zeroTexture", [], "u_velocity");
+  //}
+
+  setIntegration(integration: string) {
+    this.gpuMath.integrationType = integration;
+    this.reset();
+  }
+
+  setCreasePercent(value: string | number) {
+    const number = typeof value === "number" ? value : parseFloat(value);
+    this.gpuMath.setProgram("velocityCalc");
+    this.gpuMath.setUniformForProgram("velocityCalc", "u_creasePercent", number, "1f");
+    this.gpuMath.setProgram("positionCalcVerlet");
+    this.gpuMath.setUniformForProgram(
+      "positionCalcVerlet",
+      "u_creasePercent",
+      number,
+      "1f",
+    );
+  }
+
+  // todo: duplicate methods
+  setAxialStiffnessDuplicate(value: string | number) {
+    const number = typeof value === "number" ? value : parseFloat(value);
+    this.gpuMath.setProgram("velocityCalc");
+    this.gpuMath.setUniformForProgram("velocityCalc", "u_axialStiffness", number, "1f");
+    this.gpuMath.setProgram("positionCalcVerlet");
+    this.gpuMath.setUniformForProgram(
+      "positionCalcVerlet",
+      "u_axialStiffness",
+      number,
+      "1f",
+    );
+  }
+
+  setFaceStiffness(value: string | number) {
+    const number = typeof value === "number" ? value : parseFloat(value);
+    this.gpuMath.setProgram("velocityCalc");
+    this.gpuMath.setUniformForProgram("velocityCalc", "u_faceStiffness", number, "1f");
+    this.gpuMath.setProgram("positionCalcVerlet");
+    this.gpuMath.setUniformForProgram(
+      "positionCalcVerlet",
+      "u_faceStiffness",
+      number,
+      "1f",
+    );
+  }
+
+  setFaceStrain(value: string | number) {
+    const number = typeof value === "number" ? value : parseFloat(value);
+    this.gpuMath.setProgram("velocityCalc");
+    this.gpuMath.setUniformForProgram("velocityCalc", "u_calcFaceStrain", number, "1f");
+    this.gpuMath.setProgram("positionCalcVerlet");
+    this.gpuMath.setUniformForProgram(
+      "positionCalcVerlet",
+      "u_calcFaceStrain",
+      number,
+      "1f",
+    );
+  }
+
+  /**
+   * @description Some properties require rewrite to the shader textures,
+   * after setting these properties, call this to update the texture data.
+   */
+  //update() {
+  //  if (!this.gpuMath || !this.model) {
+  //    return;
+  //  }
+  //  // { creaseMeta, textureDimCreases }
+  //  updateCreasesMeta(this.gpuMath, this.model, this);
+  //  // { meta, beamMeta, textureDimEdges }
+  //  updateMaterials(this.gpuMath, this.model, this);
+  //}
 
   setAxialStiffness(value: number | string): void {
     this.axialStiffness = typeof value === "number" ? value : parseFloat(value);
@@ -127,7 +234,22 @@ export class NewModel {
     });
   }
 
-  export(): FOLD {
-    return exportFold(this, this.initialFOLD, this.fold);
+  /**
+   * @returns {number} the global error as a percent
+   * @param {number} numSteps number of iterations to run the solver
+   * @param {boolean} computeStrain should the strain values be computed?
+   */
+  solve(numSteps: number = 100, computeStrain: boolean = false): number {
+    for (let j = 0; j < numSteps; j += 1) {
+      solveStep(this.gpuMath, this.gpuMath);
+    }
+    return render(this.gpuMath, this, computeStrain);
+  }
+
+  //export(): FOLD {
+  //  return exportFold(this, this.initialFOLD, this.fold);
+  //}
+  dealloc() {
+    // todo
   }
 }
