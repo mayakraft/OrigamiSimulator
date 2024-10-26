@@ -9,8 +9,8 @@ import { Beam } from "./beam.ts";
 import { Crease } from "./crease.ts";
 import * as Materials from "./materials.ts";
 import { makeCreasesParams } from "../fold/creaseParams.ts";
-import prepare from "../fold/prepare.ts";
-import exportFold from "./exportFOLD.ts";
+import { prepare } from "../fold/prepare.ts";
+import { exportFold } from "./exportFOLD.ts";
 import { makeTypedArrays } from "./convert.ts";
 import { resize3 } from "../general/math.ts";
 

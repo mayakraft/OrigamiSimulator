@@ -15,7 +15,7 @@ import type { FOLD, FOLDMesh } from "../types.ts";
  * so that all faces are triangulated.
  * @param {{ triangulated?: boolean, angles?: boolean }} options
  */
-const exportFold = (
+export const exportFold = (
   model: Model,
   foldUnmodified: FOLD,
   foldTriangulated: FOLDMesh,
@@ -55,5 +55,3 @@ const exportFold = (
   // }
   return fold;
 };
-
-export default exportFold;

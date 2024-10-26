@@ -58,11 +58,25 @@ export type FOLDMesh = {
   faces_edges: number[][];
   vertices_vertices?: number[][];
   vertices_edges?: number[][];
-  vertices_faces?: (number | null | undefined)[][];
-  //edges_faces?: (number | null | undefined)[][];
+  // needed for initArrays for WebGL
+  vertices_faces: (number | null | undefined)[][];
+  // this is needed to make creases
+  edges_faces?: (number | null | undefined)[][],
+
   //edges_length?: number[];
   faces_backmap?: number[],
   faces_nextmap?: number[][],
+
+  vertices_coordsInitial: [number, number, number][];
+  // creases_ data is the imaginary perpendicular
+  // to a folded edge that "pulls" two faces together
+  creases: Crease[],
+  //creases_edge: number[],
+  //creases_faces: [number, number][],
+  //creases_vertices: [number, number][],
+  //// does the crease have a bend (1) or is fold angle 0 (0)?
+  //crease_type: (0 | 1)[], // crease_bend: (0, 1)[]
+  //crease_node_type: (0 | 1 | 2 | 3 | 4)[],
 };
 
 //export type FOLDMesh = FOLDFileMetadata & FOLDMeshFrame;

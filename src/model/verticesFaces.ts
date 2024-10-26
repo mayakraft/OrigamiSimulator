@@ -9,7 +9,7 @@ import type { Model } from "./index.ts";
 const verticesFaces = (model: Model) => {
   const vertices_faces: number[][] = model.nodes.map(() => []);
   // iterate over every face, then iterate over each of the face's vertices
-  model.faces_vertices.forEach((face, f) => {
+  model.fold.faces_vertices.forEach((face, f) => {
     // in the case that one face visits the same vertex multiple times,
     // this hash acts like a set and only allow one of each vertex index.
     const hash: number[] = [];

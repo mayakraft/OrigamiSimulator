@@ -44,8 +44,8 @@ const fillArrays = (
   const creaseVectors = new Float32Array(textureDimCreases * textureDimCreases * 4);
   const creaseMeta = new Float32Array(textureDimCreases * textureDimCreases * 4);
 
-  for (let i = 0; i < model.faces_vertices.length; i += 1) {
-    const face = model.faces_vertices[i];
+  for (let i = 0; i < model.fold.faces_vertices.length; i += 1) {
+    const face = model.fold.faces_vertices[i];
     faceVertexIndices[4 * i + 0] = face[0];
     faceVertexIndices[4 * i + 1] = face[1];
     faceVertexIndices[4 * i + 2] = face[2];
@@ -88,7 +88,7 @@ const fillArrays = (
     meta2[4 * i + 1] = num;
     for (let j = 0; j < num; j += 1) {
       const _index = (index + j) * 4;
-      const face = model.faces_vertices[nodeFaces[i][j]];
+      const face = model.fold.faces_vertices[nodeFaces[i][j]];
       nodeFaceMeta[_index] = nodeFaces[i][j];
       nodeFaceMeta[_index + 1] = face[0] === i ? -1 : face[0];
       nodeFaceMeta[_index + 2] = face[1] === i ? -1 : face[1];
