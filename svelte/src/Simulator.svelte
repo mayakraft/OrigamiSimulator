@@ -1,9 +1,4 @@
 <!--
-	Origami Simulator for Svelte (c) Kraft
-	MIT license
- -->
-
-<!--
 	@component
 	Svelte component and interface for Origami Simulator by Amanda Ghassaei.
 	@props
@@ -18,55 +13,22 @@
 	new ones
 	- props.reset (reset the vertices of the origami model)
  -->
-<script>
-	import { onDestroy } from "svelte";
+
+<script lang="ts">
 	import * as THREE from "three";
 	import TrackballView from "./ThreeJS/TrackballView.svelte";
 	import { OrigamiSimulator } from "../../src/index";
 	import Highlights from "../../src/touches/highlights";
 	import Raycasters from "../../src/touches/raycasters";
 	import boundingBox from "../../src/fold/boundingBox";
-	import {
-		active,
-		foldAmount,
-		strain,
-		tool,
-		error,
-		reset,
-		exportModel,
-	} from "./stores/Simulator.js";
-	import {
-		integration,
-		axialStiffness,
-		faceStiffness,
-		joinStiffness,
-		creaseStiffness,
-		dampingRatio,
-	} from "./stores/Solver.js";
-	import {
-		showTouches,
-		showShadows,
-		showFront,
-		showBack,
-		showBoundary,
-		showMountain,
-		showValley,
-		showFlat,
-		showJoin,
-		showUnassigned,
-		backgroundColor,
-		frontColor,
-		backColor,
-		lineOpacity,
-		boundaryColor,
-		mountainColor,
-		valleyColor,
-		flatColor,
-		joinColor,
-		unassignedColor,
-	} from "./stores/Style.js";
 
-	export let origami = {};
+  import Style from "./state/Style.svelte.js";
+  import Simulator from "./state/Simulator.svelte.js";
+  import Solver from "./state/Solver.svelte.js";
+
+	let {
+    origami,
+  } = $props();
 
 	const lightVertices = [
 		[+1, +1, +1],
@@ -78,22 +40,30 @@
 		[+1, -1, -1],
 		[-1, -1, -1],
 	];
-	const lightRadius = 10;
+
+	const lightRadius = $state(10);
+
 	// model size will update the position of the lights, camera, and
 	// trackball controlls, allowing for models to be of vastly different scales
-	let modelSize = 1;
+	let modelSize = $state(1);
+
 	// "touches" arises from the cursor position, it is an array containing
 	// a point object for every raycasted intersection with the mesh.
 	let touches = [];
+
 	// origami simulator
 	let simulator = new OrigamiSimulator();
+
 	// all raycaster methods for the user interface
 	let raycasters;
+
 	// highlighted geometry indicating the selected vertex/face
 	let highlights = Highlights({ simulator });
+
 	// three.js
-	let scene;
-	let camera;
+	let scene: THREE.Scene;
+	let camera: THREE.PerspectiveCamera;
+
 	// three.js lights for this scene
 	let lights = lightVertices.map(([x, y, z]) => {
 		const light = new THREE.PointLight();
@@ -106,21 +76,19 @@
 		light.shadow.mapSize.height = 512; // default
 		return light;
 	});
-	/**
-	 * @description Origami Simulator solver just executed. This is attached
-	 * to the window.requestAnimationFrame and will fire at the end of every loop
-	 */
-	const onCompute = (props) => {
-		error.set(props.error);
+
+	// Origami Simulator solver just executed. This is attached
+	// to the window.requestAnimationFrame and will fire at the end of every loop
+	const onCompute = (props: { error: number }) => {
+		Simulator.error = props.error;
 		// The raycaster will update on a mousemove event, but if the origami is
 		// in a folding animation, the raycaster will not update and the visuals
 		// will mismatch, hence, the raycaster can fire on a frame update if needed
-		raycasters.animate($tool === "pull");
+		raycasters.animate(Simulator.tool === "pull");
 	};
-	/**
-	 * @description This is the callback from ThreeView after three.js has
-	 * finished initializing. This is not the JS framework's builtin function.
-	 */
+
+	// This is the callback from ThreeView after three.js has
+	// finished initializing. This is not the JS framework's builtin function.
 	const didMount = ({ renderer, scene: _scene, camera: _camera }) => {
 		scene = _scene;
 		camera = _camera;
@@ -135,38 +103,39 @@
 			setTouches: t => { touches = t; },
 		});
 		lights.forEach(light => scene.add(light));
-		exportModel.set(simulator.export);
+		Simulator.exportModel = simulator.export;
 	};
 
 	// load a new origami model. thrown errors are because of a bad file format
-	$: {
-		try {
-			simulator.load(origami);
-			const box = boundingBox(origami);
-			modelSize = box ? Math.max(...box.span) : 1;
-		} catch (error) {
-			console.error(error);
-			window.alert(error);
-		}
-	}
+	//$effect(() => {
+	//	try {
+	//		simulator.load(origami);
+	//		const box = boundingBox(origami);
+	//		modelSize = box ? Math.max(...box.span) : 1;
+	//	} catch (error) {
+	//		console.error(error);
+	//		window.alert(error);
+	//	}
+	//});
 
 	// on model change, update camera position
-	$: if (camera) {
-		// scale is due to the camera's FOV
-		const scale = 1.25;
-		// the distance the camera should be to nicely fit the object
-		const fitLength = camera.aspect > 1
-			? modelSize * scale
-			: modelSize * scale * (1 / camera.aspect);
-		const length = fitLength / camera.position.length();
-		camera.position.multiplyScalar(length);
-		camera.lookAt(0, 0, 0);
-		camera.far = modelSize * 100;
-		camera.near = modelSize / 100;
-	}
+	$effect(() => {
+    if (!camera) { return; }
+    // scale is due to the camera's FOV
+    const scale = 1.25;
+    // the distance the camera should be to nicely fit the object
+    const fitLength = camera.aspect > 1
+      ? modelSize * scale
+      : modelSize * scale * (1 / camera.aspect);
+    const length = fitLength / camera.position.length();
+    camera.position.multiplyScalar(length);
+    camera.lookAt(0, 0, 0);
+    camera.far = modelSize * 100;
+    camera.near = modelSize / 100;
+  });
 
 	// on model change, update the position of the lights
-	$: {
+	$effect(() => {
 		const radius = modelSize * Math.SQRT1_2;
 		// todo, might need these inside the initialize method
 		lightVertices.forEach(([x, y, z], i) => {
@@ -176,65 +145,68 @@
 			lights[i].shadow.camera.near = radius / 10; // 0.5 default
 			lights[i].shadow.camera.far = radius * 10; // 500 default
 		});
-	}
-	$: reset.set(simulator.reset);
-
-	/**
-	 * settings from the Simulator store
-	 */
-	$: simulator.active = $active;
-	$: simulator.foldAmount = $foldAmount;
-	$: simulator.strain = $strain;
-	$: simulator.integration = $integration;
-	$: simulator.axialStiffness = $axialStiffness;
-	$: simulator.faceStiffness = $faceStiffness;
-	$: simulator.joinStiffness = $joinStiffness;
-	$: simulator.creaseStiffness = $creaseStiffness;
-	$: simulator.dampingRatio = $dampingRatio;
-	// show/hide things
-	$: simulator.shadows = $showShadows;
-	$: [0, 3, 4, 7].forEach(i => {
-		lights[i % lights.length].castShadow = $showShadows;
 	});
-	$: $showTouches
-		? highlights.highlightTouch(touches[0])
-		: highlights.clear();
-	$: simulator.meshThree.frontMesh.visible = $showFront;
-	$: simulator.meshThree.backMesh.visible = $showBack;
-	$: simulator.getLines().B.visible = $showBoundary;
-	$: simulator.getLines().M.visible = $showMountain;
-	$: simulator.getLines().V.visible = $showValley;
-	$: simulator.getLines().F.visible = $showFlat;
-	$: simulator.getLines().J.visible = $showJoin;
-	$: simulator.getLines().U.visible = $showUnassigned;
-	// colors
-	//$: simulator.setFrontColor($frontColor);
-	//$: simulator.setBackColor($backColor);
+
+	$effect(() => Simulator.reset = simulator.reset);
+
+	//settings from the Simulator store
+	$effect(() => { simulator.active = Simulator.active; });
+	$effect(() => { simulator.foldAmount = Simulator.foldAmount; });
+	$effect(() => { simulator.strain = Simulator.strain; });
+	$effect(() => { simulator.integration = Solver.integration; });
+	$effect(() => { simulator.axialStiffness = Solver.axialStiffness; });
+	$effect(() => { simulator.faceStiffness = Solver.faceStiffness; });
+	$effect(() => { simulator.joinStiffness = Solver.joinStiffness; });
+	$effect(() => { simulator.creaseStiffness = Solver.creaseStiffness; });
+	$effect(() => { simulator.dampingRatio = Solver.dampingRatio; });
+	// show/hide things
+	$effect(() => { simulator.shadows = Style.showShadows; });
+	$effect(() => {
+    [0, 3, 4, 7].forEach(i => {
+		  lights[i % lights.length].castShadow = Style.showShadows;
+    });
+  });
+	$effect(() => {
+    Style.showTouches
+      ? highlights.highlightTouch(touches[0])
+      : highlights.clear();
+  });
+	$effect(() => { simulator.meshThree.frontMesh.visible = Style.showFront; });
+	$effect(() => { simulator.meshThree.backMesh.visible = Style.showBack; });
+	$effect(() => { simulator.getLines().B.visible = Style.showBoundary; });
+	$effect(() => { simulator.getLines().M.visible = Style.showMountain; });
+	$effect(() => { simulator.getLines().V.visible = Style.showValley; });
+	$effect(() => { simulator.getLines().F.visible = Style.showFlat; });
+	$effect(() => { simulator.getLines().J.visible = Style.showJoin; });
+	$effect(() => { simulator.getLines().U.visible = Style.showUnassigned; });
+	//// colors
+	//$: simulator.setFrontColor(Style.frontColor);
+	//$: simulator.setBackColor(Style.backColor);
 	//$: Object.values(simulator.getMaterials().line)
-	//	.forEach(m => { m.opacity = $lineOpacity; });
-	//$: simulator.setBoundaryColor($boundaryColor);
-	//$: simulator.setMountainColor($mountainColor);
-	//$: simulator.setValleyColor($valleyColor);
-	//$: simulator.setFlatColor($flatColor);
-	//$: simulator.setJoinColor($joinColor);
-	//$: simulator.setUnassignedColor($unassignedColor);
-	$: if (scene) { scene.background = new THREE.Color($backgroundColor); }
+	//	.forEach(m => { m.opacity = Style.lineOpacity; });
+	//$: simulator.setBoundaryColor(Style.boundaryColor);
+	//$: simulator.setMountainColor(Style.mountainColor);
+	//$: simulator.setValleyColor(Style.valleyColor);
+	//$: simulator.setFlatColor(Style.flatColor);
+	//$: simulator.setJoinColor(Style.joinColor);
+	//$: simulator.setUnassignedColor(Style.unassignedColor);
+	//$: if (scene) { scene.background = new THREE.Color(Style.backgroundColor); }
 
-	// nitpicky. upon tool change we need raycasterPullVertex to be undefined
-	$: if (raycasters) { raycasters.raycasterReleaseHandler($tool); }
+	// nitpicky ui thing. upon tool change we need raycasterPullVertex to be undefined
+	$effect(() => { if (raycasters) { raycasters.raycasterReleaseHandler(Simulator.tool); }});
 
-	/**
-	 * @description cleanup all memory associated with origami simulator
-	 */
-	onDestroy(() => {
+	// cleanup all memory associated with origami simulator
+	const dealloc = () => {
 		if (raycasters) { raycasters.dealloc(); }
 		if (simulator) { simulator.dealloc(); }
 		if (highlights) { highlights.dealloc(); }
-	});
+	};
+
+  $effect(() => dealloc);
 </script>
 
 <TrackballView
-	enabled={$tool !== "pull"}
+	enabled={Simulator.tool !== "pull"}
 	maxDistance={modelSize * 30}
 	minDistance={modelSize * 0.1}
 	panSpeed={1}

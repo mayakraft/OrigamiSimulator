@@ -69,6 +69,7 @@ export class OrigamiSimulator {
   set foldAmount(value: number | string) {
     const number = typeof value === "number" ? value : parseFloat(value);
     this.#foldAmount = !Number.isNaN(number) ? number : 0.0;
+    console.log("fold amount", this.#foldAmount);
     this.newModel?.setCreasePercent(this.foldAmount);
   }
 
@@ -78,6 +79,7 @@ export class OrigamiSimulator {
 
   set strain(value: boolean) {
     this.#strain = !!value;
+    console.log("strain", this.#strain);
     //model.setStrain(strain);
   }
 
@@ -98,6 +100,7 @@ export class OrigamiSimulator {
   }
 
   set scene(newScene: THREE.Scene) {
+    console.log("set scene");
     this.meshThree.setScene(newScene);
   }
 
@@ -187,7 +190,10 @@ export class OrigamiSimulator {
     this.newModel.dealloc();
   }
 
-  //export: () => newModel.export(),
+  //export() { return newModel.export(); }
+  export() {
+    return {};
+  }
 
   getMesh() {
     return this.meshThree;

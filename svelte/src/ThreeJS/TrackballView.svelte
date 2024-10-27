@@ -20,31 +20,50 @@
 	- zoomSpeed (number)
 	- dynamicDampingFactor (number)
 -->
-<script>
-	import { onDestroy } from "svelte";
-	import { TrackballControls } from "three/addons/controls/TrackballControls.js";
+<script lang="ts">
+  import { TrackballControls } from "three/examples/jsm/controls/TrackballControls"
 	import ThreeView from "./ThreeView.svelte";
-	// ThreeView component
-	export let didMount = () => {};
-	export let didResize = () => {};
-	export let animate = () => {};
-	// this component
-	export let enabled = true;
-	export let maxDistance = 100;
-	export let minDistance = 0.1;
-	export let panSpeed = 1;
-	export let rotateSpeed = 4;
-	export let zoomSpeed = 16;
-	export let dynamicDampingFactor;
-	let trackball;
 
-	$: if (trackball) { trackball.enabled = enabled; }
-	$: if (trackball) { trackball.maxDistance = maxDistance; }
-	$: if (trackball) { trackball.minDistance = minDistance; }
-	$: if (trackball) { trackball.panSpeed = panSpeed; }
-	$: if (trackball) { trackball.rotateSpeed = rotateSpeed; }
-	$: if (trackball) { trackball.zoomSpeed = zoomSpeed; }
-	$: if (trackball) { trackball.dynamicDampingFactor = dynamicDampingFactor; }
+  type PropsType = {
+    didMount?: (options: object) => void;
+    didResize?: (event?: Event) => void;
+    animate?: () => void;
+  };
+
+  type TrackballPropsType = {
+    enabled?: boolean;
+    maxDistance?: number;
+    minDistance?: number;
+    panSpeed?: number;
+    rotateSpeed?: number;
+    zoomSpeed?: number;
+    dynamicDampingFactor?: number;
+  }
+
+  let {
+    // ThreeView component
+    didMount,
+    didResize,
+    animate,
+    // this component
+    enabled= true,
+    maxDistance= 100,
+    minDistance= 0.1,
+    panSpeed= 1,
+    rotateSpeed= 4,
+    zoomSpeed= 16,
+    dynamicDampingFactor,
+  }: PropsType & TrackballPropsType = $props();
+
+	let trackball: TrackballControls | undefined;
+
+	$effect(() => { trackball.enabled = enabled; });
+	$effect(() => { trackball.maxDistance = maxDistance; });
+	$effect(() => { trackball.minDistance = minDistance; });
+	$effect(() => { trackball.panSpeed = panSpeed; });
+	$effect(() => { trackball.rotateSpeed = rotateSpeed; });
+	$effect(() => { trackball.zoomSpeed = zoomSpeed; });
+	$effect(() => { trackball.dynamicDampingFactor = dynamicDampingFactor; });
 
 	const didMountHandler = ({ renderer, scene, camera }) => {
 		trackball = new TrackballControls(camera, renderer.domElement.parentNode);
@@ -54,7 +73,7 @@
 		}
 	};
 
-	const didResizeHandler = (event) => {
+	const didResizeHandler = (event: Event) => {
 		trackball.handleResize();
 		// bubble up event handler
 		if (didResize) {
@@ -70,7 +89,7 @@
 		}
 	};
 
-	onDestroy(() => trackball.dispose());
+	$effect(() => trackball.dispose);
 </script>
 
 <ThreeView
