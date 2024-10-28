@@ -208,6 +208,13 @@ export class OrigamiSimulator {
     return this.meshThree.lines;
   }
 
+  set frontVisible(value: boolean) {
+    this.meshThree.frontMesh.visible = value;
+  }
+  set backVisible(value: boolean) {
+    this.meshThree.backMesh.visible = value;
+  }
+
   set frontColor(color: string | number) {
     this.meshThree.materials.front.color.set(color);
   }

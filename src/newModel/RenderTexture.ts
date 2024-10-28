@@ -5,6 +5,9 @@ import {
   makeTexture,
 } from "./WebGL.ts";
 
+// to render the textures, the fragment shader will override the alpha
+// value to be 1.0, so you can better see the raw RGB channels.
+
 const vertexShader = `attribute vec4 a_position;
 attribute vec2 a_texcoord;
 uniform mat4 u_matrix;
@@ -22,48 +25,38 @@ void main() {
   gl_FragColor = vec4(color.rgb, 1.0);
 }`;
 
-export class DebugTexture {
+export class RenderTexture {
   gl: WebGLRenderingContext | WebGL2RenderingContext;
   program: WebGLProgram;
-
   texture: WebGLTexture;
-  textureWidth: number;
-  textureHeight: number;
+  width: number;
+  height: number;
   type: string = "FLOAT";
 
+  positionBuffer: WebGLBuffer;
+  texcoordBuffer: WebGLBuffer;
+
+  matrix: number[];
   positionLocation: GLint;
   texcoordLocation: GLint;
   matrixLocation: WebGLUniformLocation;
   textureLocation: WebGLUniformLocation;
-
-  positionBuffer: WebGLBuffer;
-  texcoordBuffer: WebGLBuffer;
 
   constructor(canvas: HTMLCanvasElement) {
     const { gl } = initializeWebGL(canvas);
     this.gl = gl;
     this.program = createProgramFromSource(this.gl, vertexShader, fragmentShader);
 
-    const ext = gl.getExtension("OES_texture_float");
-    if (!ext) {
-      alert("this machine or browser does not support OES_texture_float");
+    if (!gl.getExtension("OES_texture_float")) {
+      window.alert("OES_texture_float not supported");
     }
-    //var linear =  gl.getExtension("OES_texture_float_linear");
-    //if (!linear) {
-    //  alert("this machine or browser does not support  OES_texture_float_linear");
-    //}
 
     this.positionLocation = this.gl.getAttribLocation(this.program, "a_position");
     this.texcoordLocation = this.gl.getAttribLocation(this.program, "a_texcoord");
     this.matrixLocation = this.gl.getUniformLocation(this.program, "u_matrix");
     this.textureLocation = this.gl.getUniformLocation(this.program, "u_texture");
-    console.log("constructor");
-    console.log(this.positionLocation);
-    console.log(this.texcoordLocation);
-    console.log(this.matrixLocation);
-    console.log(this.textureLocation);
 
-    // Put a unit quad in the buffer
+    this.matrix = [1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1];
     const positions = [-1, -1, -1, 1, 1, -1, 1, -1, -1, 1, 1, 1];
     const texcoords = [0, 0, 0, 1, 1, 0, 1, 0, 0, 1, 1, 1];
 
@@ -85,30 +78,15 @@ export class DebugTexture {
     );
   }
 
-  setPixels(
-    data: ArrayBufferView,
-    width: number,
-    height: number,
-    type: string = "FLOAT",
-  ) {
-    this.textureWidth = width;
-    this.textureHeight = height;
-    this.type = type;
-
-    this.texture = makeTexture(
-      this.gl,
-      this.textureWidth,
-      this.textureHeight,
-      this.gl[this.type],
-      data,
-    );
+  setFloatPixels(data: ArrayBufferView, width: number, height: number) {
+    this.width = width;
+    this.height = height;
+    this.texture = makeTexture(this.gl, this.width, this.height, this.gl.FLOAT, data);
   }
 
   // Unlike images, textures do not have a width and height associated
   // with them so we'll pass in the width and height of the texture
   draw() {
-    const matrix = [1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1];
-
     this.gl.clear(this.gl.COLOR_BUFFER_BIT);
     this.gl.bindTexture(this.gl.TEXTURE_2D, this.texture);
     this.gl.useProgram(this.program);
@@ -121,7 +99,7 @@ export class DebugTexture {
     this.gl.enableVertexAttribArray(this.texcoordLocation);
     this.gl.vertexAttribPointer(this.texcoordLocation, 2, this.gl.FLOAT, false, 0, 0);
 
-    this.gl.uniformMatrix4fv(this.matrixLocation, false, matrix);
+    this.gl.uniformMatrix4fv(this.matrixLocation, false, this.matrix);
     this.gl.uniform1i(this.textureLocation, 0);
 
     this.gl.drawArrays(this.gl.TRIANGLES, 0, 6);

@@ -139,18 +139,3 @@ export const makeCreasesParams = (fold: FOLDMesh): CreaseParam[] => {
   });
   return result.filter((a) => a !== undefined);
 };
-
-//export const makeCreases = (fold: FOLDMesh) => {
-//  return makeCreasesParams(fold).map(
-//    (param, i) =>
-//      new Crease(
-//        this.edges[param.edge],
-//        i,
-//        param.foldAngle !== 0 ? 1 : 0, // type
-//        param.faces,
-//        param.vertices.map((v) => this.nodes[v]),
-//        param.foldAngle * (Math.PI / 180), // up until now everything has been in degrees
-//        options,
-//      ),
-//  );
-//};

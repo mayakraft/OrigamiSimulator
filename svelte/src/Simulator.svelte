@@ -18,7 +18,8 @@
 	import * as THREE from "three";
 	import TrackballView from "./ThreeJS/TrackballView.svelte";
 	import GPUVisualizer from "./GPUVisualizer.svelte";
-	import { OrigamiSimulator } from "../../src/index";
+	//import { OrigamiSimulator } from "../../src/index.ts";
+	import { OrigamiSimulator } from "../../src/SimulatorThree.ts";
 	import Highlights from "../../src/touches/highlights";
 	import Raycasters from "../../src/touches/raycasters";
 	import boundingBox from "../../src/fold/boundingBox";
@@ -181,8 +182,8 @@
       : highlights.clear();
   });
 	$effect(() => {
-    simulator.meshThree.frontMesh.visible = Style.showFront;
-	  simulator.meshThree.backMesh.visible = Style.showBack;
+    simulator.frontVisible = Style.showFront;
+	  simulator.backVisible = Style.showBack;
   });
 
 	$effect(() => {
@@ -236,9 +237,11 @@
       didMount={didMount}
     />
   </div>
+  <!--
   <div class="panel">
     <GPUVisualizer {simulator} />
   </div>
+  -->
 </div>
 
 <style>

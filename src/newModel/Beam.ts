@@ -16,14 +16,11 @@ export class Beam {
   constructor(
     nodes: [Node, Node],
     { axialStiffness, dampingRatio }: SolverOptions,
-    //{ axialStiffness, dampingRatio }: {axialStiffness?: number, dampingRatio?: number},
   ) {
     this.type = "beam";
     this.axialStiffness = axialStiffness;
     this.dampingRatio = dampingRatio;
 
-    // todo: okay this is a huge issue. we don't have the index, can't reference FOLD coords array
-    //this.vertices = [nodes[0].originalPosition, nodes[1].originalPosition];
     this.vertices = [nodes[0].originalPosition, nodes[1].originalPosition];
     this.nodes = nodes;
     this.originalLength = this.getLength();
