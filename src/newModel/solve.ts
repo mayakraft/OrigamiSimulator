@@ -18,6 +18,7 @@ export const solveStep = (
     integrationType: string;
   },
 ) => {
+  console.log("solve.ts solveStep()");
   gpuMath.setProgram("normalCalc");
   gpuMath.setSize(textureDimFaces, textureDimFaces);
   gpuMath.step(
@@ -123,6 +124,7 @@ export const solveStep = (
  * @returns {number} the global error as a percent
  */
 export const render = (gpuMath: GPUMath, model: NewModel, axialStrain: boolean) => {
+  console.log("solve.ts render()");
   if (!gpuMath) {
     return 0;
   }

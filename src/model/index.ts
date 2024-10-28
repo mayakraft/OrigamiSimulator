@@ -34,6 +34,7 @@ const emptyMesh = (): FOLDMesh => ({
  * @param {string} key
  */
 const setNewFaceMaterial = (model: Model, material: THREE.Material, key: string) => {
+  console.log("mo/index.ts setNewFaceMaterial()");
   if (model.materials[key]) {
     model.materials[key].dispose();
   }
@@ -72,6 +73,7 @@ export class Model {
    * @param {{ scene: THREE.Scene }} options
    */
   constructor({ scene }: { scene: THREE.Scene | undefined }) {
+    console.log("Model constructor()");
     // if the user chooses to export the 3D model, we need to reference
     // the original FOLD data. "this.fold" contains triangulated faces.
     this.fold = emptyMesh();
@@ -122,6 +124,7 @@ export class Model {
   }
 
   setScene(scene?: THREE.Scene): void {
+    console.log("Model setScene()");
     // remove from previous scene
     [this.frontMesh, this.backMesh]
       .filter((el) => el.removeFromParent)
@@ -138,6 +141,7 @@ export class Model {
   }
 
   makeNewGeometries(): void {
+    console.log("Model makeNewGeometries()");
     this.geometry = new THREE.BufferGeometry();
     // this.geometry.dynamic = true; // property no longer exists
     this.frontMesh.geometry = this.geometry;
@@ -152,6 +156,7 @@ export class Model {
   }
 
   faceMaterialDidUpdate(): void {
+    console.log("Model faceMaterialDidUpdate()");
     this.frontMesh.material = this.strain ? this.materials.strain : this.materials.front;
     this.backMesh.material = this.materials.back;
     // hide the back mesh if strain is currently enabled
@@ -163,6 +168,7 @@ export class Model {
   }
 
   lineMaterialDidUpdate(): void {
+    console.log("Model lineMaterialDidUpdate()");
     assignments.forEach((key) => {
       this.lines[key].material = this.materials.line[key] || Materials.line.clone();
       this.lines[key].material.needsUpdate = true;
@@ -184,6 +190,7 @@ export class Model {
   }
 
   needsUpdate(): void {
+    console.log("Model needsUpdate()");
     if (!this.positions) {
       return;
     }
@@ -197,6 +204,7 @@ export class Model {
   }
 
   makeObjects(fold: FOLDMesh): void {
+    console.log("Model makeObjects()");
     const options = {
       axialStiffness: this.axialStiffness,
       joinStiffness: this.joinStiffness,
@@ -233,6 +241,7 @@ export class Model {
     indices: Uint16Array;
     lineIndices: { [key: string]: Uint16Array };
   }): void {
+    console.log("Model setGeometryBuffers()");
     const positionsAttribute = new THREE.BufferAttribute(positions, 3);
     this.geometry.setAttribute("position", positionsAttribute);
     this.geometry.setAttribute("color", new THREE.BufferAttribute(colors, 3));
@@ -257,6 +266,7 @@ export class Model {
   }
 
   dealloc(): void {
+    console.log("Model dealloc()");
     // console.log("--- dealloc: Model()");
     // dispose geometries
     [this.geometry, this.frontMesh.geometry, this.backMesh.geometry]
@@ -289,6 +299,7 @@ export class Model {
    * Immediately following this method the solver should call .setModel()
    */
   load(foldObject: FOLD): void {
+    console.log("Model load()");
     this.dealloc();
     this.makeNewGeometries();
     const fold: FOLDMesh = prepare(foldObject);
@@ -316,6 +327,7 @@ export class Model {
   }
 
   setAxialStiffness(value: number | string): void {
+    console.log("Model setAxialStiffness()");
     this.axialStiffness = typeof value === "number" ? value : parseFloat(value);
     this.edges.forEach((edge) => {
       edge.axialStiffness = this.axialStiffness;
@@ -323,6 +335,7 @@ export class Model {
   }
 
   setJoinStiffness(value: number | string): void {
+    console.log("Model setJoinStiffness()");
     this.joinStiffness = typeof value === "number" ? value : parseFloat(value);
     this.creases.forEach((crease) => {
       crease.joinStiffness = this.joinStiffness;
@@ -330,6 +343,7 @@ export class Model {
   }
 
   setCreaseStiffness(value: number | string): void {
+    console.log("Model setCreaseStiffness()");
     this.creaseStiffness = typeof value === "number" ? value : parseFloat(value);
     this.creases.forEach((crease) => {
       crease.creaseStiffness = this.creaseStiffness;
@@ -337,6 +351,7 @@ export class Model {
   }
 
   setDampingRatio(value: number | string): void {
+    console.log("Model setDampingRatio()");
     this.dampingRatio = typeof value === "number" ? value : parseFloat(value);
     this.creases.forEach((crease) => {
       crease.dampingRatio = this.dampingRatio;

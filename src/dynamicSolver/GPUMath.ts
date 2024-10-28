@@ -27,6 +27,7 @@ export class GPUMath {
   index: number;
 
   constructor() {
+    console.log("GPUMath() constructor()");
     this.canvas = window.document.createElement("canvas");
     this.canvas.setAttribute("style", "display:none;");
     this.canvas.setAttribute("class", "gpuMathCanvas");
@@ -57,6 +58,7 @@ export class GPUMath {
    * @param {string} fragmentShader
    */
   createProgram(programName: string, vertexShader: string, fragmentShader: string) {
+    console.log("GPUMath createProgram()");
     const programs = this.programs;
     const existing = programs[programName];
     if (existing) {
@@ -89,6 +91,7 @@ export class GPUMath {
     data: ArrayBufferView,
     shouldReplace: boolean,
   ) {
+    console.log("GPUMath initTextureFromData()");
     let texture = this.textures[name];
 
     if (texture) {
@@ -107,6 +110,7 @@ export class GPUMath {
    * @param {boolean} shouldReplace
    */
   initFrameBufferForTexture(textureName: string, shouldReplace: boolean) {
+    console.log("GPUMath initFrameBufferForTexture()");
     let framebuffer = this.frameBuffers[textureName];
     if (framebuffer) {
       if (!shouldReplace) {
@@ -149,6 +153,7 @@ export class GPUMath {
    * @param {string} type
    */
   setUniformForProgram(programName: string, name: string, val: unknown, type: string) {
+    console.log("GPUMath setUniformForProgram()");
     if (!this.programs[programName]) {
       console.log(programName, this.programs, this.programs[programName]);
       console.warn(`no program with name ${programName}`);
@@ -190,6 +195,7 @@ export class GPUMath {
    * @param {number} height
    */
   setSize(width: number, height: number) {
+    console.log("GPUMath setSize()");
     this.gl.viewport(0, 0, width, height);
     this.canvas.style.width = `${width}px`;
     this.canvas.style.height = `${height}px`;
@@ -199,6 +205,7 @@ export class GPUMath {
    * @param {string} programName
    */
   setProgram(programName: string) {
+    console.log("GPUMath setProgram()");
     const program = this.programs[programName];
     if (program) {
       this.gl.useProgram(program.program);
@@ -217,6 +224,7 @@ export class GPUMath {
     outputTexture: string,
     time?: number,
   ) {
+    console.log("GPUMath step()");
     this.gl.useProgram(this.programs[programName].program);
     // todo: are we passing time 0 to bypass this, or can we write if (time === undefined)
     if (time) {
@@ -235,6 +243,7 @@ export class GPUMath {
    * @param {string} texture2Name
    */
   swapTextures2(texture1Name: string, texture2Name: string) {
+    console.log("GPUMath swapTextures2()");
     let temp = this.textures[texture1Name];
     this.textures[texture1Name] = this.textures[texture2Name];
     this.textures[texture2Name] = temp;
@@ -249,6 +258,7 @@ export class GPUMath {
    * @param {string} texture3Name
    */
   swapTextures3(texture1Name: string, texture2Name: string, texture3Name: string) {
+    console.log("GPUMath swapTextures3()");
     let temp = this.textures[texture3Name];
     this.textures[texture3Name] = this.textures[texture2Name];
     this.textures[texture2Name] = this.textures[texture1Name];
@@ -263,6 +273,7 @@ export class GPUMath {
    * @returns {boolean}
    */
   readyToRead() {
+    console.log("GPUMath readyToRead()");
     return (
       this.gl.checkFramebufferStatus(this.gl.FRAMEBUFFER) === this.gl.FRAMEBUFFER_COMPLETE
     );
@@ -282,6 +293,7 @@ export class GPUMath {
     height: number,
     array: ArrayBufferView,
   ) {
+    console.log("GPUMath readPixels()");
     this.gl.readPixels(
       xMin,
       yMin,
@@ -294,6 +306,7 @@ export class GPUMath {
   }
 
   dealloc() {
+    console.log("GPUMath dealloc()");
     Object.values(this.programs)
       .map((el) => el.program)
       .forEach((prog) => this.gl.deleteProgram(prog));

@@ -31,6 +31,7 @@ export class MeshThree {
   strain: boolean;
 
   constructor({ scene }: { scene: THREE.Scene | undefined }) {
+    console.log("MeshThree constructor()");
     // if the user chooses to export the 3D model, we need to reference
     // the original FOLD data. "this.fold" contains triangulated faces.
     this.geometry = null;
@@ -66,6 +67,7 @@ export class MeshThree {
   }
 
   setModel(model: NewModel): void {
+    console.log("MeshThree setModel()");
     //this.dealloc();
     const {
       positions,
@@ -81,6 +83,7 @@ export class MeshThree {
   }
 
   setScene(scene?: THREE.Scene): void {
+    console.log("MeshThree setScene()");
     // remove from previous scene
     [this.frontMesh, this.backMesh]
       .filter((el) => el.removeFromParent)
@@ -98,6 +101,7 @@ export class MeshThree {
   }
 
   makeNewGeometries(): void {
+    console.log("MeshThree makeNewGeometries()");
     this.geometry = new THREE.BufferGeometry();
     // this.geometry.dynamic = true; // property no longer exists
     this.frontMesh.geometry = this.geometry;
@@ -112,6 +116,7 @@ export class MeshThree {
   }
 
   faceMaterialDidUpdate(): void {
+    console.log("MeshThree faceMaterialDidUpdate()");
     this.frontMesh.material = this.strain ? this.materials.strain : this.materials.front;
     this.backMesh.material = this.materials.back;
     // hide the back mesh if strain is currently enabled
@@ -123,6 +128,7 @@ export class MeshThree {
   }
 
   lineMaterialDidUpdate(): void {
+    console.log("MeshThree lineMaterialDidUpdate()");
     assignments.forEach((key) => {
       this.lines[key].material = this.lineMaterials[key] || Materials.line.clone();
       this.lines[key].material.needsUpdate = true;
@@ -135,6 +141,7 @@ export class MeshThree {
   }
 
   setStrain(strain: boolean): void {
+    console.log("MeshThree setStrain()");
     this.strain = strain;
     this.faceMaterialDidUpdate();
   }
@@ -144,6 +151,7 @@ export class MeshThree {
   }
 
   needsUpdate(): void {
+    console.log("MeshThree needsUpdate()");
     this.geometry.attributes.position.needsUpdate = true;
     if (this.strain) {
       this.geometry.attributes.color.needsUpdate = true;
@@ -164,7 +172,8 @@ export class MeshThree {
     indices: Uint16Array;
     lineIndices: { [key: string]: Uint16Array };
   }): void {
-    console.log("set geometry buffers", positions.length, colors.length, indices.length);
+    console.log("MeshThree setGeometryBuffers()",
+      positions.length, colors.length, indices.length);
     const positionsAttribute = new THREE.BufferAttribute(positions, 3);
     this.geometry.setAttribute("position", positionsAttribute);
     this.geometry.setAttribute("color", new THREE.BufferAttribute(colors, 3));
@@ -189,6 +198,7 @@ export class MeshThree {
   }
 
   dealloc(): void {
+    console.log("MeshThree dealloc()");
     // console.log("--- dealloc: Model()");
     // dispose geometries
     [this.geometry, this.frontMesh.geometry, this.backMesh.geometry]

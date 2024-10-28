@@ -18,6 +18,7 @@ export const solveStep = (
     integrationType: string;
   },
 ) => {
+  console.log("solve.ts solve()");
   gpuMath.setProgram("normalCalc");
   gpuMath.setSize(textureDimFaces, textureDimFaces);
   gpuMath.step(
@@ -127,6 +128,7 @@ export const render = (
   model: Model,
   { textureDim, axialStrain }: { textureDim: number; axialStrain: boolean },
 ) => {
+  console.log("solve.ts render()");
   if (!gpuMath) {
     return 0;
   }

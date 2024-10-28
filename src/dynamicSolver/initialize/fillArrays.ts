@@ -35,6 +35,7 @@ const fillArrays = (
     lastTheta,
   }: GPUMathSettings,
 ) => {
+  console.log("fillArrays.ts fillArrays() [100]");
   const numCreases = model.creases.length;
   const nodeFaces = verticesFaces(model);
   const originalPosition = new Float32Array(textureDim * textureDim * 4);

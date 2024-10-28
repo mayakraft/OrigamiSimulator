@@ -52,6 +52,7 @@ export class OrigamiSimulator {
     this.#strain = false;
     this.#shadows = false;
     this.#active = false;
+    console.log("MeshThree", this.meshThree);
   }
 
   /**
@@ -59,10 +60,9 @@ export class OrigamiSimulator {
    * and deliver the error to the end user.
    */
   load(fold: FOLD): void {
-    console.log("load() new NewModel");
     this.newModel = new NewModel(fold, { creasePercent: this.foldAmount });
-    console.log(this.newModel);
     this.meshThree.setModel(this.newModel);
+    console.log("NewModel", this.newModel);
   }
 
   set foldAmount(value: number | string) {

@@ -1,48 +1,7 @@
 <script>
-	//import {
-	//	active,
-	//	foldAmount,
-	//	strain,
-	//	tool,
-	//	error,
-	//	reset,
-	//	exportModel,
-	//} from "./stores/Simulator.js";
-	//import {
-	//	showTouches,
-	//	showShadows,
-	//	showFront,
-	//	showBack,
-	//	showBoundary,
-	//	showMountain,
-	//	showValley,
-	//	showFlat,
-	//	showJoin,
-	//	showUnassigned,
-	//	backgroundColor,
-	//	frontColor,
-	//	backColor,
-	//	lineOpacity,
-	//	boundaryColor,
-	//	mountainColor,
-	//	valleyColor,
-	//	flatColor,
-	//	joinColor,
-	//	unassignedColor,
-	//} from "./stores/Style.js";
-
   import Style from "./state/Style.svelte.js";
   import Simulator from "./state/Simulator.svelte.js";
   import Solver from "./state/Solver.svelte.js";
-
-	//import {
-	//	integration,
-	//	axialStiffness,
-	//	faceStiffness,
-	//	joinStiffness,
-	//	creaseStiffness,
-	//	dampingRatio,
-	//} from "./stores/Solver.js";
 
 	export let origami = {};
 

@@ -18,6 +18,7 @@ const calcDt = (model: Model): number => {
 };
 
 const setSolveParams = (gpuMath: GPUMath, model: Model) => {
+  console.log("index.ts setSolveParams() [10]");
   const dt = calcDt(model);
   // $("#deltaT").html(dt);
   gpuMath.setProgram("thetaCalc");
@@ -34,6 +35,7 @@ const setSolveParams = (gpuMath: GPUMath, model: Model) => {
 };
 
 const initialize = (gpuMath: GPUMath, model: Model, options: GPUMathOptions) => {
+  console.log("index.ts initialize() [5]");
   const arrays = initArrays(gpuMath, model);
   const moreArrays = fillArrays(gpuMath, model, arrays);
   initGPU(gpuMath, arrays, options);

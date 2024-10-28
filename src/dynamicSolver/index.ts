@@ -16,6 +16,7 @@ import { solveStep, render } from "./solve.ts";
  * @param {Model} model
  */
 const modelCenter = (model: Model): [number, number, number] => {
+  console.log("dS/index.ts modelCenter()");
   if (!model.positions) {
     return [0, 0, 0];
   }
@@ -44,6 +45,7 @@ export class DynamicSolver {
   integrationType: string;
 
   constructor() {
+    console.log("DynamicSolver constructor()");
     // the GPU instance which will be doing our calculation
     this.gpuMath = new GPUMath();
     // store reference to the Origami Simulator model
@@ -67,6 +69,7 @@ export class DynamicSolver {
    * vertex, this conveys to the solver that a node is being manually moved.
    */
   nodeDidMove(): void {
+    console.log("DynamicSolver nodeDidMove()");
     if (!this.gpuMath || !this.model) {
       return;
     }
@@ -89,6 +92,7 @@ export class DynamicSolver {
    * @param {boolean} computeStrain should the strain values be computed?
    */
   solve(numSteps: number = 100, computeStrain: boolean = false): number {
+    console.log("DynamicSolver solve()");
     if (!this.gpuMath || !this.model) {
       return 0;
     }
@@ -116,6 +120,7 @@ export class DynamicSolver {
    * - calcFaceStrain (bool)
    */
   setModel(newModel: Model, options: GPUMathOptions = {}): void {
+    console.log("DynamicSolver setModel()");
     // these next 2 might be unnecessary
     // dealloc();
     // gpuMath = new GPUMath();
@@ -142,6 +147,7 @@ export class DynamicSolver {
    * @returns {number} the global error as a percent
    */
   reset(): number {
+    console.log("DynamicSolver reset()");
     if (!this.gpuMath || !this.model) {
       return 0;
     }
@@ -162,6 +168,7 @@ export class DynamicSolver {
    * @description deallocate everything involved with the dynamic solver
    */
   dealloc(): void {
+    console.log("DynamicSolver dealloc()");
     if (this.gpuMath) {
       this.gpuMath.dealloc();
       this.gpuMath = undefined;
@@ -169,11 +176,13 @@ export class DynamicSolver {
   }
 
   setIntegration(integration: string) {
+    console.log("DynamicSolver setIntegration()");
     this.integrationType = integration;
     this.reset();
   }
 
   setCreasePercent(value: string | number) {
+    console.log("DynamicSolver setCreasePercent()");
     if (!this.gpuMath || !this.model) {
       return;
     }
@@ -190,6 +199,7 @@ export class DynamicSolver {
   }
 
   setAxialStiffness(value: string | number) {
+    console.log("DynamicSolver setAxialStiffness()");
     if (!this.gpuMath || !this.model) {
       return;
     }
@@ -206,6 +216,7 @@ export class DynamicSolver {
   }
 
   setFaceStiffness(value: string | number) {
+    console.log("DynamicSolver setFaceStiffness()");
     if (!this.gpuMath || !this.model) {
       return;
     }
@@ -222,6 +233,7 @@ export class DynamicSolver {
   }
 
   setFaceStrain(value: string | number) {
+    console.log("DynamicSolver setFaceStrain()");
     if (!this.gpuMath || !this.model) {
       return;
     }
@@ -242,6 +254,7 @@ export class DynamicSolver {
    * after setting these properties, call this to update the texture data.
    */
   update() {
+    console.log("DynamicSolver update()");
     if (!this.gpuMath || !this.model) {
       return;
     }

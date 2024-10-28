@@ -52,6 +52,7 @@ export const initGPU = (
   }: GPUMathSettings,
   options: SolverOptions = {},
 ) => {
+  console.log("initGPU initGPU() [400]");
   const defaults: SolverOptions = { ...defaultSolverOptions, ...options };
 
   const float_type = gpuMath.float_type || "FLOAT";
@@ -473,4 +474,5 @@ export const initGPU = (
   );
 
   gpuMath.setSize(textureDim, textureDim);
+  console.log("-- initGPU initGPU() ** END **");
 };

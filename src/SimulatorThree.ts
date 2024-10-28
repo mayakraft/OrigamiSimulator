@@ -53,6 +53,8 @@ export class OrigamiSimulator {
     this.#strain = false;
     this.#shadows = false;
     this.#active = false;
+    console.log("Model", this.model);
+    console.log("DynamicSolver", this.solver);
   }
 
   /**
@@ -115,7 +117,8 @@ export class OrigamiSimulator {
   compute(): void {
     // error is the global error in the folding of the model
     // not a computational error.
-    this.error = this.solver.solve(100, this.#strain);
+    this.error = this.solver.solve(1, this.#strain);
+    //this.error = this.solver.solve(100, this.#strain);
     this.model.needsUpdate();
     // reset single loop variables
   }

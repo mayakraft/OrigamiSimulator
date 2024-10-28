@@ -78,6 +78,7 @@ const initGPU = (
   }: GPUMathSettings,
   options: GPUMathOptions = {},
 ) => {
+  console.log("initGPU.ts initGPU() [400]");
   const defaults: GPUMathOptions = { ...DEFAULTS, ...options };
 
   gpuMath.initTextureFromData(
@@ -497,6 +498,7 @@ const initGPU = (
   );
 
   gpuMath.setSize(textureDim, textureDim);
+  console.log("-- initGPU initGPU() ** END **");
 };
 
 export default initGPU;

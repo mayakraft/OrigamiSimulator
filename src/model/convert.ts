@@ -13,6 +13,7 @@ export const makeTypedArrays = (
   indices: Uint16Array;
   lineIndices: { [key: string]: Uint16Array };
 } => {
+  console.log("convert.ts makeTypedArrays()");
   const positions = new Float32Array(fold.vertices_coords.length * 3);
   const colors = new Float32Array(fold.vertices_coords.length * 3);
   const indices = new Uint16Array(fold.faces_vertices.length * 3);

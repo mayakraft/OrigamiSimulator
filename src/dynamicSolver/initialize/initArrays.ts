@@ -17,6 +17,7 @@ const calcTextureSize = (numNodes: number): number => {
 };
 
 const initArrays = (gpuMath: GPUMath, model: Model): GPUMathSettings => {
+  console.log("initArrays.ts initArrays() [40]");
   const numNodeFaces = verticesFaces(model).reduce((a, b) => a + b.length, 0);
   const numEdges = model.nodes
     .map((node) => node.beams.length)

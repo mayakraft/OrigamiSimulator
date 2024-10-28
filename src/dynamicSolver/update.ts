@@ -14,6 +14,7 @@ export const updateMaterials = (
   { meta, beamMeta, textureDimEdges },
   initing = false,
 ) => {
+  console.log("update.ts updateMaterials()");
   let index = 0;
   for (let i = 0; i < model.nodes.length; i += 1) {
     if (initing) {
@@ -53,6 +54,7 @@ export const updateExternalForces = (
   model: Model,
   { externalForces, textureDim },
 ) => {
+  console.log("update.ts updateExternalForces()");
   for (let i = 0; i < model.nodes.length; i += 1) {
     // external forces is always 0, 0, 0
     const [x, y, z] = model.nodes[i].externalForce;
@@ -76,6 +78,7 @@ export const updateExternalForces = (
  * @param {Model} model
  */
 export const updateFixed = (gpuMath: GPUMath, model: Model, { mass, textureDim }) => {
+  console.log("update.ts updateFixed()");
   for (let i = 0; i < model.nodes.length; i += 1) {
     mass[4 * i + 1] = model.nodes[i].fixed ? 1 : 0;
   }
@@ -92,6 +95,7 @@ export const updateOriginalPosition = (
   model: Model,
   { originalPosition, textureDim },
 ) => {
+  console.log("update.ts updateOriginalPosition()");
   for (let i = 0; i < model.nodes.length; i += 1) {
     const [x, y, z] = model.nodes[i].originalPosition;
     originalPosition[i * 4 + 0] = x;
@@ -118,6 +122,7 @@ export const updateCreaseVectors = (
   model: Model,
   { creaseVectors, textureDimCreases },
 ) => {
+  console.log("update.ts updateCreaseVectors()");
   for (let i = 0; i < model.creases.length; i += 1) {
     const rgbaIndex = i * 4;
     const nodes = model.creases[i].edge.nodes;
@@ -146,6 +151,7 @@ export const updateCreasesMeta = (
   { creaseMeta, textureDimCreases },
   initing = false,
 ) => {
+  console.log("update.ts updateCreasesMeta()");
   for (let i = 0; i < model.creases.length; i += 1) {
     const crease = model.creases[i];
     creaseMeta[i * 4] = crease.getK();
@@ -177,6 +183,7 @@ export const updateLastPosition = (
   model: Model,
   { lastPosition, textureDim },
 ) => {
+  console.log("update.ts updateLastPosition()");
   for (let i = 0; i < model.nodes.length; i += 1) {
     // const [x, y, z] = model.nodes[i].getRelativePosition();
     /** @type {[number, number, number]} */

@@ -16,6 +16,7 @@ import { solveStep, render } from "./solve.ts";
  * @param {Model} model
  */
 const modelCenter = (positions: Float32Array): [number, number, number] => {
+  console.log("modelCenter()");
   if (!positions.length) {
     return [0, 0, 0];
   }
@@ -66,6 +67,7 @@ export class NewModel {
    * Immediately following this method the solver should call .setModel()
    */
   constructor(foldObject: FOLD, options?: SolverOptions) {
+    console.log("NewModel constructor()");
     // makeObjects(fold: FOLDMesh): void
     options = { ...defaultSolverOptions, ...options };
 
@@ -116,6 +118,7 @@ export class NewModel {
    * @returns {number} the global error as a percent
    */
   reset(): number {
+    console.log("NewModel reset()");
     this.gpuMath.step("zeroTexture", [], "u_position");
     this.gpuMath.step("zeroTexture", [], "u_lastPosition");
     this.gpuMath.step("zeroTexture", [], "u_lastLastPosition");
@@ -134,6 +137,7 @@ export class NewModel {
    * vertex, this conveys to the solver that a node is being manually moved.
    */
   nodeDidMove(): void {
+    console.log("NewModel nodeDidMove()");
     this.gpuMath.updateLastPosition(this);
     const [x, y, z] = modelCenter(this.positions);
     this.gpuMath.setProgram("centerTexture");
@@ -148,11 +152,25 @@ export class NewModel {
   }
 
   setIntegration(integration: string) {
+    console.log("NewModel setIntegration()");
     this.gpuMath.integrationType = integration;
     this.reset();
   }
 
+  /**
+   * @description Some properties require rewrite to the shader textures,
+   * after setting these properties, call this to update the texture data.
+   */
+  update(initing: boolean = false) {
+    console.log("NewModel update()");
+    // { creaseMeta, textureDimCreases }
+    this.gpuMath.updateCreasesMeta(this, initing);
+    // { meta, beamMeta, textureDimEdges }
+    this.gpuMath.updateMaterials(this, initing);
+  }
+
   setCreasePercent(value: string | number) {
+    console.log("NewModel setCreasePercent()");
     const number = typeof value === "number" ? value : parseFloat(value);
     this.gpuMath.setProgram("velocityCalc");
     this.gpuMath.setUniformForProgram("velocityCalc", "u_creasePercent", number, "1f");
@@ -163,10 +181,12 @@ export class NewModel {
       number,
       "1f",
     );
+    this.update();
   }
 
   // todo: duplicate methods
-  setAxialStiffnessDuplicate(value: string | number) {
+  setAxialStiffness(value: string | number) {
+    console.log("NewModel setAxialStiffness()");
     const number = typeof value === "number" ? value : parseFloat(value);
     this.gpuMath.setProgram("velocityCalc");
     this.gpuMath.setUniformForProgram("velocityCalc", "u_axialStiffness", number, "1f");
@@ -177,9 +197,16 @@ export class NewModel {
       number,
       "1f",
     );
+
+    this.axialStiffness = typeof value === "number" ? value : parseFloat(value);
+    this.edges.forEach((edge) => {
+      edge.axialStiffness = this.axialStiffness;
+    });
+    this.update();
   }
 
   setFaceStiffness(value: string | number) {
+    console.log("NewModel setFaceStiffness()");
     const number = typeof value === "number" ? value : parseFloat(value);
     this.gpuMath.setProgram("velocityCalc");
     this.gpuMath.setUniformForProgram("velocityCalc", "u_faceStiffness", number, "1f");
@@ -190,9 +217,11 @@ export class NewModel {
       number,
       "1f",
     );
+    this.update();
   }
 
   setFaceStrain(value: string | number) {
+    console.log("NewModel setFaceStrain()");
     const number = typeof value === "number" ? value : parseFloat(value);
     this.gpuMath.setProgram("velocityCalc");
     this.gpuMath.setUniformForProgram("velocityCalc", "u_calcFaceStrain", number, "1f");
@@ -203,24 +232,6 @@ export class NewModel {
       number,
       "1f",
     );
-  }
-
-  /**
-   * @description Some properties require rewrite to the shader textures,
-   * after setting these properties, call this to update the texture data.
-   */
-  update(initing: boolean = false) {
-    // { creaseMeta, textureDimCreases }
-    this.gpuMath.updateCreasesMeta(this, initing);
-    // { meta, beamMeta, textureDimEdges }
-    this.gpuMath.updateMaterials(this, initing);
-  }
-
-  setAxialStiffness(value: number | string): void {
-    this.axialStiffness = typeof value === "number" ? value : parseFloat(value);
-    this.edges.forEach((edge) => {
-      edge.axialStiffness = this.axialStiffness;
-    });
     this.update();
   }
 
@@ -229,6 +240,7 @@ export class NewModel {
     this.creases.forEach((crease) => {
       crease.joinStiffness = this.joinStiffness;
     });
+    this.update();
   }
 
   setCreaseStiffness(value: number | string): void {
@@ -236,6 +248,7 @@ export class NewModel {
     this.creases.forEach((crease) => {
       crease.creaseStiffness = this.creaseStiffness;
     });
+    this.update();
   }
 
   setDampingRatio(value: number | string): void {
@@ -246,6 +259,7 @@ export class NewModel {
     this.edges.forEach((edge) => {
       edge.dampingRatio = this.dampingRatio;
     });
+    this.update();
   }
 
   /**
@@ -254,6 +268,7 @@ export class NewModel {
    * @param {boolean} computeStrain should the strain values be computed?
    */
   solve(numSteps: number = 100, computeStrain: boolean = false): number {
+    console.log("NewModel solve()");
     for (let j = 0; j < numSteps; j += 1) {
       solveStep(this.gpuMath, this.gpuMath);
     }
@@ -266,6 +281,7 @@ export class NewModel {
   //}
 
   dealloc() {
+    console.log("NewModel dealloc()");
     // todo
   }
 }
