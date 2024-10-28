@@ -16,18 +16,17 @@
 
 <script lang="ts">
 	import * as THREE from "three";
+  import { untrack } from "svelte";
 	import TrackballView from "./ThreeJS/TrackballView.svelte";
 	import GPUVisualizer from "./GPUVisualizer.svelte";
-	//import { OrigamiSimulator } from "../../src/index.ts";
-	import { OrigamiSimulator } from "../../src/SimulatorThree.ts";
-	import Highlights from "../../src/touches/highlights";
-	import Raycasters from "../../src/touches/raycasters";
-	import boundingBox from "../../src/fold/boundingBox";
-
-  import Style from "./state/Style.svelte.js";
-  import Simulator from "./state/Simulator.svelte.js";
-  import Solver from "./state/Solver.svelte.js";
-  import { untrack } from "svelte";
+	import { OrigamiSimulator } from "../../src/index.ts";
+	//import { OrigamiSimulator } from "../../src/SimulatorThree.ts";
+	import Highlights from "../../src/touches/highlights.ts";
+	import Raycasters from "../../src/touches/raycasters.ts";
+	import { boundingBox, type BoundingBox } from "../../src/fold/boundingBox.ts";
+  import Style from "./state/Style.svelte.ts";
+  import Simulator from "./state/Simulator.svelte.ts";
+  import Solver from "./state/Solver.svelte.ts";
 
 	let {
     origami,
@@ -49,6 +48,8 @@
 	// model size will update the position of the lights, camera, and
 	// trackball controlls, allowing for models to be of vastly different scales
 	let modelSize = $state(1);
+
+	let modelCenter: [number, number, number] = $state([0, 0, 0]);
 
 	// "touches" arises from the cursor position, it is an array containing
 	// a point object for every raycasted intersection with the mesh.
@@ -87,7 +88,7 @@
 		// The raycaster will update on a mousemove event, but if the origami is
 		// in a folding animation, the raycaster will not update and the visuals
 		// will mismatch, hence, the raycaster can fire on a frame update if needed
-		raycasters.animate(Simulator.tool === "pull");
+		raycasters?.animate(Simulator.tool === "pull");
 	};
 
 	// This is the callback from ThreeView after three.js has
@@ -106,13 +107,13 @@
 			setTouches: t => { touches = t; },
 		});
 		lights.forEach(light => scene.add(light));
-		Simulator.exportModel = simulator.export;
+		Simulator.exportModel = simulator.export.bind(simulator);
 	};
 
 	// load a new origami model. thrown errors are because of a bad file format
 	$effect(() => {
     const newFile = origami;
-    let box;
+    let box: BoundingBox | undefined;
     untrack(() => {
       try {
         simulator.load(newFile);
@@ -121,10 +122,11 @@
         console.error(error);
         window.alert(error);
       }
-    })
+    });
     if (box !== undefined) {
       modelSize = box ? Math.max(...box.span) : 1;
     }
+    modelCenter = simulator.getModel().center;
 	});
 
 	// on model change, update camera position
@@ -155,6 +157,8 @@
 			lights[i].shadow.camera.far = radius * 10; // 500 default
 		});
 	});
+
+  $effect(() => scene.position.set(-modelCenter[0], -modelCenter[1], -modelCenter[2]));
 
 	$effect(() => Simulator.reset = simulator.reset);
 
@@ -212,13 +216,13 @@
   });
 
 	// nitpicky ui thing. upon tool change we need raycasterPullVertex to be undefined
-	$effect(() => { if (raycasters) { raycasters.raycasterReleaseHandler(Simulator.tool); }});
+	$effect(() => { raycasters?.raycasterReleaseHandler(Simulator.tool); });
 
 	// cleanup all memory associated with origami simulator
 	const dealloc = () => {
-		if (raycasters) { raycasters.dealloc(); }
-		if (simulator) { simulator.dealloc(); }
-		if (highlights) { highlights.dealloc(); }
+		raycasters?.dealloc();
+		simulator?.dealloc();
+		highlights?.dealloc();
 	};
 
   $effect(() => dealloc);
@@ -237,11 +241,9 @@
       didMount={didMount}
     />
   </div>
-  <!--
   <div class="panel">
     <GPUVisualizer {simulator} />
   </div>
-  -->
 </div>
 
 <style>

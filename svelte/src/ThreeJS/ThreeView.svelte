@@ -54,6 +54,7 @@
 		camera.aspect = width / height;
 		camera.updateProjectionMatrix();
 	};
+
 	/**
 	 * @description Update the camera's view matrix. The camera will look
 	 * at the origin (0, 0, 0), and position itself along the +Z axis
@@ -133,6 +134,7 @@
 		}
 		initializeAnimationLoop();
 	});
+
 	/**
 	 * @description Free all memory associated with this three.js instance.
 	 * This allows you to destroy and re-instance this component many times

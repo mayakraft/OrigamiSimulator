@@ -1,5 +1,5 @@
 import type { GPUMath } from "./GPUMath.ts";
-import type { Model } from "../model/index.ts";
+import type { Model } from "./Model.ts";
 import { add, hslToRgb } from "../general/math.ts";
 
 const strainClip = 0.5;
@@ -18,7 +18,6 @@ export const solveStep = (
     integrationType: string;
   },
 ) => {
-  console.log("solve.ts solve()");
   gpuMath.setProgram("normalCalc");
   gpuMath.setSize(textureDimFaces, textureDimFaces);
   gpuMath.step(
@@ -123,12 +122,7 @@ export const solveStep = (
  * @param {object} options
  * @returns {number} the global error as a percent
  */
-export const render = (
-  gpuMath: GPUMath,
-  model: Model,
-  { textureDim, axialStrain }: { textureDim: number; axialStrain: boolean },
-) => {
-  console.log("solve.ts render()");
+export const render = (gpuMath: GPUMath, model: Model, axialStrain: boolean) => {
   if (!gpuMath) {
     return 0;
   }
@@ -138,22 +132,23 @@ export const render = (
   gpuMath.setUniformForProgram(
     "packToBytes",
     "u_floatTextureDim",
-    [textureDim, textureDim],
+    [gpuMath.textureDim, gpuMath.textureDim],
     "2f",
   );
-  gpuMath.setSize(textureDim * vectorLength, textureDim);
+  gpuMath.setSize(gpuMath.textureDim * vectorLength, gpuMath.textureDim);
   gpuMath.step("packToBytes", ["u_lastPosition"], "outputBytes");
 
   if (!gpuMath.readyToRead()) {
+    console.log("exiting render()");
     return 0;
   }
-  const numPixels = model.nodes.length * vectorLength;
-  const height = Math.ceil(numPixels / (textureDim * vectorLength));
-  const pixels = new Uint8Array(height * textureDim * 4 * vectorLength);
-  gpuMath.readPixels(0, 0, textureDim * vectorLength, height, pixels);
+  const numPixels = model.fold.vertices_coords.length * vectorLength;
+  const height = Math.ceil(numPixels / (gpuMath.textureDim * vectorLength));
+  const pixels = new Uint8Array(height * gpuMath.textureDim * 4 * vectorLength);
+  gpuMath.readPixels(0, 0, gpuMath.textureDim * vectorLength, height, pixels);
   const parsedPixels = new Float32Array(pixels.buffer);
   let globalError = 0;
-  for (let i = 0; i < model.nodes.length; i += 1) {
+  for (let i = 0; i < model.fold.vertices_coords.length; i += 1) {
     const rgbaIndex = i * vectorLength;
     let nodeError = parsedPixels[rgbaIndex + 3] * 100;
     globalError += nodeError;
@@ -162,8 +157,8 @@ export const render = (
       parsedPixels[rgbaIndex + 1],
       parsedPixels[rgbaIndex + 2],
     ];
-    const [x, y, z] = add(nodePosition, model.nodes[i].originalPosition);
-    model.positions[3 * i] = x;
+    const [x, y, z] = add(nodePosition, model.fold.vertices_coordsInitial[i]);
+    model.positions[3 * i + 0] = x;
     model.positions[3 * i + 1] = y;
     model.positions[3 * i + 2] = z;
     if (axialStrain) {

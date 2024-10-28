@@ -6,7 +6,8 @@ import { makeNode, destroyNode, type Node } from "./Node.ts";
 import { Beam } from "./Beam.ts";
 import { Crease } from "./Crease.ts";
 import { prepare } from "../fold/prepare.ts";
-import { exportFold } from "../model/exportFOLD.ts";
+import { getFOLDCenter } from "../fold/boundingBox.ts";
+import { exportFOLD } from "./exportFOLD.ts";
 import { makeCreasesParams } from "./Crease.ts";
 import { makeTypedArrays } from "./typedArrays.ts";
 import { solveStep, render } from "./solve.ts";
@@ -16,7 +17,6 @@ import { solveStep, render } from "./solve.ts";
  * @param {Model} model
  */
 const modelCenter = (positions: Float32Array): [number, number, number] => {
-  console.log("modelCenter()");
   if (!positions.length) {
     return [0, 0, 0];
   }
@@ -40,9 +40,11 @@ const modelCenter = (positions: Float32Array): [number, number, number] => {
 //  faces_edges: [],
 //});
 
-export class NewModel {
+export class Model {
   initialFOLD: FOLD;
   fold: FOLDMesh;
+  center: [number, number, number];
+
   gpuMath: GPUMath;
 
   strain: boolean;
@@ -67,12 +69,12 @@ export class NewModel {
    * Immediately following this method the solver should call .setModel()
    */
   constructor(foldObject: FOLD, options?: SolverOptions) {
-    console.log("NewModel constructor()");
     // makeObjects(fold: FOLDMesh): void
     options = { ...defaultSolverOptions, ...options };
 
     this.initialFOLD = foldObject;
     this.fold = prepare(foldObject);
+    this.center = getFOLDCenter(this.fold);
 
     this.axialStiffness = 20;
     this.joinStiffness = 0.7;
@@ -118,7 +120,6 @@ export class NewModel {
    * @returns {number} the global error as a percent
    */
   reset(): number {
-    console.log("NewModel reset()");
     this.gpuMath.step("zeroTexture", [], "u_position");
     this.gpuMath.step("zeroTexture", [], "u_lastPosition");
     this.gpuMath.step("zeroTexture", [], "u_lastLastPosition");
@@ -137,7 +138,6 @@ export class NewModel {
    * vertex, this conveys to the solver that a node is being manually moved.
    */
   nodeDidMove(): void {
-    console.log("NewModel nodeDidMove()");
     this.gpuMath.updateLastPosition(this);
     const [x, y, z] = modelCenter(this.positions);
     this.gpuMath.setProgram("centerTexture");
@@ -152,7 +152,6 @@ export class NewModel {
   }
 
   setIntegration(integration: string) {
-    console.log("NewModel setIntegration()");
     this.gpuMath.integrationType = integration;
     this.reset();
   }
@@ -162,7 +161,6 @@ export class NewModel {
    * after setting these properties, call this to update the texture data.
    */
   update(initing: boolean = false) {
-    console.log("NewModel update()");
     // { creaseMeta, textureDimCreases }
     this.gpuMath.updateCreasesMeta(this, initing);
     // { meta, beamMeta, textureDimEdges }
@@ -170,7 +168,6 @@ export class NewModel {
   }
 
   setCreasePercent(value: string | number) {
-    console.log("NewModel setCreasePercent()");
     const number = typeof value === "number" ? value : parseFloat(value);
     this.gpuMath.setProgram("velocityCalc");
     this.gpuMath.setUniformForProgram("velocityCalc", "u_creasePercent", number, "1f");
@@ -186,7 +183,6 @@ export class NewModel {
 
   // todo: duplicate methods
   setAxialStiffness(value: string | number) {
-    console.log("NewModel setAxialStiffness()");
     const number = typeof value === "number" ? value : parseFloat(value);
     this.gpuMath.setProgram("velocityCalc");
     this.gpuMath.setUniformForProgram("velocityCalc", "u_axialStiffness", number, "1f");
@@ -206,7 +202,6 @@ export class NewModel {
   }
 
   setFaceStiffness(value: string | number) {
-    console.log("NewModel setFaceStiffness()");
     const number = typeof value === "number" ? value : parseFloat(value);
     this.gpuMath.setProgram("velocityCalc");
     this.gpuMath.setUniformForProgram("velocityCalc", "u_faceStiffness", number, "1f");
@@ -221,7 +216,6 @@ export class NewModel {
   }
 
   setFaceStrain(value: string | number) {
-    console.log("NewModel setFaceStrain()");
     const number = typeof value === "number" ? value : parseFloat(value);
     this.gpuMath.setProgram("velocityCalc");
     this.gpuMath.setUniformForProgram("velocityCalc", "u_calcFaceStrain", number, "1f");
@@ -268,20 +262,23 @@ export class NewModel {
    * @param {boolean} computeStrain should the strain values be computed?
    */
   solve(numSteps: number = 100, computeStrain: boolean = false): number {
-    console.log("NewModel solve()");
     for (let j = 0; j < numSteps; j += 1) {
       solveStep(this.gpuMath, this.gpuMath);
     }
-    //console.log(this.positions[10], this.positions[11], this.positions[12]);
     return render(this.gpuMath, this, computeStrain);
   }
 
-  //export(): FOLD {
-  //  return exportFold(this, this.initialFOLD, this.fold);
-  //}
+  export(options?: { triangulated: boolean }): FOLD {
+    return exportFOLD(this, this.initialFOLD, this.fold, options);
+  }
 
   dealloc() {
-    console.log("NewModel dealloc()");
-    // todo
+    this.nodes.forEach(destroyNode);
+    this.edges.forEach((edge) => edge.destroy());
+    this.creases.forEach((crease) => crease.destroy());
+    this.center = [0, 0, 0];
+    this.nodes = [];
+    this.edges = [];
+    this.creases = [];
   }
 }

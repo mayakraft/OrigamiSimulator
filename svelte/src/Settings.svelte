@@ -1,7 +1,7 @@
 <script>
-  import Style from "./state/Style.svelte.js";
-  import Simulator from "./state/Simulator.svelte.js";
-  import Solver from "./state/Solver.svelte.js";
+  import Style from "./state/Style.svelte.ts";
+  import Simulator from "./state/Simulator.svelte.ts";
+  import Solver from "./state/Solver.svelte.ts";
 
 	export let origami = {};
 
@@ -26,7 +26,7 @@
 	const saveFoldFile = () => {
 		const FOLD = Simulator.exportModel();
 		const a = document.createElement("a");
-		a.style = "display: none";
+    a.setAttribute("style", "display: none;");
 		document.body.appendChild(a);
 		const blob = new Blob([JSON.stringify(FOLD)], { type: "octet/stream" });
 		const url = window.URL.createObjectURL(blob);

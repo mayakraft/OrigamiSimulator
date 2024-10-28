@@ -1,7 +1,7 @@
 /**
  * Created by ghassaei on 2/24/16.
  */
-import type { NewModel } from "./NewModel.ts";
+import type { Model } from "./Model.ts";
 import type { Beam } from "./Beam.ts";
 import {
   createProgramFromSource,
@@ -14,7 +14,7 @@ import { initGPU } from "./initGPU.ts";
 import { normalize, dot, subtract } from "../general/math.ts";
 import { verticesFaces } from "./verticesFaces.ts";
 
-const calcDt = (model: NewModel): number => {
+const calcDt = (model: Model): number => {
   let maxFreqNat = 0;
   model.edges.forEach((beam: Beam) => {
     if (beam.getNaturalFrequency() > maxFreqNat) {
@@ -124,8 +124,7 @@ export class GPUMath implements GPUMathSettings {
   creaseMeta: Float32Array;
 
   // options like "creasePercent" will start off the model in a folded state.
-  constructor(model: NewModel, options: SolverOptions = {}) {
-    console.log("GPUMath constructor()");
+  constructor(model: Model, options: SolverOptions = {}) {
     this.programs = {};
     this.frameBuffers = {};
     this.textures = {};
@@ -138,7 +137,6 @@ export class GPUMath implements GPUMathSettings {
   }
 
   initCanvas() {
-    console.log("GPUMath initCanvas()");
     this.canvas = window.document.createElement("canvas");
     this.canvas.setAttribute("style", "display:none;");
     this.canvas.setAttribute("class", "gpu-canvas");
@@ -153,8 +151,7 @@ export class GPUMath implements GPUMathSettings {
     this.gl.disable(this.gl.DEPTH_TEST);
   }
 
-  initArrays(model: NewModel): void {
-    console.log("GPUMath initArrays()");
+  initArrays(model: Model): void {
     //const numNodeFaces = verticesFaces(model).reduce((a, b) => a + b.length, 0);
     const numNodeFaces = model.fold.vertices_faces.reduce((a, b) => a + b.length, 0);
 
@@ -210,8 +207,7 @@ export class GPUMath implements GPUMathSettings {
     this.creaseMeta = new Float32Array(textureDimCreases * textureDimCreases * 4);
   }
 
-  setSolveParams(model: NewModel) {
-    console.log("GPUMath setSolveParams()");
+  setSolveParams(model: Model) {
     const dt = calcDt(model);
     // $("#deltaT").html(dt);
     this.setProgram("thetaCalc");
@@ -227,8 +223,7 @@ export class GPUMath implements GPUMathSettings {
     // options.controls.setDeltaT(dt);
   }
 
-  fillArrays(model: NewModel) {
-    console.log("GPUMath fillArrays()");
+  fillArrays(model: Model) {
     // array initialization was cut from here
     const numCreases = model.creases.length;
     const nodeFaces = verticesFaces(model);
@@ -339,7 +334,6 @@ export class GPUMath implements GPUMathSettings {
    * @param {string} fragmentShader
    */
   createProgram(programName: string, vertexShader: string, fragmentShader: string) {
-    console.log("GPUMath createProgram()");
     const programs = this.programs;
     const existing = programs[programName];
     if (existing) {
@@ -372,7 +366,6 @@ export class GPUMath implements GPUMathSettings {
     data: ArrayBufferView,
     shouldReplace: boolean,
   ) {
-    console.log("GPUMath initTextureFromData()");
     let texture = this.textures[name];
 
     if (texture) {
@@ -391,7 +384,6 @@ export class GPUMath implements GPUMathSettings {
    * @param {boolean} shouldReplace
    */
   initFrameBufferForTexture(textureName: string, shouldReplace: boolean) {
-    console.log("GPUMath initFrameBufferForTexture()");
     let framebuffer = this.frameBuffers[textureName];
     if (framebuffer) {
       if (!shouldReplace) {
@@ -434,7 +426,6 @@ export class GPUMath implements GPUMathSettings {
    * @param {string} type
    */
   setUniformForProgram(programName: string, name: string, val: unknown, type: string) {
-    console.log("GPUMath setUniformForProgram()");
     if (!this.programs[programName]) {
       console.log(programName, this.programs, this.programs[programName]);
       console.warn(`no program with name ${programName}`);
@@ -476,7 +467,6 @@ export class GPUMath implements GPUMathSettings {
    * @param {number} height
    */
   setSize(width: number, height: number) {
-    console.log("GPUMath setSize()");
     this.gl.viewport(0, 0, width, height);
     this.canvas.style.width = `${width}px`;
     this.canvas.style.height = `${height}px`;
@@ -486,7 +476,6 @@ export class GPUMath implements GPUMathSettings {
    * @param {string} programName
    */
   setProgram(programName: string) {
-    console.log("GPUMath setProgram()");
     const program = this.programs[programName];
     if (program) {
       this.gl.useProgram(program.program);
@@ -505,7 +494,6 @@ export class GPUMath implements GPUMathSettings {
     outputTexture: string,
     time?: number,
   ) {
-    console.log("GPUMath step()");
     this.gl.useProgram(this.programs[programName].program);
     // todo: are we passing time 0 to bypass this, or can we write if (time === undefined)
     if (time) {
@@ -524,7 +512,6 @@ export class GPUMath implements GPUMathSettings {
    * @param {string} texture2Name
    */
   swapTextures2(texture1Name: string, texture2Name: string) {
-    console.log("GPUMath swapTextures2()");
     // todo array swap notation
     let temp = this.textures[texture1Name];
     this.textures[texture1Name] = this.textures[texture2Name];
@@ -540,7 +527,6 @@ export class GPUMath implements GPUMathSettings {
    * @param {string} texture3Name
    */
   swapTextures3(texture1Name: string, texture2Name: string, texture3Name: string) {
-    console.log("GPUMath swapTextures3()");
     let temp = this.textures[texture3Name];
     this.textures[texture3Name] = this.textures[texture2Name];
     this.textures[texture2Name] = this.textures[texture1Name];
@@ -555,7 +541,6 @@ export class GPUMath implements GPUMathSettings {
    * @returns {boolean}
    */
   readyToRead() {
-    console.log("GPUMath readyToRead()");
     return (
       this.gl.checkFramebufferStatus(this.gl.FRAMEBUFFER) === this.gl.FRAMEBUFFER_COMPLETE
     );
@@ -575,7 +560,6 @@ export class GPUMath implements GPUMathSettings {
     height: number,
     array: ArrayBufferView,
   ) {
-    console.log("GPUMath readPixels()");
     this.gl.readPixels(
       xMin,
       yMin,
@@ -587,8 +571,7 @@ export class GPUMath implements GPUMathSettings {
     );
   }
 
-  updateMaterials(model: NewModel, initing = false) {
-    console.log("GPUMath updateMaterials()");
+  updateMaterials(model: Model, initing = false) {
     let index = 0;
     for (let i = 0; i < model.nodes.length; i += 1) {
       if (initing) {
@@ -616,8 +599,7 @@ export class GPUMath implements GPUMathSettings {
     );
   }
 
-  updateExternalForces(model: NewModel) {
-    console.log("GPUMath updateExternalForces()");
+  updateExternalForces(model: Model) {
     for (let i = 0; i < model.nodes.length; i += 1) {
       // external forces is always 0, 0, 0
       const [x, y, z] = model.nodes[i].externalForce;
@@ -635,8 +617,7 @@ export class GPUMath implements GPUMathSettings {
     );
   }
 
-  updateFixed(model: NewModel) {
-    console.log("GPUMath updateFixed()");
+  updateFixed(model: Model) {
     for (let i = 0; i < model.nodes.length; i += 1) {
       this.mass[4 * i + 1] = model.nodes[i].fixed ? 1 : 0;
     }
@@ -655,8 +636,7 @@ export class GPUMath implements GPUMathSettings {
    * @param {GPUMath} gpuMath
    * @param {Model} model
    */
-  updateOriginalPosition(model: NewModel) {
-    console.log("GPUMath updateOriginalPosition()");
+  updateOriginalPosition(model: Model) {
     for (let i = 0; i < model.fold.vertices_coordsInitial.length; i += 1) {
       //const [x, y, z] = model.nodes[i].originalPosition;
       const [x, y, z] = model.fold.vertices_coordsInitial[i];
@@ -679,8 +659,7 @@ export class GPUMath implements GPUMathSettings {
    * @param {GPUMath} gpuMath
    * @param {Model} model
    */
-  updateCreaseVectors(model: NewModel) {
-    console.log("GPUMath updateCreaseVectors()");
+  updateCreaseVectors(model: Model) {
     for (let i = 0; i < model.creases.length; i += 1) {
       const rgbaIndex = i * 4;
       const nodes = model.creases[i].edge.nodes;
@@ -703,8 +682,7 @@ export class GPUMath implements GPUMathSettings {
    * @param {GPUMath} gpuMath
    * @param {Model} model
    */
-  updateCreasesMeta(model: NewModel, initing = false) {
-    console.log("GPUMath updateCreasesMeta()");
+  updateCreasesMeta(model: Model, initing = false) {
     for (let i = 0; i < model.creases.length; i += 1) {
       const crease = model.creases[i];
       this.creaseMeta[i * 4] = crease.getK();
@@ -731,8 +709,7 @@ export class GPUMath implements GPUMathSettings {
    * @param {GPUMath} gpuMath
    * @param {Model} model
    */
-  updateLastPosition(model: NewModel) {
-    console.log("GPUMath updateLastPosition()");
+  updateLastPosition(model: Model) {
     for (let i = 0; i < model.nodes.length; i += 1) {
       // const [x, y, z] = model.nodes[i].getRelativePosition();
       const position: [number, number, number] = [
@@ -758,7 +735,6 @@ export class GPUMath implements GPUMathSettings {
   }
 
   dealloc() {
-    console.log("GPUMath dealloc()");
     Object.values(this.programs)
       .map((el) => el.program)
       .forEach((prog) => this.gl.deleteProgram(prog));

@@ -5,7 +5,7 @@ import type { FOLD, FOLDMesh } from "../types.ts";
 import triangulateFold from "./triangulateFold.ts";
 import splitCuts from "./splitCuts.ts";
 import removeRedundantVertices from "./removeRedundantVertices.ts";
-import boundingBox from "./boundingBox.ts";
+import { boundingBox } from "./boundingBox.ts";
 import {
   makeVerticesEdges,
   makeVerticesFacesUnsorted,

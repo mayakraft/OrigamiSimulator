@@ -1,33 +1,41 @@
 /**
  * Created by amandaghassaei on 2/25/17.
  */
-import type { Beam, SimulatorNode } from "../types.ts";
+import type { FOLDMesh } from "../types.ts";
+import type { Beam } from "./Beam.ts";
+import { SolverOptions } from "./GPUMath.ts";
+import type { Node } from "./Node.ts";
 
 export class Crease {
   index: number;
   type: number;
   edge: Beam;
   faces: [number, number];
-  nodes: [SimulatorNode, SimulatorNode];
+  nodes: [Node, Node];
   targetTheta: number;
   joinStiffness: number;
   creaseStiffness: number;
   dampingRatio: number;
 
   /** options these options tend to be app-wide, not specific to any one crease-line. */
-  constructor(
-    edge: Beam,
-    index: number,
-    type: 0 | 1,
-    faces: [number, number],
-    nodes: [SimulatorNode, SimulatorNode],
-    targetTheta: number,
-    {
-      joinStiffness = 0.7,
-      creaseStiffness = 0.7,
-      dampingRatio = 0.45,
-    }: { joinStiffness: number; creaseStiffness: number; dampingRatio: number },
-  ) {
+  constructor({
+    edge,
+    index,
+    type,
+    faces,
+    nodes,
+    targetTheta,
+    options: { joinStiffness = 0.7, creaseStiffness = 0.7, dampingRatio = 0.45 },
+  }: {
+    edge: Beam;
+    index: number;
+    type: 0 | 1;
+    faces: [number, number];
+    nodes: [Node, Node];
+    targetTheta: number;
+    options: SolverOptions;
+  }) {
+
     this.index = index;
     this.type = type;
     this.edge = edge;
@@ -53,7 +61,7 @@ export class Crease {
     return this.dampingRatio * 2 * Math.sqrt(this.getK());
   }
 
-  getNodeIndex(node: SimulatorNode): 0 | 1 | 2 | 3 | 4 {
+  getNodeIndex(node: Node): 0 | 1 | 2 | 3 | 4 {
     if (node === this.nodes[0]) {
       return 1;
     }
@@ -86,3 +94,48 @@ export class Crease {
     this.nodes = undefined;
   }
 }
+
+type CreaseParam = {
+  faces: [number, number];
+  vertices: [number, number];
+  edge: number;
+  foldAngle: number;
+};
+
+const creaseAssignments: { [key: string]: boolean } = {
+  M: true,
+  V: true,
+  F: true,
+  J: true,
+  m: true,
+  v: true,
+  f: true,
+  j: true,
+};
+
+export const makeCreasesParams = (fold: FOLDMesh): CreaseParam[] => {
+  const result: (CreaseParam | undefined)[] = fold.edges_faces.map((faces, edge) => {
+    const [v1, v2] = fold.edges_vertices[edge];
+    if (faces.length !== 2) {
+      return undefined;
+    }
+    if (!creaseAssignments[fold.edges_assignment[edge]]) {
+      return undefined;
+    }
+    // this is the face vertex across from the edge
+    const vertices = faces.map((face) =>
+      fold.faces_vertices[face].filter((v) => v !== v1 && v !== v2).shift(),
+    );
+    // we might need to flip the order... for some reason I still don't know
+    const v1Index = fold.faces_vertices[faces[1]].indexOf(v1);
+    const v2Index = fold.faces_vertices[faces[1]].indexOf(v2);
+    const flipOrder = v2Index - v1Index === 1 || v2Index - v1Index === -2;
+    return {
+      faces: flipOrder ? [faces[1], faces[0]] : [faces[0], faces[1]],
+      vertices: flipOrder ? [vertices[1], vertices[0]] : [vertices[0], vertices[1]],
+      edge,
+      foldAngle: fold.edges_foldAngle[edge],
+    };
+  });
+  return result.filter((a) => a !== undefined);
+};

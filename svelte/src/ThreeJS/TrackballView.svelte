@@ -32,6 +32,7 @@
 
   type TrackballPropsType = {
     enabled?: boolean;
+    target?: [number, number, number];
     maxDistance?: number;
     minDistance?: number;
     panSpeed?: number;
@@ -47,6 +48,7 @@
     animate,
     // this component
     enabled= true,
+    target = [0, 0, 0],
     maxDistance= 100,
     minDistance= 0.1,
     panSpeed= 1,
@@ -58,6 +60,7 @@
 	let trackball: TrackballControls | undefined;
 
 	$effect(() => { trackball.enabled = enabled; });
+	$effect(() => { trackball.target.set(...target); });
 	$effect(() => { trackball.maxDistance = maxDistance; });
 	$effect(() => { trackball.minDistance = minDistance; });
 	$effect(() => { trackball.panSpeed = panSpeed; });

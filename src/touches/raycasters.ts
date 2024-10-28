@@ -1,5 +1,6 @@
 import * as THREE from "three";
 import makeTouches from "./makeTouches.ts";
+
 /**
  * @description This raycaster object will manage all touch event
  * handlers which in turn calculate ray casting intersections with
@@ -15,7 +16,7 @@ const Raycasters = ({
   // for the pull-vertex tool.
   // orient the raycaster plane towards the camera and move it to the selected FOLD vertex.
   const raycasterPressHandler = () => {
-    const firstTouch = makeTouches(simulator.model, raycaster)[0];
+    const firstTouch = makeTouches(simulator.model, simulator.mesh, raycaster)[0];
     if (!firstTouch || firstTouch.vertex === undefined) { return; }
     raycasterPullVertex = firstTouch.vertex;
     const position = new THREE.Vector3(
@@ -36,7 +37,7 @@ const Raycasters = ({
       -((event.clientY - bounds.y) / bounds.height) * 2 + 1,
     );
     raycaster.setFromCamera(mouse, camera);
-    const touches = makeTouches(simulator.model, raycaster);
+    const touches = makeTouches(simulator.model, simulator.mesh, raycaster);
     if (setTouches) { setTouches(touches); }
   };
 
@@ -70,7 +71,7 @@ const Raycasters = ({
     // console.log("pullEnabled, raycasterPullVertex", pullEnabled, raycasterPullVertex);
     const touches = pullEnabled && raycasterPullVertex !== undefined
       ? []
-      : makeTouches(simulator.model, raycaster);
+      : makeTouches(simulator.model, simulator.mesh, raycaster);
     if (setTouches) { setTouches(touches); }
     // if the user is pulling on a node, manually move the node to the raycaster's
     // new intersection with the raycaster plane.

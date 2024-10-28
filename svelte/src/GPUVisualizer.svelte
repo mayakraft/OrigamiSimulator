@@ -1,6 +1,6 @@
 <script lang="ts">
-	import { OrigamiSimulator } from "../../src/index";
-	import { RenderTexture } from "../../src/newModel/RenderTexture.ts";
+	import { OrigamiSimulator } from "../../src/index.ts";
+	import { RenderTexture } from "../../src/model/RenderTexture.ts";
 
   let {
     simulator,
@@ -26,8 +26,8 @@
 
   const onclicks = locations.map(({ name, size }) => {
     return () => {
-      const arr = simulator?.newModel?.gpuMath?.[name];
-      const dim = simulator?.newModel?.gpuMath?.[size];
+      const arr = simulator?.model?.gpuMath?.[name];
+      const dim = simulator?.model?.gpuMath?.[size];
       originalPosition.setFloatPixels(arr, dim, dim);
       originalPosition.draw();
     }

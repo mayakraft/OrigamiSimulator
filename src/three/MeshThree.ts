@@ -1,7 +1,6 @@
 import * as THREE from "three";
 import * as Materials from "./MaterialsThree.ts";
-import type { NewModel } from "./NewModel.ts";
-import type { FOLD } from "../types.ts";
+import type { Model } from "../model/Model.ts";
 
 // no "cut" assignment. all cuts have now been turned into boundaries
 const assignments: string[] = Array.from("BMVFJU");
@@ -28,10 +27,14 @@ export class MeshThree {
   backMesh: THREE.Mesh; // back face of mesh (different color)
   lines: { [key: string]: THREE.LineSegments };
 
-  strain: boolean;
+  #strain: boolean;
+
+  set strain(strain: boolean) {
+    this.#strain = strain;
+    this.faceMaterialDidUpdate();
+  }
 
   constructor({ scene }: { scene: THREE.Scene | undefined }) {
-    console.log("MeshThree constructor()");
     // if the user chooses to export the 3D model, we need to reference
     // the original FOLD data. "this.fold" contains triangulated faces.
     this.geometry = null;
@@ -66,8 +69,7 @@ export class MeshThree {
     this.setScene(scene);
   }
 
-  setModel(model: NewModel): void {
-    console.log("MeshThree setModel()");
+  setModel(model: Model): void {
     //this.dealloc();
     const {
       positions,
@@ -78,12 +80,12 @@ export class MeshThree {
     this.setGeometryBuffers({ positions, colors, indices, lineIndices });
   }
 
-  sync(model: NewModel): void {
+  //sync(model: Model): void {
+  sync(): void {
     this.needsUpdate();
   }
 
   setScene(scene?: THREE.Scene): void {
-    console.log("MeshThree setScene()");
     // remove from previous scene
     [this.frontMesh, this.backMesh]
       .filter((el) => el.removeFromParent)
@@ -93,7 +95,6 @@ export class MeshThree {
       .forEach((line) => line.removeFromParent());
     // add to new scene
     if (scene) {
-      console.log("adding meshes to scene");
       scene.add(this.frontMesh);
       scene.add(this.backMesh);
       Object.values(this.lines).forEach((line) => scene.add(line));
@@ -101,7 +102,6 @@ export class MeshThree {
   }
 
   makeNewGeometries(): void {
-    console.log("MeshThree makeNewGeometries()");
     this.geometry = new THREE.BufferGeometry();
     // this.geometry.dynamic = true; // property no longer exists
     this.frontMesh.geometry = this.geometry;
@@ -116,11 +116,10 @@ export class MeshThree {
   }
 
   faceMaterialDidUpdate(): void {
-    console.log("MeshThree faceMaterialDidUpdate()");
-    this.frontMesh.material = this.strain ? this.materials.strain : this.materials.front;
+    this.frontMesh.material = this.#strain ? this.materials.strain : this.materials.front;
     this.backMesh.material = this.materials.back;
     // hide the back mesh if strain is currently enabled
-    this.backMesh.visible = !this.strain;
+    this.backMesh.visible = !this.#strain;
     // this.frontMesh.material.depthWrite = false;
     // this.backMesh.material.depthWrite = false;
     this.frontMesh.material.needsUpdate = true;
@@ -128,7 +127,6 @@ export class MeshThree {
   }
 
   lineMaterialDidUpdate(): void {
-    console.log("MeshThree lineMaterialDidUpdate()");
     assignments.forEach((key) => {
       this.lines[key].material = this.lineMaterials[key] || Materials.line.clone();
       this.lines[key].material.needsUpdate = true;
@@ -140,20 +138,13 @@ export class MeshThree {
     this.lineMaterialDidUpdate();
   }
 
-  setStrain(strain: boolean): void {
-    console.log("MeshThree setStrain()");
-    this.strain = strain;
-    this.faceMaterialDidUpdate();
-  }
-
   getMesh(): [THREE.Mesh, THREE.Mesh] {
     return [this.frontMesh, this.backMesh];
   }
 
   needsUpdate(): void {
-    console.log("MeshThree needsUpdate()");
     this.geometry.attributes.position.needsUpdate = true;
-    if (this.strain) {
+    if (this.#strain) {
       this.geometry.attributes.color.needsUpdate = true;
     }
     // if (vrEnabled) this.geometry.computeBoundingBox();
@@ -172,8 +163,6 @@ export class MeshThree {
     indices: Uint16Array;
     lineIndices: { [key: string]: Uint16Array };
   }): void {
-    console.log("MeshThree setGeometryBuffers()",
-      positions.length, colors.length, indices.length);
     const positionsAttribute = new THREE.BufferAttribute(positions, 3);
     this.geometry.setAttribute("position", positionsAttribute);
     this.geometry.setAttribute("color", new THREE.BufferAttribute(colors, 3));
@@ -198,8 +187,6 @@ export class MeshThree {
   }
 
   dealloc(): void {
-    console.log("MeshThree dealloc()");
-    // console.log("--- dealloc: Model()");
     // dispose geometries
     [this.geometry, this.frontMesh.geometry, this.backMesh.geometry]
       .filter(geo => geo !== undefined)
@@ -290,7 +277,7 @@ export class MeshThree {
    * @param {string[]} assignmentsOptions list of assignment keys like ["M"]
    * a list of the assignment(s) you want to apply this material to.
    */
-  setMaterialLine(material: THREE.Material, assignmentsOptions = []) {
+  setMaterialLine(material: THREE.Material, assignmentsOptions: string[] = []) {
     const keys = assignmentsOptions.length
       ? assignmentsOptions
         .filter((a) => typeof a === "string")
