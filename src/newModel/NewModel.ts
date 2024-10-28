@@ -11,6 +11,25 @@ import { makeCreasesParams } from "./Crease.ts";
 import { makeTypedArrays } from "./typedArrays.ts";
 import { solveStep, render } from "./solve.ts";
 
+/**
+ * @description Get the center of the bounding box of the model.
+ * @param {Model} model
+ */
+const modelCenter = (positions: Float32Array): [number, number, number] => {
+  if (!positions.length) {
+    return [0, 0, 0];
+  }
+  const min = Array(3).fill(Infinity);
+  const max = Array(3).fill(-Infinity);
+  for (let i = 0; i < positions.length; i += 3) {
+    for (let dim = 0; dim < 3; dim += 1) {
+      min[dim] = Math.min(min[dim], positions[i + dim]);
+      max[dim] = Math.max(max[dim], positions[i + dim]);
+    }
+  }
+  return [(min[0] + max[0]) / 2, (min[1] + max[1]) / 2, (min[2] + max[2]) / 2];
+};
+
 //const emptyMesh = (): FOLDMesh => ({
 //  vertices_coords: [],
 //  edges_vertices: [],
@@ -114,22 +133,19 @@ export class NewModel {
    * @description The user will call this method when the UI is pulling on a
    * vertex, this conveys to the solver that a node is being manually moved.
    */
-  //nodeDidMove(): void {
-  //  if (!this.gpuMath || !this.model) {
-  //    return;
-  //  }
-  //  updateLastPosition(this.gpuMath, this.model, this);
-  //  const [x, y, z] = modelCenter(this.model);
-  //  this.gpuMath.setProgram("centerTexture");
-  //  this.gpuMath.setUniformForProgram("centerTexture", "u_center", [x, y, z], "3f");
-  //  this.gpuMath.step("centerTexture", ["u_lastPosition"], "u_position");
-  //  if (this.gpuMath.integrationType === "verlet") {
-  //    this.gpuMath.step("copyTexture", ["u_position"], "u_lastLastPosition");
-  //  }
-  //  this.gpuMath.swapTextures2("u_position", "u_lastPosition");
-  //  this.gpuMath.step("zeroTexture", [], "u_lastVelocity");
-  //  this.gpuMath.step("zeroTexture", [], "u_velocity");
-  //}
+  nodeDidMove(): void {
+    this.gpuMath.updateLastPosition(this);
+    const [x, y, z] = modelCenter(this.positions);
+    this.gpuMath.setProgram("centerTexture");
+    this.gpuMath.setUniformForProgram("centerTexture", "u_center", [x, y, z], "3f");
+    this.gpuMath.step("centerTexture", ["u_lastPosition"], "u_position");
+    if (this.gpuMath.integrationType === "verlet") {
+      this.gpuMath.step("copyTexture", ["u_position"], "u_lastLastPosition");
+    }
+    this.gpuMath.swapTextures2("u_position", "u_lastPosition");
+    this.gpuMath.step("zeroTexture", [], "u_lastVelocity");
+    this.gpuMath.step("zeroTexture", [], "u_velocity");
+  }
 
   setIntegration(integration: string) {
     this.gpuMath.integrationType = integration;
@@ -193,21 +209,19 @@ export class NewModel {
    * @description Some properties require rewrite to the shader textures,
    * after setting these properties, call this to update the texture data.
    */
-  //update() {
-  //  if (!this.gpuMath || !this.model) {
-  //    return;
-  //  }
-  //  // { creaseMeta, textureDimCreases }
-  //  updateCreasesMeta(this.gpuMath, this.model, this);
-  //  // { meta, beamMeta, textureDimEdges }
-  //  updateMaterials(this.gpuMath, this.model, this);
-  //}
+  update(initing: boolean = false) {
+    // { creaseMeta, textureDimCreases }
+    this.gpuMath.updateCreasesMeta(this, initing);
+    // { meta, beamMeta, textureDimEdges }
+    this.gpuMath.updateMaterials(this, initing);
+  }
 
   setAxialStiffness(value: number | string): void {
     this.axialStiffness = typeof value === "number" ? value : parseFloat(value);
     this.edges.forEach((edge) => {
       edge.axialStiffness = this.axialStiffness;
     });
+    this.update();
   }
 
   setJoinStiffness(value: number | string): void {
@@ -243,12 +257,14 @@ export class NewModel {
     for (let j = 0; j < numSteps; j += 1) {
       solveStep(this.gpuMath, this.gpuMath);
     }
+    //console.log(this.positions[10], this.positions[11], this.positions[12]);
     return render(this.gpuMath, this, computeStrain);
   }
 
   //export(): FOLD {
   //  return exportFold(this, this.initialFOLD, this.fold);
   //}
+
   dealloc() {
     // todo
   }

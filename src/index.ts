@@ -3,7 +3,6 @@
  */
 import type { FOLD } from "./types.ts";
 import * as THREE from "three";
-
 import { NewModel } from "./newModel/NewModel.ts";
 import { MeshThree } from "./newModel/MeshThree.ts";
 
@@ -63,7 +62,7 @@ export class OrigamiSimulator {
     console.log("load() new NewModel");
     this.newModel = new NewModel(fold, { creasePercent: this.foldAmount });
     console.log(this.newModel);
-    //meshThree.setModel(newModel);
+    this.meshThree.setModel(this.newModel);
   }
 
   set foldAmount(value: number | string) {
@@ -147,32 +146,33 @@ export class OrigamiSimulator {
   }
 
   set integration(value: string) {
+    console.log("integration", value);
     this.newModel?.setIntegration(value);
   }
 
   set axialStiffness(value: number) {
+    console.log("axial stiffness", value);
     this.newModel?.setAxialStiffness(value);
-    //newModel.update();
   }
 
   set faceStiffness(value: number) {
+    console.log("face stiffness", value);
     this.newModel?.setFaceStiffness(value);
-    //solver.update();
   }
 
   set joinStiffness(value: number) {
+    console.log("join stiffness", value);
     this.newModel?.setJoinStiffness(value);
-    //solver.update();
   }
 
   set creaseStiffness(value: number) {
+    console.log("crease stiffness", value);
     this.newModel?.setCreaseStiffness(value);
-    //solver.update();
   }
 
   set dampingRatio(value: number) {
+    console.log("damping ratio", value);
     this.newModel?.setDampingRatio(value);
-    //solver.update();
   }
 
   /**
@@ -207,31 +207,51 @@ export class OrigamiSimulator {
   getLines() {
     return this.meshThree.lines;
   }
-  //setFrontColor(color: string | number) meshThree.materials.front.color.set(color),
-  //setBackColor(color: string | number) meshThree.materials.back.color.set(color),
-  //// set all line assignments to one color
-  //setLineColor(color: string | number) meshThree.setLineColor(color),
-  //// line colors by assignment type
-  //setBoundaryColor(color: string | number) meshThree.setBoundaryColor(color),
-  //setMountainColor(color: string | number) meshThree.setMountainColor(color),
-  //setValleyColor(color: string | number) meshThree.setValleyColor(color),
-  //setFlatColor(color: string | number) meshThree.setFlatColor(color),
-  //setJoinColor(color: string | number) meshThree.setJoinColor(color),
-  //setUnassignedColor: (color: string | number) meshThree.setUnassignedColor(color),
-  //// set the materials directly
-  //setMaterialFront(material: THREE.Material) meshThree.setMaterialFront(material),
-  //setMaterialBack(material: THREE.Material) meshThree.setMaterialBack(material),
+
+  set frontColor(color: string | number) {
+    this.meshThree.materials.front.color.set(color);
+  }
+  set backColor(color: string | number) {
+    this.meshThree.materials.back.color.set(color);
+  }
+
+  // set all line assignments to one color
+  set lineColor(color: string | number) {
+    this.meshThree.setLineColor(color);
+  }
+
+  // line colors by assignment type
+  set boundaryColor(color: string | number) {
+    this.meshThree.setBoundaryColor(color);
+  }
+  set mountainColor(color: string | number) {
+    this.meshThree.setMountainColor(color);
+  }
+  set valleyColor(color: string | number) {
+    this.meshThree.setValleyColor(color);
+  }
+  set flatColor(color: string | number) {
+    this.meshThree.setFlatColor(color);
+  }
+  set joinColor(color: string | number) {
+    this.meshThree.setJoinColor(color);
+  }
+  set unassignedColor(color: string | number) {
+    this.meshThree.setUnassignedColor(color);
+  }
+
+  // set the materials directly
+  set materialFront(material: THREE.Material) {
+    this.meshThree.setMaterialFront(material);
+  }
+  set materialBack(material: THREE.Material) {
+    this.meshThree.setMaterialBack(material);
+  }
+
   setMaterialStrain(material: THREE.Material) {
     return this.meshThree.setMaterialStrain(material);
   }
   setMaterialLine(material: THREE.Material, assignments: string[]) {
     return this.meshThree.setMaterialLine(material, assignments);
   }
-
-  // getters and setters
-  //Object.defineProperty(app, "active", { get: () => active, set: setActive });
-  //Object.defineProperty(app, "foldAmount", { get: () => foldAmount, set: setFoldAmount });
-  //Object.defineProperty(app, "strain", { get: () => strain, set: setStrain });
-  //Object.defineProperty(app, "shadows", { get: () => shadows, set: setShadows });
-  //Object.defineProperty(app, "materials", { get: () => meshThree.materials });
 }

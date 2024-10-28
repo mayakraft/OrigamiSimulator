@@ -1,7 +1,9 @@
 //import type { GPUMath } from "./GPUMath.ts";
-//import type { Model } from "../model/index.ts";
-//import { float_type } from "./constants.ts";
+//import type { NewModel } from "./NewModel.ts";
+////import { float_type } from "./constants.ts";
 //import { subtract } from "../general/math.ts";
+//
+//const float_type = "FLOAT";
 //
 ///**
 // * @description todo
@@ -10,23 +12,22 @@
 // */
 //export const updateMaterials = (
 //  gpuMath: GPUMath,
-//  model: Model,
-//  { meta, beamMeta, textureDimEdges },
+//  model: NewModel,
 //  initing = false,
 //) => {
 //  let index = 0;
 //  for (let i = 0; i < model.nodes.length; i += 1) {
 //    if (initing) {
-//      meta[4 * i] = index;
-//      meta[4 * i + 1] = model.nodes[i].beams.length;
+//      gpuMath.meta[4 * i] = index;
+//      gpuMath.meta[4 * i + 1] = model.nodes[i].beams.length;
 //    }
 //    for (let j = 0; j < model.nodes[i].beams.length; j += 1) {
 //      const beam = model.nodes[i].beams[j];
-//      beamMeta[4 * index] = beam.getK();
-//      beamMeta[4 * index + 1] = beam.getD();
+//      gpuMath.beamMeta[4 * index] = beam.getK();
+//      gpuMath.beamMeta[4 * index + 1] = beam.getD();
 //      if (initing) {
-//        beamMeta[4 * index + 2] = beam.getLength();
-//        beamMeta[4 * index + 3] = beam.getOtherNode(model.nodes[i]).index;
+//        gpuMath.beamMeta[4 * index + 2] = beam.getLength();
+//        gpuMath.beamMeta[4 * index + 3] = beam.getOtherNode(model.nodes[i]).index;
 //      }
 //      index += 1;
 //    }

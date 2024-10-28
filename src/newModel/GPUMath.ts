@@ -512,6 +512,7 @@ export class GPUMath implements GPUMathSettings {
    * @param {string} texture2Name
    */
   swapTextures2(texture1Name: string, texture2Name: string) {
+    // todo array swap notation
     let temp = this.textures[texture1Name];
     this.textures[texture1Name] = this.textures[texture2Name];
     this.textures[texture2Name] = temp;

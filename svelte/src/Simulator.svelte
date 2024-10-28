@@ -17,6 +17,7 @@
 <script lang="ts">
 	import * as THREE from "three";
 	import TrackballView from "./ThreeJS/TrackballView.svelte";
+	import GPUVisualizer from "./GPUVisualizer.svelte";
 	import { OrigamiSimulator } from "../../src/index";
 	import Highlights from "../../src/touches/highlights";
 	import Raycasters from "../../src/touches/raycasters";
@@ -25,6 +26,7 @@
   import Style from "./state/Style.svelte.js";
   import Simulator from "./state/Simulator.svelte.js";
   import Solver from "./state/Solver.svelte.js";
+  import { untrack } from "svelte";
 
 	let {
     origami,
@@ -52,7 +54,7 @@
 	let touches = [];
 
 	// origami simulator
-	let simulator = new OrigamiSimulator();
+	let simulator = $state(new OrigamiSimulator());
 
 	// all raycaster methods for the user interface
 	let raycasters;
@@ -107,16 +109,22 @@
 	};
 
 	// load a new origami model. thrown errors are because of a bad file format
-	//$effect(() => {
-	//	try {
-	//		simulator.load(origami);
-	//		const box = boundingBox(origami);
-	//		modelSize = box ? Math.max(...box.span) : 1;
-	//	} catch (error) {
-	//		console.error(error);
-	//		window.alert(error);
-	//	}
-	//});
+	$effect(() => {
+    const newFile = origami;
+    let box;
+    untrack(() => {
+      try {
+        simulator.load(newFile);
+        box = boundingBox(newFile);
+      } catch (error) {
+        console.error(error);
+        window.alert(error);
+      }
+    })
+    if (box !== undefined) {
+      modelSize = box ? Math.max(...box.span) : 1;
+    }
+	});
 
 	// on model change, update camera position
 	$effect(() => {
@@ -159,6 +167,7 @@
 	$effect(() => { simulator.joinStiffness = Solver.joinStiffness; });
 	$effect(() => { simulator.creaseStiffness = Solver.creaseStiffness; });
 	$effect(() => { simulator.dampingRatio = Solver.dampingRatio; });
+
 	// show/hide things
 	$effect(() => { simulator.shadows = Style.showShadows; });
 	$effect(() => {
@@ -171,26 +180,35 @@
       ? highlights.highlightTouch(touches[0])
       : highlights.clear();
   });
-	$effect(() => { simulator.meshThree.frontMesh.visible = Style.showFront; });
-	$effect(() => { simulator.meshThree.backMesh.visible = Style.showBack; });
-	$effect(() => { simulator.getLines().B.visible = Style.showBoundary; });
-	$effect(() => { simulator.getLines().M.visible = Style.showMountain; });
-	$effect(() => { simulator.getLines().V.visible = Style.showValley; });
-	$effect(() => { simulator.getLines().F.visible = Style.showFlat; });
-	$effect(() => { simulator.getLines().J.visible = Style.showJoin; });
-	$effect(() => { simulator.getLines().U.visible = Style.showUnassigned; });
-	//// colors
-	//$: simulator.setFrontColor(Style.frontColor);
-	//$: simulator.setBackColor(Style.backColor);
-	//$: Object.values(simulator.getMaterials().line)
-	//	.forEach(m => { m.opacity = Style.lineOpacity; });
-	//$: simulator.setBoundaryColor(Style.boundaryColor);
-	//$: simulator.setMountainColor(Style.mountainColor);
-	//$: simulator.setValleyColor(Style.valleyColor);
-	//$: simulator.setFlatColor(Style.flatColor);
-	//$: simulator.setJoinColor(Style.joinColor);
-	//$: simulator.setUnassignedColor(Style.unassignedColor);
-	//$: if (scene) { scene.background = new THREE.Color(Style.backgroundColor); }
+	$effect(() => {
+    simulator.meshThree.frontMesh.visible = Style.showFront;
+	  simulator.meshThree.backMesh.visible = Style.showBack;
+  });
+
+	$effect(() => {
+    simulator.getLines().B.visible = Style.showBoundary;
+    simulator.getLines().M.visible = Style.showMountain;
+    simulator.getLines().V.visible = Style.showValley;
+    simulator.getLines().F.visible = Style.showFlat;
+    simulator.getLines().J.visible = Style.showJoin;
+    simulator.getLines().U.visible = Style.showUnassigned;
+  });
+
+	// colors
+	$effect(() => {
+    simulator.frontColor = (Style.frontColor);
+    simulator.backColor = (Style.backColor);
+    // todo bring this back
+    //Object.values(simulator.getMaterials().line)
+    //  .forEach(m => { m.opacity = Style.lineOpacity; });
+    simulator.boundaryColor = (Style.boundaryColor);
+    simulator.mountainColor = (Style.mountainColor);
+    simulator.valleyColor = (Style.valleyColor);
+    simulator.flatColor = (Style.flatColor);
+    simulator.joinColor = (Style.joinColor);
+    simulator.unassignedColor = (Style.unassignedColor);
+    if (scene) { scene.background = new THREE.Color(Style.backgroundColor); }
+  });
 
 	// nitpicky ui thing. upon tool change we need raycasterPullVertex to be undefined
 	$effect(() => { if (raycasters) { raycasters.raycasterReleaseHandler(Simulator.tool); }});
@@ -205,13 +223,36 @@
   $effect(() => dealloc);
 </script>
 
-<TrackballView
-	enabled={Simulator.tool !== "pull"}
-	maxDistance={modelSize * 30}
-	minDistance={modelSize * 0.1}
-	panSpeed={1}
-	rotateSpeed={4}
-	zoomSpeed={16}
-	dynamicDampingFactor={1}
-	didMount={didMount}
-/>
+<div class="container">
+  <div>
+    <TrackballView
+      enabled={Simulator.tool !== "pull"}
+      maxDistance={modelSize * 30}
+      minDistance={modelSize * 0.1}
+      panSpeed={1}
+      rotateSpeed={4}
+      zoomSpeed={16}
+      dynamicDampingFactor={1}
+      didMount={didMount}
+    />
+  </div>
+  <div class="panel">
+    <GPUVisualizer {simulator} />
+  </div>
+</div>
+
+<style>
+  div {
+    width: 100%;
+    height: 100%;
+    flex: 1;
+  }
+  .container {
+    display: flex;
+    flex-direction: row;
+  }
+  .panel {
+    flex: 0 1 320px;
+    background-color: black;
+  }
+</style>

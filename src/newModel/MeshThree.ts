@@ -4,14 +4,14 @@ import type { NewModel } from "./NewModel.ts";
 import type { FOLD } from "../types.ts";
 
 // no "cut" assignment. all cuts have now been turned into boundaries
-const assignments = Array.from("BMVFJU");
+const assignments: string[] = Array.from("BMVFJU");
 
 /**
  * @param {Model} model
  * @param {THREE.Material} material
  * @param {string} key
  */
-const setNewFaceMaterial = (model: NewModel, material: THREE.Material, key: string) => {
+const setNewFaceMaterial = (model: MeshThree, material: THREE.Material, key: string) => {
   if (model.materials[key]) {
     model.materials[key].dispose();
   }
@@ -22,10 +22,13 @@ const setNewFaceMaterial = (model: NewModel, material: THREE.Material, key: stri
 export class MeshThree {
   geometry: THREE.BufferGeometry;
   materials: { [key: string]: THREE.Material };
+  lineMaterials: { [key: string]: THREE.Material };
   //materials.line = {};
   frontMesh: THREE.Mesh; // front face of mesh
   backMesh: THREE.Mesh; // back face of mesh (different color)
   lines: { [key: string]: THREE.LineSegments };
+
+  strain: boolean;
 
   constructor({ scene }: { scene: THREE.Scene | undefined }) {
     // if the user chooses to export the 3D model, we need to reference
@@ -35,9 +38,9 @@ export class MeshThree {
     this.materials.front = Materials.front;
     this.materials.back = Materials.back;
     this.materials.strain = Materials.strain;
-    this.materials.line = {};
+    this.lineMaterials = {};
     assignments.forEach((key) => {
-      this.materials.line[key] = Materials.line.clone();
+      this.lineMaterials[key] = Materials.line.clone();
     });
     this.frontMesh = new THREE.Mesh(); // front face of mesh
     this.backMesh = new THREE.Mesh(); // back face of mesh (different color)
@@ -45,7 +48,7 @@ export class MeshThree {
     assignments.forEach((key) => {
       this.lines[key] = new THREE.LineSegments(
         new THREE.BufferGeometry(),
-        this.materials.line[key],
+        this.lineMaterials[key],
       );
     });
 
@@ -63,7 +66,7 @@ export class MeshThree {
   }
 
   setModel(model: NewModel): void {
-    this.dealloc();
+    //this.dealloc();
     const {
       positions,
       colors,
@@ -73,7 +76,9 @@ export class MeshThree {
     this.setGeometryBuffers({ positions, colors, indices, lineIndices });
   }
 
-  sync(model: NewModel): void { }
+  sync(model: NewModel): void {
+    this.needsUpdate();
+  }
 
   setScene(scene?: THREE.Scene): void {
     // remove from previous scene
@@ -101,8 +106,8 @@ export class MeshThree {
     // this.geometry.verticesNeedUpdate = true;
     Object.values(this.lines).forEach((line) => {
       line.geometry = new THREE.BufferGeometry();
-      line.geometry.dynamic = true;
-      // line.geometry.verticesNeedUpdate = true;
+      //line.geometry.dynamic = true;
+      //line.geometry.verticesNeedUpdate = true;
     });
   }
 
@@ -119,7 +124,7 @@ export class MeshThree {
 
   lineMaterialDidUpdate(): void {
     assignments.forEach((key) => {
-      this.lines[key].material = this.materials.line[key] || Materials.line.clone();
+      this.lines[key].material = this.lineMaterials[key] || Materials.line.clone();
       this.lines[key].material.needsUpdate = true;
     });
   }
@@ -139,9 +144,6 @@ export class MeshThree {
   }
 
   needsUpdate(): void {
-    if (!this.positions) {
-      return;
-    }
     this.geometry.attributes.position.needsUpdate = true;
     if (this.strain) {
       this.geometry.attributes.color.needsUpdate = true;
@@ -162,6 +164,7 @@ export class MeshThree {
     indices: Uint16Array;
     lineIndices: { [key: string]: Uint16Array };
   }): void {
+    console.log("set geometry buffers", positions.length, colors.length, indices.length);
     const positionsAttribute = new THREE.BufferAttribute(positions, 3);
     this.geometry.setAttribute("position", positionsAttribute);
     this.geometry.setAttribute("color", new THREE.BufferAttribute(colors, 3));
@@ -189,20 +192,20 @@ export class MeshThree {
     // console.log("--- dealloc: Model()");
     // dispose geometries
     [this.geometry, this.frontMesh.geometry, this.backMesh.geometry]
-      .filter((geo) => geo)
+      .filter(geo => geo !== undefined)
       .forEach((geo) => geo.dispose());
     this.geometry = null;
     this.frontMesh.geometry = null;
     this.backMesh.geometry = null;
     Object.values(this.lines)
-      .filter((line) => line.geometry)
+      .filter((line) => line.geometry !== undefined)
       .forEach((line) => line.geometry.dispose());
     // dispose materials
     [this.frontMesh.material, this.backMesh.material]
-      .filter((material) => material)
+      .filter((material) => material !== undefined)
       .forEach((material) => material.dispose());
     Object.values(this.lines)
-      .filter((line) => line.material)
+      .filter((line) => line.material !== undefined)
       .forEach((line) => line.material.dispose());
   }
 
@@ -217,38 +220,45 @@ export class MeshThree {
   }
 
   setBoundaryColor(color: number | string): void {
-    this.materials.line.B.color.set(color);
+    const material = (this.lineMaterials.B as THREE.LineBasicMaterial);
+    material?.color.set(color);
     this.lines.B.material.needsUpdate = true;
   }
 
   setMountainColor(color: number | string): void {
-    this.materials.line.M.color.set(color);
+    const material = (this.lineMaterials.M as THREE.LineBasicMaterial);
+    material?.color.set(color);
     this.lines.M.material.needsUpdate = true;
   }
 
   setValleyColor(color: number | string): void {
-    this.materials.line.V.color.set(color);
+    const material = (this.lineMaterials.V as THREE.LineBasicMaterial);
+    material?.color.set(color);
     this.lines.V.material.needsUpdate = true;
   }
 
   setFlatColor(color: number | string): void {
-    this.materials.line.F.color.set(color);
+    const material = (this.lineMaterials.F as THREE.LineBasicMaterial);
+    material?.color.set(color);
     this.lines.F.material.needsUpdate = true;
   }
 
   setUnassignedColor(color: number | string): void {
-    this.materials.line.U.color.set(color);
+    const material = (this.lineMaterials.U as THREE.LineBasicMaterial);
+    material?.color.set(color);
     this.lines.U.material.needsUpdate = true;
   }
 
   setJoinColor(color: number | string): void {
-    this.materials.line.J.color.set(color);
+    const material = (this.lineMaterials.J as THREE.LineBasicMaterial);
+    material?.color.set(color);
     this.lines.J.material.needsUpdate = true;
   }
 
   setLineColor(color: number | string): void {
     assignments.forEach((key) => {
-      this.materials.line[key].color.set(color);
+      const material = (this.lineMaterials[key] as THREE.LineBasicMaterial);
+      material.color.set(color);
     });
     this.lineMaterialDidUpdate();
   }
@@ -276,9 +286,9 @@ export class MeshThree {
         .filter((a) => typeof a === "string")
         .map((str: string) => str.toUpperCase())
       : assignments;
-    keys.forEach((key) => this.materials.line[key].dispose());
+    keys.forEach((key) => this.lineMaterials[key].dispose());
     keys.forEach((key) => {
-      this.materials.line[key] = material;
+      this.lineMaterials[key] = material;
     });
     this.lineMaterialDidUpdate();
   }
