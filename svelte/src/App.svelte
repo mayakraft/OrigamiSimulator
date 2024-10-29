@@ -1,5 +1,6 @@
 <script>
 	import Simulator from "./Simulator.svelte";
+	//import TrackballView from "./ThreeJS/TrackballView.svelte";
 	import Settings from "./Settings.svelte";
 
 	// example model

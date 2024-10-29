@@ -5,7 +5,8 @@
   "license": "MIT",
   "scripts": {
     "test": "vitest",
-    "types": "tsc"
+    "types": "tsc",
+    "format": "prettier --write ."
   },
   "dependencies": {
     "earcut": "^3.0.0",
@@ -13,10 +14,12 @@
   },
   "devDependencies": {
     "@eslint/js": "^9.13.0",
+    "@types/three": "^0.169.0",
     "eslint": "^9.13.0",
     "eslint-config-prettier": "^9.1.0",
     "eslint-plugin-prettier": "^5.2.1",
     "prettier": "^3.3.3",
+    "prettier-plugin-svelte": "^3.2.7",
     "typescript": "^5.6.3",
     "typescript-eslint": "^8.11.0",
     "vitest": "^2.1.3"

@@ -5,9 +5,14 @@ import type { FOLD, FOLDMesh } from "../types.ts";
 import triangulateFold from "./triangulateFold.ts";
 import splitCuts from "./splitCuts.ts";
 import removeRedundantVertices from "./removeRedundantVertices.ts";
-import boundingBox from "./boundingBox.ts";
-import { makeVerticesEdges, makeVerticesVertices } from "./adjacentVertices.ts";
+import { boundingBox } from "./boundingBox.ts";
+import {
+  makeVerticesEdges,
+  makeVerticesFacesUnsorted,
+  makeVerticesVertices,
+} from "./adjacentVertices.ts";
 import { resize3 } from "../general/math.ts";
+import { makeEdgesFacesUnsorted } from "./edgesFaces.ts";
 
 /**
  * @description convert the indices to values and values to indices,
@@ -28,7 +33,7 @@ const invertMap = (map: number[]): number[][] => {
  * @description the relative fold angle in degrees for
  * all assignments that have a fold angle that is not 0.
  */
-const assignmentFlatAngles = {
+const assignmentFlatAngles: { [key: string]: number } = {
   M: -180,
   m: -180,
   V: 180,
@@ -40,7 +45,7 @@ const assignmentFlatAngles = {
  * by referencing the edges_assignment. This results will assume
  * the mountain and valleys are flat-folded 180 degrees.
  */
-const makeEdgesFoldAngle = ({ edges_assignment }) =>
+const makeEdgesFoldAngle = ({ edges_assignment }: FOLD) =>
   edges_assignment.map((a) => assignmentFlatAngles[a] || 0);
 
 /**
@@ -56,7 +61,7 @@ const makeEdgesFoldAngle = ({ edges_assignment }) =>
  * second optional parameter was also used to run "returnCreaseParams".
  * This is changed, now model/index calls "returnCreaseParams" directly.
  */
-const prepare = (inputFOLD: FOLD, epsilon?: number): FOLDMesh => {
+export const prepare = (inputFOLD: FOLD, epsilon?: number): FOLDMesh => {
   // these fields are absolutely necessary
   if (!inputFOLD.vertices_coords || !inputFOLD.edges_vertices) {
     throw new Error("model must contain vertices_coords and edges_vertices");
@@ -66,15 +71,17 @@ const prepare = (inputFOLD: FOLD, epsilon?: number): FOLDMesh => {
   // ensure fields exist
   let fold: FOLDMesh = {
     //vertices_coords: [],
-    edges_vertices: [],
-    edges_assignment: [],
-    edges_foldAngle: [],
-    faces_vertices: [],
-    faces_edges: [],
+    //edges_vertices: [],
+    //edges_assignment: [],
+    //edges_foldAngle: [],
+    //faces_vertices: [],
+    //faces_edges: [],
     ...structuredClone(inputFOLD),
     // ensure vertices are 3D
     vertices_coords: inputFOLD.vertices_coords.map(resize3),
   };
+
+  fold.vertices_coordsInitial = structuredClone(fold.vertices_coords);
 
   // one of these two fields is absolutely necessary.
   // if neither exist, set all creases to unassigned "U".
@@ -125,7 +132,14 @@ const prepare = (inputFOLD: FOLD, epsilon?: number): FOLDMesh => {
   // which face index from the original set did this face arise from?
   fold.faces_backmap = faces_backmap;
   fold.faces_nextmap = invertMap(faces_backmap);
+
+  if (!fold.vertices_faces) {
+    fold.vertices_faces = makeVerticesFacesUnsorted(fold);
+  }
+
+  if (!fold.edges_faces) {
+    fold.edges_faces = makeEdgesFacesUnsorted(fold);
+  }
+
   return fold;
 };
-
-export default prepare;

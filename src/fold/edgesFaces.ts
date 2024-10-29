@@ -1,3 +1,4 @@
+import type { FOLD } from "../types.ts";
 import { makeVerticesToEdge } from "./lookup.ts";
 
 /**
@@ -6,7 +7,7 @@ import { makeVerticesToEdge } from "./lookup.ts";
  * edges_vertices and faces_vertices
  * @returns {number[][]} a `faces_edges` array
  */
-export const makeFacesEdgesFromVertices = ({ edges_vertices, faces_vertices }) => {
+export const makeFacesEdgesFromVertices = ({ edges_vertices, faces_vertices }: FOLD) => {
   const map = makeVerticesToEdge({ edges_vertices });
   return faces_vertices
     .map((face) => face.map((v, i, arr) => [v, arr[(i + 1) % arr.length]].join(" ")))
@@ -25,7 +26,7 @@ export const makeEdgesFacesUnsorted = ({
   edges_vertices,
   faces_vertices,
   faces_edges,
-}) => {
+}: FOLD) => {
   // faces_vertices is only needed to build this array, if it doesn't exist.
   if (!faces_edges) {
     faces_edges = makeFacesEdgesFromVertices({ edges_vertices, faces_vertices });
@@ -34,7 +35,7 @@ export const makeEdgesFacesUnsorted = ({
   // the length of something like edges_vertices)
   const edges_faces = edges_vertices.map(() => []);
   faces_edges.forEach((face, f) => {
-    const hash = [];
+    const hash: number[] = [];
     // in the case that one face visits the same edge multiple times,
     // this hash acts as a set allowing one occurence of each edge index.
     face.forEach((edge) => {

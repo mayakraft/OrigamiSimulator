@@ -1,25 +1,26 @@
 /**
  * Created by ghassaei on 9/16/16.
  */
-import type { SimulatorNode } from "../types.ts";
+import type { Node } from "./Node.ts";
 import { magnitude, subtract } from "../general/math.ts";
+import { SolverOptions } from "./GPUMath.ts";
 
 export class Beam {
   type: string;
   axialStiffness: number;
   dampingRatio: number;
   vertices: [[number, number, number], [number, number, number]];
-  nodes: [SimulatorNode, SimulatorNode];
+  nodes: [Node, Node];
   originalLength: number;
 
   constructor(
-    nodes: [SimulatorNode, SimulatorNode],
-    { axialStiffness, dampingRatio }: { axialStiffness: number; dampingRatio: number },
-    //{ axialStiffness, dampingRatio }: {axialStiffness?: number, dampingRatio?: number},
+    nodes: [Node, Node],
+    { axialStiffness, dampingRatio }: SolverOptions,
   ) {
     this.type = "beam";
     this.axialStiffness = axialStiffness;
     this.dampingRatio = dampingRatio;
+
     this.vertices = [nodes[0].originalPosition, nodes[1].originalPosition];
     this.nodes = nodes;
     this.originalLength = this.getLength();
@@ -34,10 +35,6 @@ export class Beam {
   /** distance between the original position of the two nodes */
   getLength(): number {
     return magnitude(this.getVector());
-  }
-
-  recalcOriginalLength(): void {
-    this.originalLength = magnitude(this.getVector());
   }
 
   isFixed(): boolean {
@@ -64,7 +61,7 @@ export class Beam {
   }
 
   /** given a node in this beam, get the other node */
-  getOtherNode(node: SimulatorNode): SimulatorNode {
+  getOtherNode(node: Node): Node {
     if (this.nodes[0] === node) return this.nodes[1];
     return this.nodes[0];
   }

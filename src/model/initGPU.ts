@@ -1,6 +1,5 @@
-import type { GPUMath } from "../GPUMath.ts";
-import { defaults as DEFAULTS, type GPUMathOptions } from "./options.ts";
-import { float_type } from "../constants.ts";
+import type { GPUMath, GPUMathSettings, SolverOptions } from "./GPUMath.ts";
+import { defaultSolverOptions } from "./GPUMath.ts";
 import {
   vertexShader,
   positionCalcShader,
@@ -17,31 +16,6 @@ import {
   updateCreaseGeo,
 } from "../shaders/shaders.ts";
 
-export type GPUMathSettings = {
-  textureDim: number;
-  textureDimEdges: number;
-  textureDimFaces: number;
-  textureDimCreases: number;
-  textureDimNodeFaces: number;
-  textureDimNodeCreases: number;
-  position: Float32Array;
-  lastPosition: Float32Array;
-  lastLastPosition: Float32Array;
-  velocity: Float32Array;
-  lastVelocity: Float32Array;
-  meta: Float32Array;
-  meta2: Float32Array;
-  normals: Float32Array;
-  faceVertexIndices: Float32Array;
-  nodeFaceMeta: Float32Array;
-  nominalTriangles: Float32Array;
-  nodeCreaseMeta: Float32Array;
-  creaseMeta2: Float32Array;
-  creaseGeo: Float32Array;
-  theta: Float32Array;
-  lastTheta: Float32Array;
-};
-
 /**
  * @description This method is called when a new model is loaded.
  * This allocates all space needed for communication back and forth
@@ -50,7 +24,7 @@ export type GPUMathSettings = {
  * @param {object} options these options are not required, if empty it
  * will default to origami simulator's default settings.
  */
-const initGPU = (
+export const initGPU = (
   gpuMath: GPUMath,
   {
     textureDim,
@@ -76,9 +50,11 @@ const initGPU = (
     theta,
     lastTheta,
   }: GPUMathSettings,
-  options: GPUMathOptions = {},
+  options: SolverOptions = {},
 ) => {
-  const defaults: GPUMathOptions = { ...DEFAULTS, ...options };
+  const defaults: SolverOptions = { ...defaultSolverOptions, ...options };
+
+  const float_type = gpuMath.float_type || "FLOAT";
 
   gpuMath.initTextureFromData(
     "u_position",
@@ -498,5 +474,3 @@ const initGPU = (
 
   gpuMath.setSize(textureDim, textureDim);
 };
-
-export default initGPU;

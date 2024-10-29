@@ -20,61 +20,89 @@
 	- zoomSpeed (number)
 	- dynamicDampingFactor (number)
 -->
-<script>
-	import { onDestroy } from "svelte";
-	import { TrackballControls } from "three/addons/controls/TrackballControls.js";
-	import ThreeView from "./ThreeView.svelte";
-	// ThreeView component
-	export let didMount = () => {};
-	export let didResize = () => {};
-	export let animate = () => {};
-	// this component
-	export let enabled = true;
-	export let maxDistance = 100;
-	export let minDistance = 0.1;
-	export let panSpeed = 1;
-	export let rotateSpeed = 4;
-	export let zoomSpeed = 16;
-	export let dynamicDampingFactor;
-	let trackball;
+<script lang="ts">
+  import { TrackballControls } from "three/examples/jsm/controls/TrackballControls";
+  import ThreeView from "./ThreeView.svelte";
 
-	$: if (trackball) { trackball.enabled = enabled; }
-	$: if (trackball) { trackball.maxDistance = maxDistance; }
-	$: if (trackball) { trackball.minDistance = minDistance; }
-	$: if (trackball) { trackball.panSpeed = panSpeed; }
-	$: if (trackball) { trackball.rotateSpeed = rotateSpeed; }
-	$: if (trackball) { trackball.zoomSpeed = zoomSpeed; }
-	$: if (trackball) { trackball.dynamicDampingFactor = dynamicDampingFactor; }
+  type PropsType = {
+    didMount?: (options: object) => void;
+    didResize?: (event?: Event) => void;
+    animate?: () => void;
+  };
 
-	const didMountHandler = ({ renderer, scene, camera }) => {
-		trackball = new TrackballControls(camera, renderer.domElement.parentNode);
-		// bubble up event handler
-		if (didMount) {
-			didMount({ renderer, scene, camera });
-		}
-	};
+  type TrackballPropsType = {
+    enabled?: boolean;
+    target?: [number, number, number];
+    maxDistance?: number;
+    minDistance?: number;
+    panSpeed?: number;
+    rotateSpeed?: number;
+    zoomSpeed?: number;
+    dynamicDampingFactor?: number;
+  };
 
-	const didResizeHandler = (event) => {
-		trackball.handleResize();
-		// bubble up event handler
-		if (didResize) {
-			didResize(event);
-		}
-	};
+  let {
+    // ThreeView component
+    didMount,
+    didResize,
+    animate,
+    // this component
+    enabled = true,
+    target = [0, 0, 0],
+    maxDistance = 100,
+    minDistance = 0.1,
+    panSpeed = 1,
+    rotateSpeed = 4,
+    zoomSpeed = 16,
+    dynamicDampingFactor,
+  }: PropsType & TrackballPropsType = $props();
 
-	const animateHandler = () => {
-		trackball.update();
-		// bubble up event handler
-		if (animate) {
-			animate();
-		}
-	};
+  let trackball: TrackballControls | undefined;
 
-	onDestroy(() => trackball.dispose());
+  $effect(() => {
+    if (!trackball) {
+      return;
+    }
+    trackball.enabled = enabled;
+    trackball.target.set(...target);
+    trackball.maxDistance = maxDistance;
+    trackball.minDistance = minDistance;
+    trackball.panSpeed = panSpeed;
+    trackball.rotateSpeed = rotateSpeed;
+    trackball.zoomSpeed = zoomSpeed;
+    trackball.dynamicDampingFactor = dynamicDampingFactor;
+  });
+
+  const didMountHandler = ({ renderer, scene, camera }) => {
+    trackball = new TrackballControls(camera, renderer.domElement.parentNode);
+    // bubble up event handler
+    if (didMount) {
+      didMount({ renderer, scene, camera });
+    }
+  };
+
+  const didResizeHandler = (event: Event) => {
+    trackball?.handleResize();
+    // bubble up event handler
+    if (didResize) {
+      didResize(event);
+    }
+  };
+
+  const animateHandler = () => {
+    trackball?.update();
+    // bubble up event handler
+    if (animate) {
+      animate();
+    }
+  };
+
+  $effect(() => {
+    return () => trackball?.dispose();
+  });
 </script>
 
 <ThreeView
-	didMount={didMountHandler}
-	didResize={didResizeHandler}
-	animate={animateHandler}
-/>
+  didMount={didMountHandler}
+  didResize={didResizeHandler}
+  animate={animateHandler} />

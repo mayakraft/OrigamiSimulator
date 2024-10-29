@@ -1,7 +1,7 @@
 /**
  * Created by amandaghassaei on 5/6/17.
  */
-import type { Model } from "./index.ts";
+import type { Model } from "./Model.ts";
 import type { FOLD, FOLDMesh } from "../types.ts";
 
 /**
@@ -15,13 +15,13 @@ import type { FOLD, FOLDMesh } from "../types.ts";
  * so that all faces are triangulated.
  * @param {{ triangulated?: boolean, angles?: boolean }} options
  */
-const exportFold = (
+export const exportFOLD = (
   model: Model,
   foldUnmodified: FOLD,
   foldTriangulated: FOLDMesh,
   { triangulated, angles }: { triangulated?: boolean; angles?: boolean } = {},
 ) => {
-  //
+
   if (!model.positions || !foldUnmodified.vertices_coords) {
     triangulated = true;
   } else {
@@ -55,5 +55,3 @@ const exportFold = (
   // }
   return fold;
 };
-
-export default exportFold;

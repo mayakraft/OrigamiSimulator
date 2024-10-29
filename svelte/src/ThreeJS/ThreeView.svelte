@@ -21,31 +21,40 @@
 	  renderer draws to the screen.
  -->
 
-<script>
-	import { onMount, onDestroy } from "svelte";
+<script lang="ts">
 	import * as THREE from "three";
-	export let didMount = () => {};
-	export let didResize = () => {};
-	export let animate = () => {};
+  
+  type PropsType = {
+    didMount?: (options: object) => void;
+    didResize?: (event?: Event) => void;
+    animate?: () => void;
+  };
+
+  let { didMount, didResize, animate }: PropsType = $props();
+
 	// these will be initialized and managed by this component
-	let renderer;
-	let scene;
-	let camera;
+	let renderer: THREE.WebGLRenderer;
+	let scene: THREE.Scene;
+	let camera: THREE.PerspectiveCamera;
+
 	// the parent of the <canvas> element
-	let parentNode;
-	// the value returned from window.requestAnimationFrame
-	let animationID;
+  let parentNode: HTMLDivElement;
+
+  // the value returned from window.requestAnimationFrame
+  let animationID: number | undefined;
+
 	/**
 	 * @description Update the projection matrix, aspect ratio, and size
 	 * of the renderer.
 	 */
-	const updateProjection = () => {
+	const updateProjection = (): void => {
 		const width = parentNode.clientWidth;
 		const height = parentNode.clientHeight;
 		renderer.setSize(width, height);
 		camera.aspect = width / height;
 		camera.updateProjectionMatrix();
 	};
+
 	/**
 	 * @description Update the camera's view matrix. The camera will look
 	 * at the origin (0, 0, 0), and position itself along the +Z axis
@@ -53,7 +62,7 @@
 	 * @param {number} modelSize the diameter across the largest size
 	 * of the model; used to aspect fit the model in view.
 	 */
-	const updateView = (modelSize = 1.0) => {
+	const updateView = (modelSize: number = 1.0): void => {
 		const scale = 1.25;
 		const fitLength = camera.aspect > 1
 			? modelSize * scale
@@ -64,10 +73,11 @@
 		camera.far = modelSize * 100;
 		camera.near = modelSize / 100;
 	};
+
 	/**
 	 * @description Setup one three.js canvas with a renderer, scene, and camera
 	 */
-	const initializeThreeJS = () => {
+	const initializeThreeJS = (): void => {
 		renderer = new THREE.WebGLRenderer({ antialias: true });
 		scene = new THREE.Scene();
 		camera = new THREE.PerspectiveCamera(45, 1 / 1, 0.1, 1000);
@@ -79,12 +89,13 @@
 		updateView();
 		parentNode.appendChild(renderer.domElement);
 	};
+
 	/**
 	 * @description Begin the animation loop, maintain a reference to the
 	 * return value of requestAnimationFrame so that the animation loop
 	 * can be canceled at any time (like in the deallocate method).
 	 */
-	const initializeAnimationLoop = () => {
+	const initializeAnimationLoop = (): void => {
 		const animateLoop = () => {
 			animationID = window.requestAnimationFrame(animateLoop);
 			// bubble up animation event just before the scene is rendered
@@ -95,10 +106,11 @@
 		};
 		animateLoop();
 	};
+
 	/**
 	 * @description The method attached to the window's "resize" event.
 	 */
-	const onResize = (event) => {
+	const onResize = (event: Event): void => {
 		parentNode.removeChild(renderer.domElement);
 		updateProjection();
 		parentNode.appendChild(renderer.domElement);
@@ -107,12 +119,13 @@
 			didResize(event);
 		}
 	};
+
 	/**
 	 * @description onMount (built-in function) will setup three.js, then
 	 * bubble up the didMount event, and lastly, start the animation loop,
 	 * ensuring that animation begins after all setup is (presumably) done.
 	 */
-	onMount(() => {
+	$effect(() => {
 		initializeThreeJS();
 		window.addEventListener("resize", onResize);
 		// bubble up the didMount event before starting the animation loop
@@ -121,12 +134,13 @@
 		}
 		initializeAnimationLoop();
 	});
+
 	/**
 	 * @description Free all memory associated with this three.js instance.
 	 * This allows you to destroy and re-instance this component many times
 	 * throughout the lifecycle of the app.
 	 */
-	onDestroy(() => {
+	const onDestroy = () => {
 		window.removeEventListener("resize", onResize);
 		window.cancelAnimationFrame(animationID);
 		scene.clear();
@@ -134,10 +148,12 @@
 		renderer.dispose();
 		camera = null;
 		parentNode.removeChild(renderer.domElement);
-	});
+	};
+
+  $effect(() => onDestroy);
 </script>
 
-<div class="container" bind:this={parentNode} />
+<div class="container" bind:this={parentNode}></div>
 
 <style>
 	.container {

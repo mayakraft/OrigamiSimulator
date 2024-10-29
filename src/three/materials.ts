@@ -3,7 +3,7 @@ import * as THREE from "three";
 // positive value pushes polygon further away
 const polygonOffsetFactor = 0.5;
 
-const front = new THREE.MeshPhongMaterial({
+export const front = new THREE.MeshPhongMaterial({
   flatShading: true,
   side: THREE.FrontSide,
   polygonOffset: true,
@@ -17,7 +17,7 @@ const front = new THREE.MeshPhongMaterial({
   refractionRatio: 0,
 });
 
-const back = new THREE.MeshPhongMaterial({
+export const back = new THREE.MeshPhongMaterial({
   flatShading: true,
   side: THREE.BackSide,
   polygonOffset: true,
@@ -31,18 +31,16 @@ const back = new THREE.MeshPhongMaterial({
   refractionRatio: 0,
 });
 
-const line = new THREE.LineBasicMaterial({
+export const line = new THREE.LineBasicMaterial({
   color: 0x000000,
   transparent: true,
   opacity: 0.5,
 });
 
-const strain = new THREE.MeshBasicMaterial({
+export const strain = new THREE.MeshBasicMaterial({
   vertexColors: true,
   side: THREE.DoubleSide,
   polygonOffset: true,
   polygonOffsetFactor,
   polygonOffsetUnits: 1,
 });
-
-export { front, back, line, strain };
