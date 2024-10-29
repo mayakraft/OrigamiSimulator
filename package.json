@@ -5,7 +5,8 @@
   "license": "MIT",
   "scripts": {
     "test": "vitest",
-    "types": "tsc"
+    "types": "tsc",
+    "format": "prettier --write ."
   },
   "dependencies": {
     "earcut": "^3.0.0",

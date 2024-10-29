@@ -1,9 +1,9 @@
 import type { FOLD, FOLDMesh } from "../types.ts";
 
 export type BoundingBox = {
-  min: [number, number] | [number, number, number],
-  max: [number, number] | [number, number, number],
-  span: [number, number] | [number, number, number],
+  min: [number, number] | [number, number, number];
+  max: [number, number] | [number, number, number];
+  span: [number, number] | [number, number, number];
 };
 
 /**
@@ -12,12 +12,21 @@ export type BoundingBox = {
  * by adding padding on all sides, or inset in the case of negative number.
  * (positive=inclusive boundary, negative=exclusive boundary)
  */
-export const boundingBox = ({ vertices_coords }: FOLD, padding: number = 0) => {
+export const boundingBox = (
+  { vertices_coords }: FOLD,
+  padding: number = 0,
+): BoundingBox | undefined => {
   if (!vertices_coords || !vertices_coords.length) {
     return undefined;
   }
-  const min = Array(vertices_coords[0].length).fill(Infinity);
-  const max = Array(vertices_coords[0].length).fill(-Infinity);
+  const coord0: [number, number] | [number, number, number] = vertices_coords[0];
+  const min = Array(coord0.length).fill(Infinity) as
+    | [number, number]
+    | [number, number, number];
+  const max = Array(coord0.length).fill(-Infinity) as
+    | [number, number]
+    | [number, number, number];
+
   vertices_coords.forEach((point) =>
     point.forEach((c, i) => {
       if (c < min[i]) {
@@ -28,7 +37,9 @@ export const boundingBox = ({ vertices_coords }: FOLD, padding: number = 0) => {
       }
     }),
   );
-  const span = max.map((m, i) => m - min[i]);
+  const span = max.map((m, i) => m - min[i]) as
+    | [number, number]
+    | [number, number, number];
   return { min, max, span };
 };
 

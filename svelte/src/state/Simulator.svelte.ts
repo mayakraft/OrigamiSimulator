@@ -4,7 +4,7 @@
 
 class Simulator {
   // turn on/off Origami Simulator's folding engine
-  active = $state(false);
+  active = $state(true);
 
   // fold the origami model, float (0.0-1.0)
   foldAmount = $state(0.15);

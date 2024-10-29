@@ -31,15 +31,6 @@ const modelCenter = (positions: Float32Array): [number, number, number] => {
   return [(min[0] + max[0]) / 2, (min[1] + max[1]) / 2, (min[2] + max[2]) / 2];
 };
 
-//const emptyMesh = (): FOLDMesh => ({
-//  vertices_coords: [],
-//  edges_vertices: [],
-//  edges_assignment: [],
-//  edges_foldAngle: [],
-//  faces_vertices: [],
-//  faces_edges: [],
-//});
-
 export class Model {
   initialFOLD: FOLD;
   fold: FOLDMesh;
@@ -75,6 +66,17 @@ export class Model {
     this.initialFOLD = foldObject;
     this.fold = prepare(foldObject);
     this.center = getFOLDCenter(this.fold);
+
+    // here is a hack to bring the model to the center of the scene
+    // that also works with the ray caster. for whatever reason,
+    // translating the model or translating a parent layer causes the
+    // raycaster to fail outside of the boundary which would have been eclipsed.
+    this.fold.vertices_coords = this.fold.vertices_coords.map(([x, y, z]) => [
+      x - this.center[0],
+      y - this.center[1],
+      z - this.center[2],
+    ]);
+    this.fold.vertices_coordsInitial = structuredClone(this.fold.vertices_coords);
 
     this.axialStiffness = 20;
     this.joinStiffness = 0.7;

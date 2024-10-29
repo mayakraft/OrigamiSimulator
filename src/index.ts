@@ -140,6 +140,10 @@ export class OrigamiSimulator {
     }
   }
 
+  get active(): boolean {
+    return this.#active;
+  }
+
   set integration(value: string) {
     this.model?.setIntegration(value);
   }
@@ -190,11 +194,14 @@ export class OrigamiSimulator {
   getModel() {
     return this.model;
   }
+  getLines() {
+    return this.mesh.lines;
+  }
   getMaterials() {
     return this.mesh.materials;
   }
-  getLines() {
-    return this.mesh.lines;
+  getLineMaterials() {
+    return this.mesh.lineMaterials;
   }
 
   set frontVisible(value: boolean) {
