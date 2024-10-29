@@ -1,5 +1,5 @@
 import * as THREE from "three";
-import { type RayTouch, makeTouches } from "./makeTouches.ts";
+import { type RayTouch, makeTouches } from "./RayTouch.ts";
 import { OrigamiSimulator } from "../index.ts";
 
 /**

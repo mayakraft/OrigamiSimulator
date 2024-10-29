@@ -156,7 +156,9 @@ export class GPUMath implements GPUMathSettings {
     const numFaces = model.fold.faces_vertices.length;
     const numCreases = model.creases.length;
     const numNodeFaces = model.fold.vertices_faces
-      .reduce((a, b) => a + b.length, 0);
+      .map(faces => faces
+        .filter(a => a !== undefined && a !== null).length)
+      .reduce((a, b) => a + b, 0);
     const numNodeEdges = model.fold.vertices_edges
       .reduce((a, b) => a + b.length, 0);
 

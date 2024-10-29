@@ -1,7 +1,7 @@
 import * as THREE from "three";
 import * as Materials from "./materials.ts";
 import { OrigamiSimulator } from "../index.ts";
-import type { RayTouch } from "./makeTouches.ts";
+import type { RayTouch } from "./RayTouch.ts";
 
 // todo: idea- duplicate highlighted vertex, one obeys depthTest with full
 // opacity, the other is always visible with half opacity.

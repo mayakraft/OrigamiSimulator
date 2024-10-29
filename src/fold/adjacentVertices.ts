@@ -160,7 +160,7 @@ export const makeVerticesVerticesFromFaces = ({
   }
   // every iterate through every vertices_faces's faces_vertices
   const vertices_faces_vertices = vertices_faces.map((faces) =>
-    faces.map((f) => faces_vertices[f]),
+    faces.filter(a => a !== undefined && a !== null).map((f) => faces_vertices[f]),
   );
   // for every vertex, find its index in its faces_vertices array.
   const vertices_faces_indexOf = vertices_faces_vertices.map((faces, vertex) =>

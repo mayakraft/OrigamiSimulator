@@ -27,7 +27,7 @@
   // these pertain to the touch interaction which uses the raycaster
   import { Highlights } from "../../src/touches/Highlights.ts";
   import { Raycasters } from "../../src/touches/Raycasters.ts";
-  import type { RayTouch } from "../../src/touches/makeTouches.ts";
+  import type { RayTouch } from "../../src/touches/RayTouch.ts";
 
   let { origami } = $props();
 
