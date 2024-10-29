@@ -1,10 +1,10 @@
 precision mediump float;
-uniform vec2 u_textureDim;
-uniform vec2 u_textureDimEdges;
+uniform vec2 u_textureDimNodes;
 uniform vec2 u_textureDimFaces;
 uniform vec2 u_textureDimCreases;
-uniform vec2 u_textureDimNodeCreases;
+uniform vec2 u_textureDimNodeEdges;
 uniform vec2 u_textureDimNodeFaces;
+uniform vec2 u_textureDimNodeCreases;
 uniform float u_creasePercent;
 uniform float u_dt;
 uniform float u_axialStiffness;
@@ -33,14 +33,14 @@ vec4 getFromArray(float index1D, vec2 dimensions, sampler2D tex){
 }
 
 vec3 getPosition(float index1D){
-  vec2 index = vec2(mod(index1D, u_textureDim.x)+0.5, floor(index1D/u_textureDim.x)+0.5);
-  vec2 scaledIndex = index/u_textureDim;
+  vec2 index = vec2(mod(index1D, u_textureDimNodes.x)+0.5, floor(index1D/u_textureDimNodes.x)+0.5);
+  vec2 scaledIndex = index/u_textureDimNodes;
   return texture2D(u_lastPosition, scaledIndex).xyz + texture2D(u_originalPosition, scaledIndex).xyz;
 }
 
 void main(){
   vec2 fragCoord = gl_FragCoord.xy;
-  vec2 scaledFragCoord = fragCoord/u_textureDim;
+  vec2 scaledFragCoord = fragCoord/u_textureDimNodes;
 
   vec2 mass = texture2D(u_mass, scaledFragCoord).xy;
   if (mass[1] == 1.0){//fixed
@@ -61,11 +61,11 @@ void main(){
   for (int j=0;j<100;j++){//for all beams (up to 100, had to put a const int in here)
     if (j >= int(meta[1])) break;
 
-    vec4 beamMeta = getFromArray(meta[0]+float(j), u_textureDimEdges, u_beamMeta);
+    vec4 beamMeta = getFromArray(meta[0]+float(j), u_textureDimNodeEdges, u_beamMeta);
 
     float neighborIndex1D = beamMeta[3];
-    vec2 neighborIndex = vec2(mod(neighborIndex1D, u_textureDim.x)+0.5, floor(neighborIndex1D/u_textureDim.x)+0.5);
-    vec2 scaledNeighborIndex = neighborIndex/u_textureDim;
+    vec2 neighborIndex = vec2(mod(neighborIndex1D, u_textureDimNodes.x)+0.5, floor(neighborIndex1D/u_textureDimNodes.x)+0.5);
+    vec2 scaledNeighborIndex = neighborIndex/u_textureDimNodes;
     vec3 neighborLastPosition = texture2D(u_lastPosition, scaledNeighborIndex).xyz;
     vec3 neighborLastVelocity = texture2D(u_lastVelocity, scaledNeighborIndex).xyz;
     vec3 neighborOriginalPosition = texture2D(u_originalPosition, scaledNeighborIndex).xyz;

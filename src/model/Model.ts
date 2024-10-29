@@ -3,7 +3,7 @@ import type { SolverOptions } from "./GPUMath.ts";
 import { defaultSolverOptions } from "./GPUMath.ts";
 import { GPUMath } from "./GPUMath.ts";
 import { makeNode, destroyNode, type Node } from "./Node.ts";
-import { Beam } from "./Beam.ts";
+import { Edge } from "./Edge.ts";
 import { Crease } from "./Crease.ts";
 import { prepare } from "../fold/prepare.ts";
 import { getFOLDCenter } from "../fold/boundingBox.ts";
@@ -52,7 +52,7 @@ export class Model {
   lineIndices: { [key: string]: Uint16Array };
 
   nodes: Node[];
-  edges: Beam[];
+  edges: Edge[];
   creases: Crease[];
 
   /**
@@ -65,17 +65,14 @@ export class Model {
 
     this.initialFOLD = foldObject;
     this.fold = prepare(foldObject);
-    this.center = getFOLDCenter(this.fold);
+    const center = getFOLDCenter(this.fold);
 
     // here is a hack to bring the model to the center of the scene
     // that also works with the ray caster. for whatever reason,
     // translating the model or translating a parent layer causes the
     // raycaster to fail outside of the boundary which would have been eclipsed.
-    this.fold.vertices_coords = this.fold.vertices_coords.map(([x, y, z]) => [
-      x - this.center[0],
-      y - this.center[1],
-      z - this.center[2],
-    ]);
+    this.fold.vertices_coords = this.fold.vertices_coords
+      .map(([x, y, z]) => [x - center[0], y - center[1], z - center[2]]);
     this.fold.vertices_coordsInitial = structuredClone(this.fold.vertices_coords);
 
     this.axialStiffness = 20;
@@ -89,7 +86,7 @@ export class Model {
     // will get rid of these eventually
     this.edges = this.fold.edges_vertices
       .map((ev) => ev.map((v) => this.nodes[v]))
-      .map(([a, b]) => new Beam([a, b], options));
+      .map(([a, b]) => new Edge([a, b], options));
 
     // will move creases here
     this.creases = makeCreasesParams(this.fold).map(
@@ -165,7 +162,7 @@ export class Model {
   update(initing: boolean = false) {
     // { creaseMeta, textureDimCreases }
     this.gpuMath.updateCreasesMeta(this, initing);
-    // { meta, beamMeta, textureDimEdges }
+    // { meta, beamMeta, textureDimNodeEdges }
     this.gpuMath.updateMaterials(this, initing);
   }
 
@@ -275,10 +272,12 @@ export class Model {
   }
 
   dealloc() {
+    console.log("Model dealloc()");
+    this.fold = {};
+    this.initialFOLD = {};
     this.nodes.forEach(destroyNode);
     this.edges.forEach((edge) => edge.destroy());
     this.creases.forEach((crease) => crease.destroy());
-    this.center = [0, 0, 0];
     this.nodes = [];
     this.edges = [];
     this.creases = [];

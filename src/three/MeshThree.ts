@@ -21,7 +21,6 @@ const setNewFaceMaterial = (model: MeshThree, material: THREE.Material, key: str
 export class MeshThree {
   geometry: THREE.BufferGeometry;
 
-  layer: THREE.Object3D;
   frontMesh: THREE.Mesh; // front face of mesh
   backMesh: THREE.Mesh; // back face of mesh (different color)
   lines: { [key: string]: THREE.LineSegments };
@@ -37,21 +36,22 @@ export class MeshThree {
   }
 
   constructor({ scene }: { scene: THREE.Scene | undefined }) {
-    // if the user chooses to export the 3D model, we need to reference
-    // the original FOLD data. "this.fold" contains triangulated faces.
-    this.geometry = null;
+    // materials
     this.materials = {};
+    this.lineMaterials = {};
     this.materials.front = Materials.front;
     this.materials.back = Materials.back;
     this.materials.strain = Materials.strain;
-    this.lineMaterials = {};
     assignments.forEach((key) => {
       this.lineMaterials[key] = Materials.line.clone();
     });
 
-    this.layer = new THREE.Object3D();
     this.frontMesh = new THREE.Mesh(); // front face of mesh
     this.backMesh = new THREE.Mesh(); // back face of mesh (different color)
+
+    this.geometry = new THREE.BufferGeometry();
+    this.frontMesh.geometry = this.geometry;
+    this.backMesh.geometry = this.geometry;
     this.lines = {};
     assignments.forEach((key) => {
       this.lines[key] = new THREE.LineSegments(
@@ -60,31 +60,31 @@ export class MeshThree {
       );
     });
 
-    this.layer.add(this.frontMesh);
-    this.layer.add(this.backMesh);
-    Object.values(this.lines).forEach((line) => this.layer.add(line));
-
-    // by default, "join" edges (result of triangulation) are not visible
-    this.lines.J.visible = false;
-
     this.frontMesh.castShadow = true;
     this.frontMesh.receiveShadow = true;
     // this.backMesh.castShadow = true;
     this.backMesh.receiveShadow = true;
+    // by default, "join" edges (result of triangulation) are not visible
+    this.lines.J.visible = false;
 
-    this.makeNewGeometries();
-    this.materialDidUpdate();
+    this.faceMaterialDidUpdate();
+    this.lineMaterialDidUpdate();
     this.setScene(scene);
   }
 
   setModel(model: Model): void {
+    this.geometry?.dispose();
+
     //this.dealloc();
     const { positions, colors, indices, lineIndices } = model;
+
+    this.geometry = new THREE.BufferGeometry();
+    this.frontMesh.geometry = this.geometry;
+    this.backMesh.geometry = this.geometry;
     this.setGeometryBuffers({ positions, colors, indices, lineIndices });
+
     //this.layer.position.set(-model.center[0], -model.center[1], -model.center[2]);
     //this.layer.updateMatrixWorld();
-    this.frontMesh.updateMatrixWorld();
-    this.backMesh.updateMatrixWorld();
   }
 
   //sync(model: Model): void {
@@ -93,37 +93,19 @@ export class MeshThree {
   }
 
   setScene(scene?: THREE.Scene): void {
-    this.layer.removeFromParent();
+    // remove from previous scene
+    [this.frontMesh, this.backMesh]
+      .filter((el) => el.removeFromParent)
+      .forEach((side) => side.removeFromParent());
+    Object.values(this.lines)
+      .filter((el) => el.removeFromParent)
+      .forEach((line) => line.removeFromParent());
+    // add to new scene
     if (scene) {
-      scene.add(this.layer);
+      scene.add(this.frontMesh);
+      scene.add(this.backMesh);
+      Object.values(this.lines).forEach((line) => scene.add(line));
     }
-    //// remove from previous scene
-    //[this.frontMesh, this.backMesh]
-    //  .filter((el) => el.removeFromParent)
-    //  .forEach((side) => side.removeFromParent());
-    //Object.values(this.lines)
-    //  .filter((el) => el.removeFromParent)
-    //  .forEach((line) => line.removeFromParent());
-    //// add to new scene
-    //if (scene) {
-    //  scene.add(this.frontMesh);
-    //  scene.add(this.backMesh);
-    //  Object.values(this.lines).forEach((line) => scene.add(line));
-    //}
-  }
-
-  makeNewGeometries(): void {
-    this.geometry = new THREE.BufferGeometry();
-    // this.geometry.dynamic = true; // property no longer exists
-    this.frontMesh.geometry = this.geometry;
-    this.backMesh.geometry = this.geometry;
-    // todo: do we need to set frontside/backside dynamic?
-    // this.geometry.verticesNeedUpdate = true;
-    Object.values(this.lines).forEach((line) => {
-      line.geometry = new THREE.BufferGeometry();
-      //line.geometry.dynamic = true;
-      //line.geometry.verticesNeedUpdate = true;
-    });
   }
 
   faceMaterialDidUpdate(): void {
@@ -142,11 +124,6 @@ export class MeshThree {
       this.lines[key].material = this.lineMaterials[key] || Materials.line.clone();
       this.lines[key].material.needsUpdate = true;
     });
-  }
-
-  materialDidUpdate(): void {
-    this.faceMaterialDidUpdate();
-    this.lineMaterialDidUpdate();
   }
 
   getMesh(): [THREE.Mesh, THREE.Mesh] {
@@ -187,9 +164,9 @@ export class MeshThree {
       this.lines[key].geometry.computeBoundingSphere();
       this.lines[key].geometry.center();
     });
-    // geometry.attributes.position.needsUpdate = true;
-    // geometry.index.needsUpdate = true;
-    // geometry.verticesNeedUpdate = true;
+    //this.geometry.attributes.position.needsUpdate = true;
+    //this.geometry.index.needsUpdate = true;
+    //this.geometry.verticesNeedUpdate = true;
     // re-scale object to unit-space and center it at the origin.
     this.geometry.computeVertexNormals();
     this.geometry.computeBoundingBox();
@@ -199,22 +176,18 @@ export class MeshThree {
 
   dealloc(): void {
     // dispose geometries
-    [this.geometry, this.frontMesh.geometry, this.backMesh.geometry]
-      .filter((geo) => geo !== undefined)
-      .forEach((geo) => geo.dispose());
-    this.geometry = null;
+    this.geometry?.dispose();
+    this.frontMesh?.geometry?.dispose();
+    this.backMesh?.geometry?.dispose();
+    Object.values(this.lines).forEach((line) => line?.geometry?.dispose());
     this.frontMesh.geometry = null;
     this.backMesh.geometry = null;
-    Object.values(this.lines)
-      .filter((line) => line.geometry !== undefined)
-      .forEach((line) => line.geometry.dispose());
+    this.geometry = null;
+
     // dispose materials
-    [this.frontMesh.material, this.backMesh.material]
-      .filter((material) => material !== undefined)
-      .forEach((material) => material.dispose());
-    Object.values(this.lines)
-      .filter((line) => line.material !== undefined)
-      .forEach((line) => line.material.dispose());
+    this.frontMesh?.material?.dispose();
+    this.backMesh?.material?.dispose();
+    Object.values(this.lines).forEach((line) => line?.material?.dispose());
   }
 
   setFrontColor(color: number | string): void {

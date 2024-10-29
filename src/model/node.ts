@@ -1,7 +1,7 @@
 /**
  * Created by ghassaei on 9/16/16.
  */
-import type { Beam } from "./Beam.ts";
+import type { Edge } from "./Edge.ts";
 import type { Crease } from "./Crease.ts";
 
 export type Node = {
@@ -9,7 +9,7 @@ export type Node = {
   originalPosition: [number, number, number];
   index: number;
   // Beams are edges_ (edges_vertices)
-  beams: Beam[]; // vertices_edges
+  edges: Edge[]; // vertices_edges
   // Creases are their own thing. they are not edges
   creases: Crease[]; // vertices_creases
   // invCreases is
@@ -36,7 +36,7 @@ export const makeNode = (
   originalPosition: [x, y, z],
   index: index,
 
-  beams: [],
+  edges: [],
   creases: [],
   invCreases: [],
   externalForce: [0, 0, 0],
@@ -48,7 +48,7 @@ export const makeNode = (
  * @param {SimulatorNode} node
  */
 export const destroyNode = (node: Node) => {
-  node.beams = [];
+  node.edges = [];
   node.creases = [];
   node.invCreases = [];
 };

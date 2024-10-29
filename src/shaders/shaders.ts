@@ -5,7 +5,7 @@ void main() {
 `;
 
 export const positionCalcShader = `precision mediump float;
-uniform vec2 u_textureDim;
+uniform vec2 u_textureDimNodes;
 uniform float u_dt;
 uniform sampler2D u_lastPosition;
 uniform sampler2D u_velocity;
@@ -13,7 +13,7 @@ uniform sampler2D u_mass;
 
 void main(){
   vec2 fragCoord = gl_FragCoord.xy;
-  vec2 scaledFragCoord = fragCoord/u_textureDim;
+  vec2 scaledFragCoord = fragCoord/u_textureDimNodes;
 
   vec3 lastPosition = texture2D(u_lastPosition, scaledFragCoord).xyz;
 
@@ -30,7 +30,7 @@ void main(){
 `;
 
 export const velocityCalcVerletShader = `precision mediump float;
-uniform vec2 u_textureDim;
+uniform vec2 u_textureDimNodes;
 uniform float u_dt;
 uniform sampler2D u_position;
 uniform sampler2D u_lastPosition;
@@ -38,7 +38,7 @@ uniform sampler2D u_mass;
 
 void main(){
   vec2 fragCoord = gl_FragCoord.xy;
-  vec2 scaledFragCoord = fragCoord/u_textureDim;
+  vec2 scaledFragCoord = fragCoord/u_textureDimNodes;
 
   float isFixed = texture2D(u_mass, scaledFragCoord).y;
   if (isFixed == 1.0){
@@ -53,12 +53,12 @@ void main(){
 `;
 
 export const velocityCalcShader = `precision mediump float;
-uniform vec2 u_textureDim;
-uniform vec2 u_textureDimEdges;
+uniform vec2 u_textureDimNodes;
 uniform vec2 u_textureDimFaces;
 uniform vec2 u_textureDimCreases;
-uniform vec2 u_textureDimNodeCreases;
+uniform vec2 u_textureDimNodeEdges;
 uniform vec2 u_textureDimNodeFaces;
+uniform vec2 u_textureDimNodeCreases;
 uniform float u_creasePercent;
 uniform float u_dt;
 uniform float u_axialStiffness;
@@ -87,14 +87,14 @@ vec4 getFromArray(float index1D, vec2 dimensions, sampler2D tex){
 }
 
 vec3 getPosition(float index1D){
-  vec2 index = vec2(mod(index1D, u_textureDim.x)+0.5, floor(index1D/u_textureDim.x)+0.5);
-  vec2 scaledIndex = index/u_textureDim;
+  vec2 index = vec2(mod(index1D, u_textureDimNodes.x)+0.5, floor(index1D/u_textureDimNodes.x)+0.5);
+  vec2 scaledIndex = index/u_textureDimNodes;
   return texture2D(u_lastPosition, scaledIndex).xyz + texture2D(u_originalPosition, scaledIndex).xyz;
 }
 
 void main(){
   vec2 fragCoord = gl_FragCoord.xy;
-  vec2 scaledFragCoord = fragCoord/u_textureDim;
+  vec2 scaledFragCoord = fragCoord/u_textureDimNodes;
 
   vec2 mass = texture2D(u_mass, scaledFragCoord).xy;
   if (mass[1] == 1.0){//fixed
@@ -115,11 +115,11 @@ void main(){
   for (int j=0;j<100;j++){//for all beams (up to 100, had to put a const int in here)
     if (j >= int(meta[1])) break;
 
-    vec4 beamMeta = getFromArray(meta[0]+float(j), u_textureDimEdges, u_beamMeta);
+    vec4 beamMeta = getFromArray(meta[0]+float(j), u_textureDimNodeEdges, u_beamMeta);
 
     float neighborIndex1D = beamMeta[3];
-    vec2 neighborIndex = vec2(mod(neighborIndex1D, u_textureDim.x)+0.5, floor(neighborIndex1D/u_textureDim.x)+0.5);
-    vec2 scaledNeighborIndex = neighborIndex/u_textureDim;
+    vec2 neighborIndex = vec2(mod(neighborIndex1D, u_textureDimNodes.x)+0.5, floor(neighborIndex1D/u_textureDimNodes.x)+0.5);
+    vec2 scaledNeighborIndex = neighborIndex/u_textureDimNodes;
     vec3 neighborLastPosition = texture2D(u_lastPosition, scaledNeighborIndex).xyz;
     vec3 neighborLastVelocity = texture2D(u_lastVelocity, scaledNeighborIndex).xyz;
     vec3 neighborOriginalPosition = texture2D(u_originalPosition, scaledNeighborIndex).xyz;
@@ -262,12 +262,12 @@ void main(){
 `;
 
 export const positionCalcVerletShader = `precision mediump float;
-uniform vec2 u_textureDim;
-uniform vec2 u_textureDimEdges;
+uniform vec2 u_textureDimNodes;
 uniform vec2 u_textureDimFaces;
 uniform vec2 u_textureDimCreases;
-uniform vec2 u_textureDimNodeCreases;
+uniform vec2 u_textureDimNodeEdges;
 uniform vec2 u_textureDimNodeFaces;
+uniform vec2 u_textureDimNodeCreases;
 uniform float u_creasePercent;
 uniform float u_dt;
 uniform float u_axialStiffness;
@@ -296,14 +296,14 @@ vec4 getFromArray(float index1D, vec2 dimensions, sampler2D tex){
 }
 
 vec3 getPosition(float index1D){
-  vec2 index = vec2(mod(index1D, u_textureDim.x)+0.5, floor(index1D/u_textureDim.x)+0.5);
-  vec2 scaledIndex = index/u_textureDim;
+  vec2 index = vec2(mod(index1D, u_textureDimNodes.x)+0.5, floor(index1D/u_textureDimNodes.x)+0.5);
+  vec2 scaledIndex = index/u_textureDimNodes;
   return texture2D(u_lastPosition, scaledIndex).xyz + texture2D(u_originalPosition, scaledIndex).xyz;
 }
 
 void main(){
   vec2 fragCoord = gl_FragCoord.xy;
-  vec2 scaledFragCoord = fragCoord/u_textureDim;
+  vec2 scaledFragCoord = fragCoord/u_textureDimNodes;
 
   vec3 lastPosition = texture2D(u_lastPosition, scaledFragCoord).xyz;
 
@@ -326,11 +326,11 @@ void main(){
   for (int j=0;j<100;j++){//for all beams (up to 100, had to put a const int in here)
     if (j >= int(meta[1])) break;
 
-    vec4 beamMeta = getFromArray(meta[0]+float(j), u_textureDimEdges, u_beamMeta);
+    vec4 beamMeta = getFromArray(meta[0]+float(j), u_textureDimNodeEdges, u_beamMeta);
 
     float neighborIndex1D = beamMeta[3];
-    vec2 neighborIndex = vec2(mod(neighborIndex1D, u_textureDim.x)+0.5, floor(neighborIndex1D/u_textureDim.x)+0.5);
-    vec2 scaledNeighborIndex = neighborIndex/u_textureDim;
+    vec2 neighborIndex = vec2(mod(neighborIndex1D, u_textureDimNodes.x)+0.5, floor(neighborIndex1D/u_textureDimNodes.x)+0.5);
+    vec2 scaledNeighborIndex = neighborIndex/u_textureDimNodes;
     vec3 neighborLastPosition = texture2D(u_lastPosition, scaledNeighborIndex).xyz;
     vec3 neighborLastVelocity = texture2D(u_lastVelocity, scaledNeighborIndex).xyz;
     vec3 neighborOriginalPosition = texture2D(u_originalPosition, scaledNeighborIndex).xyz;
@@ -470,7 +470,7 @@ void main(){
 
 export const thetaCalcShader = `#define TWO_PI 6.283185307179586476925286766559
 precision mediump float;
-uniform vec2 u_textureDim;
+uniform vec2 u_textureDimNodes;
 uniform vec2 u_textureDimFaces;
 uniform vec2 u_textureDimCreases;
 uniform sampler2D u_normals;
@@ -506,11 +506,11 @@ void main(){
   else if (dotNormals > 1.0) dotNormals = 1.0;
 
   vec2 creaseVectorIndices = texture2D(u_creaseVectors, scaledFragCoord).xy;
-  vec2 creaseNodeIndex = vec2(mod(creaseVectorIndices[0], u_textureDim.x)+0.5, floor(creaseVectorIndices[0]/u_textureDim.x)+0.5);
-  vec2 scaledNodeIndex = creaseNodeIndex/u_textureDim;
+  vec2 creaseNodeIndex = vec2(mod(creaseVectorIndices[0], u_textureDimNodes.x)+0.5, floor(creaseVectorIndices[0]/u_textureDimNodes.x)+0.5);
+  vec2 scaledNodeIndex = creaseNodeIndex/u_textureDimNodes;
   vec3 node0 = texture2D(u_lastPosition, scaledNodeIndex).xyz + texture2D(u_originalPosition, scaledNodeIndex).xyz;
-  creaseNodeIndex = vec2(mod(creaseVectorIndices[1], u_textureDim.x)+0.5, floor(creaseVectorIndices[1]/u_textureDim.x)+0.5);
-  scaledNodeIndex = creaseNodeIndex/u_textureDim;
+  creaseNodeIndex = vec2(mod(creaseVectorIndices[1], u_textureDimNodes.x)+0.5, floor(creaseVectorIndices[1]/u_textureDimNodes.x)+0.5);
+  scaledNodeIndex = creaseNodeIndex/u_textureDimNodes;
   vec3 node1 = texture2D(u_lastPosition, scaledNodeIndex).xyz + texture2D(u_originalPosition, scaledNodeIndex).xyz;
 
   //https://math.stackexchange.com/questions/47059/how-do-i-calculate-a-dihedral-angle-given-cartesian-coordinates
@@ -533,15 +533,15 @@ void main(){
 `;
 
 export const normalCalc = `precision mediump float;
-uniform vec2 u_textureDim;
+uniform vec2 u_textureDimNodes;
 uniform vec2 u_textureDimFaces;
 uniform sampler2D u_faceVertexIndices;
 uniform sampler2D u_lastPosition;
 uniform sampler2D u_originalPosition;
 
 vec3 getPosition(float index1D){
-  vec2 index = vec2(mod(index1D, u_textureDim.x)+0.5, floor(index1D/u_textureDim.x)+0.5);
-  vec2 scaledIndex = index/u_textureDim;
+  vec2 index = vec2(mod(index1D, u_textureDimNodes.x)+0.5, floor(index1D/u_textureDimNodes.x)+0.5);
+  vec2 scaledIndex = index/u_textureDimNodes;
   return texture2D(u_lastPosition, scaledIndex).xyz + texture2D(u_originalPosition, scaledIndex).xyz;
 }
 
@@ -626,11 +626,11 @@ void main(){
 
 export const centerTexture = `precision mediump float;
 uniform sampler2D u_lastPosition;
-uniform vec2 u_textureDim;
+uniform vec2 u_textureDimNodes;
 uniform vec3 u_center;
 void main(){
   vec2 fragCoord = gl_FragCoord.xy;
-  vec2 scaledFragCoord = fragCoord/u_textureDim;
+  vec2 scaledFragCoord = fragCoord/u_textureDimNodes;
   vec3 position = texture2D(u_lastPosition, scaledFragCoord).xyz;
   gl_FragColor = vec4(position-u_center, 0.0);
 }
@@ -638,22 +638,22 @@ void main(){
 
 export const copyTexture = `precision mediump float;
 uniform sampler2D u_orig;
-uniform vec2 u_textureDim;
+uniform vec2 u_textureDimNodes;
 void main(){
-  gl_FragColor = texture2D(u_orig, gl_FragCoord.xy/u_textureDim);
+  gl_FragColor = texture2D(u_orig, gl_FragCoord.xy/u_textureDimNodes);
 }
 `;
 
 export const updateCreaseGeo = `precision mediump float;
-uniform vec2 u_textureDim;
+uniform vec2 u_textureDimNodes;
 uniform vec2 u_textureDimCreases;
 uniform sampler2D u_lastPosition;
 uniform sampler2D u_originalPosition;
 uniform sampler2D u_creaseMeta2;
 
 vec3 getPosition(float index1D){
-  vec2 index = vec2(mod(index1D, u_textureDim.x)+0.5, floor(index1D/u_textureDim.x)+0.5);
-  vec2 scaledIndex = index/u_textureDim;
+  vec2 index = vec2(mod(index1D, u_textureDimNodes.x)+0.5, floor(index1D/u_textureDimNodes.x)+0.5);
+  vec2 scaledIndex = index/u_textureDimNodes;
   return texture2D(u_lastPosition, scaledIndex).xyz + texture2D(u_originalPosition, scaledIndex).xyz;
 }
 
@@ -695,3 +695,4 @@ void main(){
 
   gl_FragColor = vec4(dist1, dist2, proj1Length/creaseLength, proj2Length/creaseLength);
 }`;
+

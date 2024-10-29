@@ -27,10 +27,10 @@ import {
 export const initGPU = (
   gpuMath: GPUMath,
   {
-    textureDim,
-    textureDimEdges,
+    textureDimNodes,
     textureDimFaces,
     textureDimCreases,
+    textureDimNodeEdges,
     textureDimNodeFaces,
     textureDimNodeCreases,
     position,
@@ -58,40 +58,40 @@ export const initGPU = (
 
   gpuMath.initTextureFromData(
     "u_position",
-    textureDim,
-    textureDim,
+    textureDimNodes,
+    textureDimNodes,
     float_type,
     position,
     true,
   );
   gpuMath.initTextureFromData(
     "u_lastPosition",
-    textureDim,
-    textureDim,
+    textureDimNodes,
+    textureDimNodes,
     float_type,
     lastPosition,
     true,
   );
   gpuMath.initTextureFromData(
     "u_lastLastPosition",
-    textureDim,
-    textureDim,
+    textureDimNodes,
+    textureDimNodes,
     float_type,
     lastLastPosition,
     true,
   );
   gpuMath.initTextureFromData(
     "u_velocity",
-    textureDim,
-    textureDim,
+    textureDimNodes,
+    textureDimNodes,
     float_type,
     velocity,
     true,
   );
   gpuMath.initTextureFromData(
     "u_lastVelocity",
-    textureDim,
-    textureDim,
+    textureDimNodes,
+    textureDimNodes,
     float_type,
     lastVelocity,
     true,
@@ -130,8 +130,8 @@ export const initGPU = (
   gpuMath.initFrameBufferForTexture("u_lastTheta", true);
   gpuMath.initFrameBufferForTexture("u_normals", true);
 
-  gpuMath.initTextureFromData("u_meta", textureDim, textureDim, float_type, meta, true);
-  gpuMath.initTextureFromData("u_meta2", textureDim, textureDim, float_type, meta2, true);
+  gpuMath.initTextureFromData("u_meta", textureDimNodes, textureDimNodes, float_type, meta, true);
+  gpuMath.initTextureFromData("u_meta2", textureDimNodes, textureDimNodes, float_type, meta2, true);
   gpuMath.initTextureFromData(
     "u_nominalTrinagles",
     textureDimFaces,
@@ -196,8 +196,8 @@ export const initGPU = (
   gpuMath.setUniformForProgram("positionCalc", "u_mass", 2, "1i");
   gpuMath.setUniformForProgram(
     "positionCalc",
-    "u_textureDim",
-    [textureDim, textureDim],
+    "u_textureDimNodes",
+    [textureDimNodes, textureDimNodes],
     "2f",
   );
 
@@ -207,8 +207,8 @@ export const initGPU = (
   gpuMath.setUniformForProgram("velocityCalcVerlet", "u_mass", 2, "1i");
   gpuMath.setUniformForProgram(
     "velocityCalcVerlet",
-    "u_textureDim",
-    [textureDim, textureDim],
+    "u_textureDimNodes",
+    [textureDimNodes, textureDimNodes],
     "2f",
   );
 
@@ -230,14 +230,8 @@ export const initGPU = (
   gpuMath.setUniformForProgram("velocityCalc", "u_nominalTriangles", 14, "1i");
   gpuMath.setUniformForProgram(
     "velocityCalc",
-    "u_textureDim",
-    [textureDim, textureDim],
-    "2f",
-  );
-  gpuMath.setUniformForProgram(
-    "velocityCalc",
-    "u_textureDimEdges",
-    [textureDimEdges, textureDimEdges],
+    "u_textureDimNodes",
+    [textureDimNodes, textureDimNodes],
     "2f",
   );
   gpuMath.setUniformForProgram(
@@ -254,14 +248,20 @@ export const initGPU = (
   );
   gpuMath.setUniformForProgram(
     "velocityCalc",
-    "u_textureDimNodeCreases",
-    [textureDimNodeCreases, textureDimNodeCreases],
+    "u_textureDimNodeEdges",
+    [textureDimNodeEdges, textureDimNodeEdges],
     "2f",
   );
   gpuMath.setUniformForProgram(
     "velocityCalc",
     "u_textureDimNodeFaces",
     [textureDimNodeFaces, textureDimNodeFaces],
+    "2f",
+  );
+  gpuMath.setUniformForProgram(
+    "velocityCalc",
+    "u_textureDimNodeCreases",
+    [textureDimNodeCreases, textureDimNodeCreases],
     "2f",
   );
   gpuMath.setUniformForProgram(
@@ -308,14 +308,8 @@ export const initGPU = (
   gpuMath.setUniformForProgram("positionCalcVerlet", "u_nominalTriangles", 15, "1i");
   gpuMath.setUniformForProgram(
     "positionCalcVerlet",
-    "u_textureDim",
-    [textureDim, textureDim],
-    "2f",
-  );
-  gpuMath.setUniformForProgram(
-    "positionCalcVerlet",
-    "u_textureDimEdges",
-    [textureDimEdges, textureDimEdges],
+    "u_textureDimNodes",
+    [textureDimNodes, textureDimNodes],
     "2f",
   );
   gpuMath.setUniformForProgram(
@@ -332,14 +326,20 @@ export const initGPU = (
   );
   gpuMath.setUniformForProgram(
     "positionCalcVerlet",
-    "u_textureDimNodeCreases",
-    [textureDimNodeCreases, textureDimNodeCreases],
+    "u_textureDimNodeEdges",
+    [textureDimNodeEdges, textureDimNodeEdges],
     "2f",
   );
   gpuMath.setUniformForProgram(
     "positionCalcVerlet",
     "u_textureDimNodeFaces",
     [textureDimNodeFaces, textureDimNodeFaces],
+    "2f",
+  );
+  gpuMath.setUniformForProgram(
+    "positionCalcVerlet",
+    "u_textureDimNodeCreases",
+    [textureDimNodeCreases, textureDimNodeCreases],
     "2f",
   );
   gpuMath.setUniformForProgram(
@@ -375,8 +375,8 @@ export const initGPU = (
   gpuMath.setUniformForProgram("thetaCalc", "u_originalPosition", 4, "1i");
   gpuMath.setUniformForProgram(
     "thetaCalc",
-    "u_textureDim",
-    [textureDim, textureDim],
+    "u_textureDimNodes",
+    [textureDimNodes, textureDimNodes],
     "2f",
   );
   gpuMath.setUniformForProgram(
@@ -398,8 +398,8 @@ export const initGPU = (
   gpuMath.setUniformForProgram("normalCalc", "u_originalPosition", 2, "1i");
   gpuMath.setUniformForProgram(
     "normalCalc",
-    "u_textureDim",
-    [textureDim, textureDim],
+    "u_textureDimNodes",
+    [textureDimNodes, textureDimNodes],
     "2f",
   );
   gpuMath.setUniformForProgram(
@@ -412,8 +412,8 @@ export const initGPU = (
   gpuMath.createProgram("packToBytes", vertexShader, packToBytesShader);
   gpuMath.initTextureFromData(
     "outputBytes",
-    textureDim * 4,
-    textureDim,
+    textureDimNodes * 4,
+    textureDimNodes,
     "UNSIGNED_BYTE",
     null,
     true,
@@ -422,7 +422,7 @@ export const initGPU = (
   gpuMath.setUniformForProgram(
     "packToBytes",
     "u_floatTextureDim",
-    [textureDim, textureDim],
+    [textureDimNodes, textureDimNodes],
     "2f",
   );
   gpuMath.setUniformForProgram("packToBytes", "u_floatTexture", 0, "1i");
@@ -441,8 +441,8 @@ export const initGPU = (
   gpuMath.setUniformForProgram("centerTexture", "u_lastPosition", 0, "1i");
   gpuMath.setUniformForProgram(
     "centerTexture",
-    "u_textureDim",
-    [textureDim, textureDim],
+    "u_textureDimNodes",
+    [textureDimNodes, textureDimNodes],
     "2f",
   );
 
@@ -450,8 +450,8 @@ export const initGPU = (
   gpuMath.setUniformForProgram("copyTexture", "u_orig", 0, "1i");
   gpuMath.setUniformForProgram(
     "copyTexture",
-    "u_textureDim",
-    [textureDim, textureDim],
+    "u_textureDimNodes",
+    [textureDimNodes, textureDimNodes],
     "2f",
   );
 
@@ -461,8 +461,8 @@ export const initGPU = (
   gpuMath.setUniformForProgram("updateCreaseGeo", "u_creaseMeta2", 2, "1i");
   gpuMath.setUniformForProgram(
     "updateCreaseGeo",
-    "u_textureDim",
-    [textureDim, textureDim],
+    "u_textureDimNodes",
+    [textureDimNodes, textureDimNodes],
     "2f",
   );
   gpuMath.setUniformForProgram(
@@ -472,5 +472,5 @@ export const initGPU = (
     "2f",
   );
 
-  gpuMath.setSize(textureDim, textureDim);
+  gpuMath.setSize(textureDimNodes, textureDimNodes);
 };

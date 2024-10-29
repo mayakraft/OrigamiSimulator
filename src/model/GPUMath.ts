@@ -2,7 +2,7 @@
  * Created by ghassaei on 2/24/16.
  */
 import type { Model } from "./Model.ts";
-import type { Beam } from "./Beam.ts";
+import type { Edge } from "./Edge.ts";
 import {
   createProgramFromSource,
   loadVertexData,
@@ -16,7 +16,7 @@ import { verticesFaces } from "./verticesFaces.ts";
 
 const calcDt = (model: Model): number => {
   let maxFreqNat = 0;
-  model.edges.forEach((beam: Beam) => {
+  model.edges.forEach((beam: Edge) => {
     if (beam.getNaturalFrequency() > maxFreqNat) {
       maxFreqNat = beam.getNaturalFrequency();
     }
@@ -51,10 +51,10 @@ export const defaultSolverOptions: SolverOptions = Object.freeze({
 });
 
 export type GPUMathSettings = {
-  textureDim: number;
-  textureDimEdges: number;
+  textureDimNodes: number;
   textureDimFaces: number;
   textureDimCreases: number;
+  textureDimNodeEdges: number;
   textureDimNodeFaces: number;
   textureDimNodeCreases: number;
   position: Float32Array;
@@ -93,10 +93,10 @@ export class GPUMath implements GPUMathSettings {
 
   integrationType: string = "euler";
 
-  textureDim: number;
-  textureDimEdges: number;
+  textureDimNodes: number;
   textureDimFaces: number;
   textureDimCreases: number;
+  textureDimNodeEdges: number;
   textureDimNodeFaces: number;
   textureDimNodeCreases: number;
   position: Float32Array;
@@ -152,59 +152,55 @@ export class GPUMath implements GPUMathSettings {
   }
 
   initArrays(model: Model): void {
-    //const numNodeFaces = verticesFaces(model).reduce((a, b) => a + b.length, 0);
-    const numNodeFaces = model.fold.vertices_faces.reduce((a, b) => a + b.length, 0);
-
-    // this is not the number of edges, rather the number of vertices_edges
-    // (individual edges will appear more than once)
-    const numEdges = model.nodes
-      .map((node) => node.beams.length)
-      .reduce((a, b) => a + b, 0);
+    const numNodes = model.fold.vertices_coords.length;
     const numFaces = model.fold.faces_vertices.length;
     const numCreases = model.creases.length;
+    const numNodeFaces = model.fold.vertices_faces
+      .reduce((a, b) => a + b.length, 0);
+    const numNodeEdges = model.fold.vertices_edges
+      .reduce((a, b) => a + b.length, 0);
 
     // numNodeCreases + reactions
     const numNodeCreases =
       numCreases * 2 +
       model.nodes.map((node) => node.creases.length).reduce((a, b) => a + b, 0);
-    const textureDim = fitToPow2(model.nodes.length);
-    const textureDimEdges = fitToPow2(numEdges);
+    const textureDimNodes = fitToPow2(numNodes);
     const textureDimFaces = fitToPow2(numFaces);
     const textureDimCreases = fitToPow2(numCreases);
+    const textureDimNodeEdges = fitToPow2(numNodeEdges);
     const textureDimNodeFaces = fitToPow2(numNodeFaces);
     const textureDimNodeCreases = fitToPow2(numNodeCreases);
-    this.textureDim = textureDim;
-    this.textureDimEdges = textureDimEdges;
+
+    this.textureDimNodes = textureDimNodes;
     this.textureDimFaces = textureDimFaces;
     this.textureDimCreases = textureDimCreases;
+    this.textureDimNodeEdges = textureDimNodeEdges;
     this.textureDimNodeFaces = textureDimNodeFaces;
     this.textureDimNodeCreases = textureDimNodeCreases;
 
-    this.position = new Float32Array(textureDim * textureDim * 4);
-    this.lastPosition = new Float32Array(textureDim * textureDim * 4);
-    this.lastLastPosition = new Float32Array(textureDim * textureDim * 4);
-    this.velocity = new Float32Array(textureDim * textureDim * 4);
-    this.lastVelocity = new Float32Array(textureDim * textureDim * 4);
-    this.meta = new Float32Array(textureDim * textureDim * 4);
-    this.meta2 = new Float32Array(textureDim * textureDim * 4);
-    this.normals = new Float32Array(textureDimFaces * textureDimFaces * 4);
-    this.faceVertexIndices = new Float32Array(textureDimFaces * textureDimFaces * 4);
-    this.nodeFaceMeta = new Float32Array(textureDimNodeFaces * textureDimNodeFaces * 4);
-    this.nominalTriangles = new Float32Array(textureDimFaces * textureDimFaces * 4);
-    this.nodeCreaseMeta = new Float32Array(
-      textureDimNodeCreases * textureDimNodeCreases * 4,
-    );
-    this.creaseMeta2 = new Float32Array(textureDimCreases * textureDimCreases * 4);
-    this.creaseGeo = new Float32Array(textureDimCreases * textureDimCreases * 4);
-    this.theta = new Float32Array(textureDimCreases * textureDimCreases * 4);
-    this.lastTheta = new Float32Array(textureDimCreases * textureDimCreases * 4);
+    this.position = new Float32Array(textureDimNodes ** 2 * 4);
+    this.lastPosition = new Float32Array(textureDimNodes ** 2 * 4);
+    this.lastLastPosition = new Float32Array(textureDimNodes ** 2 * 4);
+    this.velocity = new Float32Array(textureDimNodes ** 2 * 4);
+    this.lastVelocity = new Float32Array(textureDimNodes ** 2 * 4);
+    this.meta = new Float32Array(textureDimNodes ** 2 * 4);
+    this.meta2 = new Float32Array(textureDimNodes ** 2 * 4);
+    this.normals = new Float32Array(textureDimFaces ** 2 * 4);
+    this.faceVertexIndices = new Float32Array(textureDimFaces ** 2 * 4);
+    this.nodeFaceMeta = new Float32Array(textureDimNodeFaces ** 2 * 4);
+    this.nominalTriangles = new Float32Array(textureDimFaces ** 2 * 4);
+    this.nodeCreaseMeta = new Float32Array(textureDimNodeCreases ** 2 * 4);
+    this.creaseMeta2 = new Float32Array(textureDimCreases ** 2 * 4);
+    this.creaseGeo = new Float32Array(textureDimCreases ** 2 * 4);
+    this.theta = new Float32Array(textureDimCreases ** 2 * 4);
+    this.lastTheta = new Float32Array(textureDimCreases ** 2 * 4);
 
-    this.originalPosition = new Float32Array(textureDim * textureDim * 4);
-    this.externalForces = new Float32Array(textureDim * textureDim * 4);
-    this.mass = new Float32Array(textureDim * textureDim * 4);
-    this.beamMeta = new Float32Array(textureDimEdges * textureDimEdges * 4);
-    this.creaseVectors = new Float32Array(textureDimCreases * textureDimCreases * 4);
-    this.creaseMeta = new Float32Array(textureDimCreases * textureDimCreases * 4);
+    this.originalPosition = new Float32Array(textureDimNodes ** 2 * 4);
+    this.externalForces = new Float32Array(textureDimNodes ** 2 * 4);
+    this.mass = new Float32Array(textureDimNodes ** 2 * 4);
+    this.beamMeta = new Float32Array(textureDimNodeEdges ** 2 * 4);
+    this.creaseVectors = new Float32Array(textureDimCreases ** 2 * 4);
+    this.creaseMeta = new Float32Array(textureDimCreases ** 2 * 4);
   }
 
   setSolveParams(model: Model) {
@@ -257,7 +253,7 @@ export class GPUMath implements GPUMathSettings {
       }
     }
 
-    for (let i = 0; i < this.textureDim * this.textureDim; i += 1) {
+    for (let i = 0; i < this.textureDimNodes * this.textureDimNodes; i += 1) {
       this.mass[4 * i + 1] = 1; // set all fixed by default
     }
 
@@ -576,10 +572,10 @@ export class GPUMath implements GPUMathSettings {
     for (let i = 0; i < model.nodes.length; i += 1) {
       if (initing) {
         this.meta[4 * i] = index;
-        this.meta[4 * i + 1] = model.nodes[i].beams.length;
+        this.meta[4 * i + 1] = model.nodes[i].edges.length;
       }
-      for (let j = 0; j < model.nodes[i].beams.length; j += 1) {
-        const beam = model.nodes[i].beams[j];
+      for (let j = 0; j < model.nodes[i].edges.length; j += 1) {
+        const beam = model.nodes[i].edges[j];
         this.beamMeta[4 * index] = beam.getK();
         this.beamMeta[4 * index + 1] = beam.getD();
         if (initing) {
@@ -591,8 +587,8 @@ export class GPUMath implements GPUMathSettings {
     }
     this.initTextureFromData(
       "u_beamMeta",
-      this.textureDimEdges,
-      this.textureDimEdges,
+      this.textureDimNodeEdges,
+      this.textureDimNodeEdges,
       this.float_type,
       this.beamMeta,
       true,
@@ -609,8 +605,8 @@ export class GPUMath implements GPUMathSettings {
     }
     this.initTextureFromData(
       "u_externalForces",
-      this.textureDim,
-      this.textureDim,
+      this.textureDimNodes,
+      this.textureDimNodes,
       this.float_type,
       this.externalForces,
       true,
@@ -623,8 +619,8 @@ export class GPUMath implements GPUMathSettings {
     }
     this.initTextureFromData(
       "u_mass",
-      this.textureDim,
-      this.textureDim,
+      this.textureDimNodes,
+      this.textureDimNodes,
       this.float_type,
       this.mass,
       true,
@@ -646,8 +642,8 @@ export class GPUMath implements GPUMathSettings {
     }
     this.initTextureFromData(
       "u_originalPosition",
-      this.textureDim,
-      this.textureDim,
+      this.textureDimNodes,
+      this.textureDimNodes,
       this.float_type,
       this.originalPosition,
       true,
@@ -725,8 +721,8 @@ export class GPUMath implements GPUMathSettings {
     }
     this.initTextureFromData(
       "u_lastPosition",
-      this.textureDim,
-      this.textureDim,
+      this.textureDimNodes,
+      this.textureDimNodes,
       this.float_type,
       this.lastPosition,
       true,
@@ -738,8 +734,10 @@ export class GPUMath implements GPUMathSettings {
     Object.values(this.programs)
       .map((el) => el.program)
       .forEach((prog) => this.gl.deleteProgram(prog));
-    Object.values(this.frameBuffers).forEach((buf) => this.gl.deleteFramebuffer(buf));
-    Object.values(this.textures).forEach((texture) => this.gl.deleteTexture(texture));
+    Object.values(this.frameBuffers)
+      .forEach((buf) => this.gl.deleteFramebuffer(buf));
+    Object.values(this.textures)
+      .forEach((texture) => this.gl.deleteTexture(texture));
     this.programs = {};
     this.frameBuffers = {};
     this.textures = {};

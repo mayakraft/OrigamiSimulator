@@ -1,0 +1,6 @@
+- Beam to Edge
+- textureDimEdges to textureDimNodeEdges
+- textureDim to textureDimNodes
+
+moving solver options from inside Edge, Crease, etc to be a pointer to the GPUMath options object
+

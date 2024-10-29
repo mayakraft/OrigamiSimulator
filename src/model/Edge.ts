@@ -5,7 +5,7 @@ import type { Node } from "./Node.ts";
 import { magnitude, subtract } from "../general/math.ts";
 import { SolverOptions } from "./GPUMath.ts";
 
-export class Beam {
+export class Edge {
   type: string;
   axialStiffness: number;
   dampingRatio: number;
@@ -24,8 +24,8 @@ export class Beam {
     this.vertices = [nodes[0].originalPosition, nodes[1].originalPosition];
     this.nodes = nodes;
     this.originalLength = this.getLength();
-    nodes[0].beams.push(this);
-    nodes[1].beams.push(this);
+    nodes[0].edges.push(this);
+    nodes[1].edges.push(this);
   }
 
   getVector(): [number, number, number] {
@@ -70,8 +70,8 @@ export class Beam {
   destroy(): void {
     const that = this;
     this.nodes.forEach((node) => {
-      const index = node.beams.indexOf(that);
-      if (index >= 0) node.beams.splice(index, 1);
+      const index = node.edges.indexOf(that);
+      if (index >= 0) node.edges.splice(index, 1);
     });
     this.vertices = [
       [0, 0, 0],

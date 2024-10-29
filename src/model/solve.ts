@@ -7,12 +7,12 @@ const strainClip = 0.5;
 export const solveStep = (
   gpuMath: GPUMath,
   {
-    textureDim,
+    textureDimNodes,
     textureDimCreases,
     textureDimFaces,
     integrationType,
   }: {
-    textureDim: number;
+    textureDimNodes: number;
     textureDimCreases: number;
     textureDimFaces: number;
     integrationType: string;
@@ -48,7 +48,7 @@ export const solveStep = (
   switch (integrationType) {
     case "verlet":
       gpuMath.setProgram("positionCalcVerlet");
-      gpuMath.setSize(textureDim, textureDim);
+      gpuMath.setSize(textureDimNodes, textureDimNodes);
       gpuMath.step(
         "positionCalcVerlet",
         [
@@ -81,7 +81,7 @@ export const solveStep = (
     case "euler":
     default:
       gpuMath.setProgram("velocityCalc");
-      gpuMath.setSize(textureDim, textureDim);
+      gpuMath.setSize(textureDimNodes, textureDimNodes);
       gpuMath.step(
         "velocityCalc",
         [
@@ -132,10 +132,10 @@ export const render = (gpuMath: GPUMath, model: Model, axialStrain: boolean) => 
   gpuMath.setUniformForProgram(
     "packToBytes",
     "u_floatTextureDim",
-    [gpuMath.textureDim, gpuMath.textureDim],
+    [gpuMath.textureDimNodes, gpuMath.textureDimNodes],
     "2f",
   );
-  gpuMath.setSize(gpuMath.textureDim * vectorLength, gpuMath.textureDim);
+  gpuMath.setSize(gpuMath.textureDimNodes * vectorLength, gpuMath.textureDimNodes);
   gpuMath.step("packToBytes", ["u_lastPosition"], "outputBytes");
 
   if (!gpuMath.readyToRead()) {
@@ -143,9 +143,9 @@ export const render = (gpuMath: GPUMath, model: Model, axialStrain: boolean) => 
     return 0;
   }
   const numPixels = model.fold.vertices_coords.length * vectorLength;
-  const height = Math.ceil(numPixels / (gpuMath.textureDim * vectorLength));
-  const pixels = new Uint8Array(height * gpuMath.textureDim * 4 * vectorLength);
-  gpuMath.readPixels(0, 0, gpuMath.textureDim * vectorLength, height, pixels);
+  const height = Math.ceil(numPixels / (gpuMath.textureDimNodes * vectorLength));
+  const pixels = new Uint8Array(height * gpuMath.textureDimNodes * 4 * vectorLength);
+  gpuMath.readPixels(0, 0, gpuMath.textureDimNodes * vectorLength, height, pixels);
   const parsedPixels = new Float32Array(pixels.buffer);
   let globalError = 0;
   for (let i = 0; i < model.fold.vertices_coords.length; i += 1) {

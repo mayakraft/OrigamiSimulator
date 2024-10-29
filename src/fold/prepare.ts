@@ -8,6 +8,7 @@ import removeRedundantVertices from "./removeRedundantVertices.ts";
 import { boundingBox } from "./boundingBox.ts";
 import {
   makeVerticesEdges,
+  makeVerticesEdgesUnsorted,
   makeVerticesFacesUnsorted,
   makeVerticesVertices,
 } from "./adjacentVertices.ts";
@@ -121,10 +122,9 @@ export const prepare = (inputFOLD: FOLD, epsilon?: number): FOLDMesh => {
     fold.vertices_vertices = makeVerticesVertices(fold);
     // remove vertices that split edge
     fold = removeRedundantVertices(fold, epsilon);
+    delete fold.vertices_vertices;
+    delete fold.vertices_edges;
   }
-
-  delete fold.vertices_vertices;
-  delete fold.vertices_edges;
 
   // this may change the number of edges and faces, but not vertices
   const faces_backmap = triangulateFold(fold, true);
@@ -139,6 +139,10 @@ export const prepare = (inputFOLD: FOLD, epsilon?: number): FOLDMesh => {
 
   if (!fold.edges_faces) {
     fold.edges_faces = makeEdgesFacesUnsorted(fold);
+  }
+
+  if (!fold.vertices_edges) {
+    fold.vertices_edges = makeVerticesEdgesUnsorted(fold);
   }
 
   return fold;

@@ -52,7 +52,6 @@ export class OrigamiSimulator {
     this.#strain = false;
     this.#shadows = false;
     this.#active = false;
-    console.log("MeshThree", this.mesh);
   }
 
   /**
@@ -60,6 +59,8 @@ export class OrigamiSimulator {
    * and deliver the error to the end user.
    */
   load(fold: FOLD): void {
+    //this.mesh?.dealloc();
+    this.model?.dealloc();
     this.model = new Model(fold, { creasePercent: this.foldAmount });
     this.mesh.setModel(this.model);
   }
