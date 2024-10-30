@@ -51,11 +51,12 @@ export type FOLDMesh = {
   faces_vertices: number[][];
   faces_edges: number[][];
   vertices_vertices?: number[][];
-  vertices_edges?: number[][];
-  // needed for initArrays for WebGL
-  vertices_faces: (number | null | undefined)[][];
+  // both now needed inside of GPUMath initArrays()
+  vertices_edges: number[][];
+  // difference from FOLD spec, these do not contain null or undefined.
+  vertices_faces: number[][];
   // this is needed to make creases
-  edges_faces?: (number | null | undefined)[][],
+  edges_faces?: number[][],
 
   //edges_length?: number[];
   faces_backmap?: number[],

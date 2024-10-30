@@ -1,6 +1,6 @@
 #define TWO_PI 6.283185307179586476925286766559
 precision mediump float;
-uniform vec2 u_textureDim;
+uniform vec2 u_textureDimNodes;
 uniform vec2 u_textureDimFaces;
 uniform vec2 u_textureDimCreases;
 uniform sampler2D u_normals;
@@ -36,11 +36,11 @@ void main(){
   else if (dotNormals > 1.0) dotNormals = 1.0;
 
   vec2 creaseVectorIndices = texture2D(u_creaseVectors, scaledFragCoord).xy;
-  vec2 creaseNodeIndex = vec2(mod(creaseVectorIndices[0], u_textureDim.x)+0.5, floor(creaseVectorIndices[0]/u_textureDim.x)+0.5);
-  vec2 scaledNodeIndex = creaseNodeIndex/u_textureDim;
+  vec2 creaseNodeIndex = vec2(mod(creaseVectorIndices[0], u_textureDimNodes.x)+0.5, floor(creaseVectorIndices[0]/u_textureDimNodes.x)+0.5);
+  vec2 scaledNodeIndex = creaseNodeIndex/u_textureDimNodes;
   vec3 node0 = texture2D(u_lastPosition, scaledNodeIndex).xyz + texture2D(u_originalPosition, scaledNodeIndex).xyz;
-  creaseNodeIndex = vec2(mod(creaseVectorIndices[1], u_textureDim.x)+0.5, floor(creaseVectorIndices[1]/u_textureDim.x)+0.5);
-  scaledNodeIndex = creaseNodeIndex/u_textureDim;
+  creaseNodeIndex = vec2(mod(creaseVectorIndices[1], u_textureDimNodes.x)+0.5, floor(creaseVectorIndices[1]/u_textureDimNodes.x)+0.5);
+  scaledNodeIndex = creaseNodeIndex/u_textureDimNodes;
   vec3 node1 = texture2D(u_lastPosition, scaledNodeIndex).xyz + texture2D(u_originalPosition, scaledNodeIndex).xyz;
 
   //https://math.stackexchange.com/questions/47059/how-do-i-calculate-a-dihedral-angle-given-cartesian-coordinates

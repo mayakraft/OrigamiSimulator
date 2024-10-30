@@ -2,14 +2,14 @@
  * Created by amandaghassaei on 2/25/17.
  */
 import type { FOLDMesh } from "../types.ts";
-import type { Beam } from "./Beam.ts";
+import type { Edge } from "./Edge.ts";
 import { SolverOptions } from "./GPUMath.ts";
 import type { Node } from "./Node.ts";
 
 export class Crease {
   index: number;
   type: number;
-  edge: Beam;
+  edge: Edge;
   faces: [number, number];
   nodes: [Node, Node];
   targetTheta: number;
@@ -27,7 +27,7 @@ export class Crease {
     targetTheta,
     options: { joinStiffness = 0.7, creaseStiffness = 0.7, dampingRatio = 0.45 },
   }: {
-    edge: Beam;
+    edge: Edge;
     index: number;
     type: 0 | 1;
     faces: [number, number];

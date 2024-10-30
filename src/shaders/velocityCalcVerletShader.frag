@@ -1,5 +1,5 @@
 precision mediump float;
-uniform vec2 u_textureDim;
+uniform vec2 u_textureDimNodes;
 uniform float u_dt;
 uniform sampler2D u_position;
 uniform sampler2D u_lastPosition;
@@ -7,7 +7,7 @@ uniform sampler2D u_mass;
 
 void main(){
   vec2 fragCoord = gl_FragCoord.xy;
-  vec2 scaledFragCoord = fragCoord/u_textureDim;
+  vec2 scaledFragCoord = fragCoord/u_textureDimNodes;
 
   float isFixed = texture2D(u_mass, scaledFragCoord).y;
   if (isFixed == 1.0){

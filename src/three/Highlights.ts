@@ -1,7 +1,7 @@
 import * as THREE from "three";
 import * as Materials from "./materials.ts";
-import { OrigamiSimulator } from "../index.ts";
-import type { RayTouch } from "./makeTouches.ts";
+import { Model } from "../model/Model.ts";
+import type { RayTouch } from "./RayTouch.ts";
 
 // todo: idea- duplicate highlighted vertex, one obeys depthTest with full
 // opacity, the other is always visible with half opacity.
@@ -13,14 +13,14 @@ import type { RayTouch } from "./makeTouches.ts";
  */
 export class Highlights {
   parent: THREE.Object3D;
-  simulator: OrigamiSimulator;
+  model: Model;
   point: THREE.Points;
   vertex: THREE.Points;
   face: THREE.Mesh;
 
-  constructor({ parent, simulator }: { parent: THREE.Object3D; simulator: OrigamiSimulator }) {
+  constructor({ parent, model }: { parent?: THREE.Object3D; model?: Model }) {
     this.parent = parent;
-    this.simulator = simulator;
+    this.model = model;
 
     // setup highlighted point. does not adhere to depthTest
     const raycasterPointPositionAttr = new THREE.BufferAttribute(
@@ -58,7 +58,9 @@ export class Highlights {
       Materials.backFace,
     ]);
 
-    this.setParent(parent);
+    if (parent) {
+      this.setParent(parent);
+    }
   }
 
   /**
@@ -79,12 +81,13 @@ export class Highlights {
    *
    */
   highlightVertex(touch: RayTouch) {
+    if (!this.model) { return; }
     this.vertex.visible = touch.vertex != null;
     if (!this.vertex.visible) {
       return;
     }
     const vertex_coords = [0, 1, 2].map(
-      (i) => this.simulator.model.positions[touch.vertex * 3 + i],
+      (i) => this.model.positions[touch.vertex * 3 + i],
     );
     this.vertex.geometry.attributes.position.array[0] = vertex_coords[0];
     this.vertex.geometry.attributes.position.array[1] = vertex_coords[1];
@@ -98,10 +101,11 @@ export class Highlights {
    * @param {number[]} triangles a list of triangle face indices
    */
   makeTrianglesVertexArray(triangles: number[]) {
+    if (!this.model) { return; }
     const faces = triangles
-      .map((f) => this.simulator.model.fold.faces_vertices[f])
+      .map((f) => this.model.fold.faces_vertices[f])
       .map((tri) =>
-        tri.map((v) => [0, 1, 2].map((i) => this.simulator.model.positions[v * 3 + i])),
+        tri.map((v) => [0, 1, 2].map((i) => this.model.positions[v * 3 + i])),
       )
       //.map((tri) => tri.map((p) => ({ x: p[0], y: p[1], z: p[2] })));
       .map((tri) => tri.map((p) => new THREE.Vector3(p[0], p[1], p[2])));
@@ -158,6 +162,10 @@ export class Highlights {
     if (this.face.geometry) {
       this.face.geometry.dispose();
     }
+    this.model = undefined;
+    this.point = undefined;
+    this.vertex = undefined;
+    this.face = undefined;
   }
 
   /**

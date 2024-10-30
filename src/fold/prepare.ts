@@ -8,11 +8,15 @@ import removeRedundantVertices from "./removeRedundantVertices.ts";
 import { boundingBox } from "./boundingBox.ts";
 import {
   makeVerticesEdges,
+  makeVerticesEdgesUnsorted,
   makeVerticesFacesUnsorted,
   makeVerticesVertices,
 } from "./adjacentVertices.ts";
 import { resize3 } from "../general/math.ts";
-import { makeEdgesFacesUnsorted } from "./edgesFaces.ts";
+import {
+  makeFacesEdgesFromVertices,
+  makeEdgesFacesUnsorted,
+} from "./edgesFaces.ts";
 
 /**
  * @description convert the indices to values and values to indices,
@@ -123,9 +127,6 @@ export const prepare = (inputFOLD: FOLD, epsilon?: number): FOLDMesh => {
     fold = removeRedundantVertices(fold, epsilon);
   }
 
-  delete fold.vertices_vertices;
-  delete fold.vertices_edges;
-
   // this may change the number of edges and faces, but not vertices
   const faces_backmap = triangulateFold(fold, true);
   // store a reference, for every face (new triangulated faces),
@@ -133,13 +134,13 @@ export const prepare = (inputFOLD: FOLD, epsilon?: number): FOLDMesh => {
   fold.faces_backmap = faces_backmap;
   fold.faces_nextmap = invertMap(faces_backmap);
 
-  if (!fold.vertices_faces) {
-    fold.vertices_faces = makeVerticesFacesUnsorted(fold);
-  }
-
-  if (!fold.edges_faces) {
-    fold.edges_faces = makeEdgesFacesUnsorted(fold);
-  }
+  // if any faces were just triangulated, we need to rebuild these anyway,
+  // it's a safety measure to just rebuild these no matter what.
+  fold.vertices_edges = makeVerticesEdgesUnsorted(fold);
+  fold.vertices_faces = makeVerticesFacesUnsorted(fold);
+  fold.faces_edges = makeFacesEdgesFromVertices(fold);
+  fold.edges_faces = makeEdgesFacesUnsorted(fold);
+  delete fold.faces_faces;
 
   return fold;
 };

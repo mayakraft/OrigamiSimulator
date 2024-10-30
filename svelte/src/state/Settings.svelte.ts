@@ -2,7 +2,7 @@
 // communication from outside to Origami Simulator
 //
 
-class Simulator {
+class Settings {
   // turn on/off Origami Simulator's folding engine
   active = $state(true);
 
@@ -28,7 +28,15 @@ class Simulator {
 
   // ask origami simulator to export the current 3D state
   exportModel = $state(() => { });
+
+  // settings for the solver
+  integration = $state("euler");
+  axialStiffness = $state(20);
+  faceStiffness = $state(0.2);
+  joinStiffness = $state(0.7);
+  creaseStiffness = $state(0.7);
+  dampingRatio = $state(0.45);
 }
 
-export default new Simulator();
+export default new Settings();
 

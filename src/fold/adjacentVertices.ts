@@ -37,7 +37,7 @@ const sortVerticesCounterClockwise = (
  * @returns {number[][]} array of array of numbers, where each row corresponds to a
  * vertex index and the values in the inner array are edge indices.
  */
-const makeVerticesEdgesUnsorted = ({ edges_vertices = [] }: FOLD) => {
+export const makeVerticesEdgesUnsorted = ({ edges_vertices = [] }: FOLD) => {
   const vertices_edges: number[][] = [];
   // iterate over edges_vertices and swap the index for each of the contents
   // each edge (index 0: [3, 4]) will be converted into (index 3: [0], index 4: [0])
@@ -160,7 +160,7 @@ export const makeVerticesVerticesFromFaces = ({
   }
   // every iterate through every vertices_faces's faces_vertices
   const vertices_faces_vertices = vertices_faces.map((faces) =>
-    faces.map((f) => faces_vertices[f]),
+    faces.filter(a => a !== undefined && a !== null).map((f) => faces_vertices[f]),
   );
   // for every vertex, find its index in its faces_vertices array.
   const vertices_faces_indexOf = vertices_faces_vertices.map((faces, vertex) =>
