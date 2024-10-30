@@ -3,7 +3,7 @@
   import { untrack } from "svelte";
   import TrackballView from "./ThreeJS/TrackballView.svelte";
   import Settings from "./state/Settings.svelte.ts";
-  import { Model } from "../../src/model/Model.ts";
+  import { Model } from "../../src/simulator/Model.ts";
   import { MeshThree } from "../../src/three/MeshThree.ts";
   import { boundingBox, type BoundingBox } from "../../src/fold/boundingBox.ts";
 

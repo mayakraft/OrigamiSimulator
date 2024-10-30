@@ -2,43 +2,42 @@
 
 This is a fork of Origami Simulator, by Amanda Ghassaei; see the [original repo](https://github.com/amandaghassaei/OrigamiSimulator) for an introduction.
 
-The primary purpose of the rewrite is to uncouple the codebase from its frontend and UI. This allows Origami Simulator to be instanced (multiple times even) inside of a custom Javascript framework, React, Svelte, SolidJS, etc..
+The purpose of the rewrite is to uncouple the backend from the frontend and UI. Additionally, Three.js is no longer a required dependency for the solver. You can use the Three.js Mesh renderer, or use a different library, or run the solver with no front end. Also, the library has been ported from Javascript to Typescript.
 
-# this repo
+The input file format is [FOLD](https://github.com/edemaine/FOLD/). The original Origami Simulator repo contains an SVG to FOLD converter which is not present here.
 
-the `src/` folder contains all of Origami Simulator's source code.
+# source
 
-there are 4 example apps which demo Origami Simulator, each implementation in a different framework:
+the `src/` folder contains all of Origami Simulator's source code. the examples are in the various other directories.
 
-- `reactjs/`
-- `solidjs/`
-- `svelte/`
-- `vanilla/`
-
-the `fold/` folder contains an example origami model, models are in [FOLD file format](https://github.com/edemaine/FOLD/).
+- `src/fold/` methods pertaining to the FOLD file format.
+- `src/shaders/` all shader files, including the python script to bundle (read below).
+- `src/simulator/` origami simulator
+- `src/three/` all three.js files, mesher, raytracer.
 
 # examples
 
-This repo contains one simple example app implemented across a few Javascript frameworks.
+A few examples have been written using some popular Javascript front-ends.
 
 |   |   |   |
 |---|---|---|
 | ✅ | [Svelte](https://svelte.dev) | svelte/ |
-| ✅ | [Solid JS](https://www.solidjs.com/) | solidjs/ |
-| ⚠️ | [React JS](https://reactjs.org/) | reactjs/ |
-| ✅ | Vanilla JS \* | vanillajs/ |
+| ⚠️  | [Solid JS](https://www.solidjs.com/) | solidjs/ |
+| ⚠️  | [React JS](https://reactjs.org/) | reactjs/ |
+
+(sorry, I only maintain the Svelte package. The others are in need of updating.)
 
 To run an example:
 
 1. `npm i` in the root directory
-2. `cd svelte/` (or solidjs/ or reactjs/) and run `npm i` again
-3. `npm run dev` to start the app
+2. `npm i` *again* inside of one of the examples, `cd svelte/` (or solidjs/ or reactjs/)
+3. `npm run dev` in the example dir to start the app
 
-**Vanilla JS** only requires you run a local server, then open `index.html` [more details](#vanilla-js).
+# known issues
 
-> \* the Vanilla JS example is the odd one out, it is much more simple compared to the others.
->
-> the React example is buggy; use Svelte or Solid if you can.
+- the Raycasters() class (Raycasters.ts) "mouseup" event is not firing, this is potentially due to [a known Three.js issue](https://discourse.threejs.org/t/mouseup-event-does-not-work-along-with-orbitcontrols/20432). The result is when switching tools to "pull", there is a momentary jerking of the mesh due to the raycasterPullVertex still containing a vertex instead of being cleared.
+
+# ! all information below here is out of date and in need of an update !
 
 # installation
 
@@ -122,21 +121,13 @@ sim.setFoldAmount(0.5);
 
 ### shader files
 
-Loading the raw text shader files (`.frag`, `.vert`) has been a persistent source of pain. Because these shader files are rarely modified, a Python script has been added which bundles all shader files into one `.js` file with named exports. If you ever modify the shader files, re-bundle them:
+This project bundles the shader files (`.frag`, `.vert`) into string type variables in a single javascript file. Javascript projects otherwise have inconsistent solutions to loading a raw text file. This is a nice work around. **If you modify the shader files, you must recompile the bundle**, run:
 
 ```bash
 cd src/dynamicSolver/shaders
 python bundle.py
 ```
 
-### vanilla js
-
-ES6 modules are finally supported natively on the browser (yay!) so the Origami Simulator source code can run directly without any bundling. However the technology is still very new, for example `index.html` makes use of an [importmap](https://developer.mozilla.org/en-US/docs/Web/HTML/Element/script/type/importmap) which is [only recently supported](https://caniuse.com/?search=importmap) on all major browsers. So, there may be some hiccups with this example (I always have to refresh one time after the initial page load).
-
 # license
 
 amandaghassaei/OrigamiSimulator is licensed under the [MIT License](https://github.com/amandaghassaei/OrigamiSimulator/blob/main/LICENSE)
-
-# more dev notes
-
-it's possible that we can remove this method `geometry.computeBoundingBox`, boundingBox is no longer being used by the shader, although, raycaster might still be using it.

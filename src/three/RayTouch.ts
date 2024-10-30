@@ -1,6 +1,6 @@
 import * as THREE from "three";
 import type { FOLDMesh } from "../types.ts";
-import type { Model } from "../model/Model.ts";
+import type { Model } from "../simulator/Model.ts";
 import type { MeshThree } from "../three/MeshThree.ts";
 import { distance as Distance } from "../general/math.ts";
 

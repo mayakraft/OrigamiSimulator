@@ -7,8 +7,8 @@ import { Edge } from "./Edge.ts";
 import { Crease } from "./Crease.ts";
 import { prepare } from "../fold/prepare.ts";
 import { getFOLDCenter } from "../fold/boundingBox.ts";
+import { makeCreasesParams } from "../fold/creaseParams.ts";
 import { exportFOLD } from "./exportFOLD.ts";
-import { makeCreasesParams } from "./Crease.ts";
 import { makeTypedArrays } from "./typedArrays.ts";
 import { solveStep, render } from "./solve.ts";
 

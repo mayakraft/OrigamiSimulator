@@ -63,7 +63,7 @@ const makeEdgesFoldAngle = ({ edges_assignment }: FOLD) =>
  *
  * This was refactored from globals.pattern.setFoldData, where the
  * second optional parameter was also used to run "returnCreaseParams".
- * This is changed, now model/index calls "returnCreaseParams" directly.
+ * This is changed, now simulator/index calls "returnCreaseParams" directly.
  */
 export const prepare = (inputFOLD: FOLD, epsilon?: number): FOLDMesh => {
   // these fields are absolutely necessary

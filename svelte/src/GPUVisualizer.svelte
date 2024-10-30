@@ -1,6 +1,6 @@
 <script lang="ts">
-  import { Model } from "../../src/model/Model.ts";
-  import { RenderTexture } from "../../src/model/RenderTexture.ts";
+  import { Model } from "../../src/simulator/Model.ts";
+  import { RenderTexture } from "../../src/simulator/RenderTexture.ts";
 
   let { model }: { model: Model } = $props();
 

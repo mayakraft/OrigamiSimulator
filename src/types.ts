@@ -1,4 +1,4 @@
-import type { Crease } from "./model/Crease.ts";
+import type { Crease } from "./simulator/Crease.ts";
 
 type FOLDFrame = {
   frame_author?: string;

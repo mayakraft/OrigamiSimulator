@@ -1,6 +1,6 @@
 import * as THREE from "three";
 import { type RayTouch, makeTouches } from "./RayTouch.ts";
-import { Model } from "../model/Model.ts";
+import { Model } from "../simulator/Model.ts";
 import { MeshThree } from "../three/MeshThree.ts";
 
 /**
@@ -67,12 +67,10 @@ export class Raycasters {
   // orient the raycaster plane towards the camera
   // and move it to the selected FOLD vertex.
   raycasterPressHandler() {
-    if (!this.#model || !this.#mesh) { return; }
-    const firstTouch = makeTouches(
-      this.#model,
-      this.#mesh,
-      this.raycaster,
-    )[0];
+    if (!this.#model || !this.#mesh) {
+      return;
+    }
+    const firstTouch = makeTouches(this.#model, this.#mesh, this.raycaster)[0];
     if (!firstTouch || firstTouch.vertex === undefined) {
       return;
     }
@@ -89,7 +87,9 @@ export class Raycasters {
   }
 
   raycasterMoveHandler(event: MouseEvent) {
-    if (!this.#model || !this.#mesh) { return; }
+    if (!this.#model || !this.#mesh) {
+      return;
+    }
     const bounds = this.renderer.domElement.getBoundingClientRect();
     const mouse = new THREE.Vector2(
       ((event.clientX - bounds.x) / bounds.width) * 2 - 1,
@@ -102,6 +102,7 @@ export class Raycasters {
 
   // for the pull-vertex tool. disable the pull motion when mouseup
   raycasterReleaseHandler() {
+    console.log("Raycasters.ts raycasterReleaseHandler()");
     this.raycasterPullVertex = undefined;
   }
 
@@ -109,7 +110,10 @@ export class Raycasters {
    * @description todo
    */
   pullVertex() {
-    if (!this.#model || !this.#mesh) { return; }
+    if (!this.#model || !this.#mesh) {
+      return;
+    }
+    //console.log("pull vertex", this.raycasterPullVertex);
     const node = this.#model.nodes[this.raycasterPullVertex];
     if (!node) {
       return;
@@ -130,8 +134,7 @@ export class Raycasters {
   // To fix this, during the animation loop, if the simulator is on,
   // calculate the touches under the cursor.
   animate({ active = false, pull = false }) {
-    if (!this.#model || !this.#mesh) { return; }
-    if (!active) {
+    if (!this.#model || !this.#mesh || !active) {
       return;
     }
     const touches =

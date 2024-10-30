@@ -1,6 +1,6 @@
 import * as THREE from "three";
 import * as Materials from "./materials.ts";
-import type { Model } from "../model/Model.ts";
+import type { Model } from "../simulator/Model.ts";
 
 // no "cut" assignment. all cuts have now been turned into boundaries
 const allAssignments: string[] = Array.from("BMVFJU");

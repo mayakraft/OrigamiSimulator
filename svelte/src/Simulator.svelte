@@ -5,13 +5,12 @@
   import Settings from "./state/Settings.svelte.ts";
   import Style from "./state/Style.svelte.ts";
   // origami simulator
-  import { Model } from "../../src/model/Model.ts";
+  import { Model } from "../../src/simulator/Model.ts";
   import { MeshThree } from "../../src/three/MeshThree.ts";
   import { Highlights } from "../../src/three/Highlights.ts";
   import { Raycasters } from "../../src/three/Raycasters.ts";
   import type { RayTouch } from "../../src/three/RayTouch.ts";
   import { boundingBox, type BoundingBox } from "../../src/fold/boundingBox.ts";
-  import GPUVisualizer from "./GPUVisualizer.svelte";
 
   let { origami } = $props();
 
@@ -249,35 +248,12 @@
   $effect(() => dealloc);
 </script>
 
-<div class="container">
-  <div>
-    <TrackballView
-      enabled={Settings.tool !== "pull"}
-      maxDistance={modelSize * 30}
-      minDistance={modelSize * 0.1}
-      panSpeed={1}
-      rotateSpeed={4}
-      zoomSpeed={16}
-      dynamicDampingFactor={1}
-      {didMount} />
-  </div>
-  <div class="panel">
-    <GPUVisualizer {model} />
-  </div>
-</div>
-
-<style>
-  div {
-    width: 100%;
-    height: 100%;
-    flex: 1;
-  }
-  .container {
-    display: flex;
-    flex-direction: row;
-  }
-  .panel {
-    flex: 0 1 320px;
-    background-color: black;
-  }
-</style>
+<TrackballView
+  enabled={Settings.tool !== "pull"}
+  maxDistance={modelSize * 30}
+  minDistance={modelSize * 0.1}
+  panSpeed={1}
+  rotateSpeed={4}
+  zoomSpeed={16}
+  dynamicDampingFactor={1}
+  {didMount} />
