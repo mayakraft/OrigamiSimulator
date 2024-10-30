@@ -40,10 +40,10 @@ export class Model {
 
   strain: boolean;
 
-  axialStiffness: number;
-  joinStiffness: number;
-  creaseStiffness: number;
-  dampingRatio: number;
+  #axialStiffness: number;
+  #joinStiffness: number;
+  #creaseStiffness: number;
+  #dampingRatio: number;
 
   // vertex / color buffer arrays for GPU
   positions: Float32Array;
@@ -75,10 +75,10 @@ export class Model {
       .map(([x, y, z]) => [x - center[0], y - center[1], z - center[2]]);
     this.fold.vertices_coordsInitial = structuredClone(this.fold.vertices_coords);
 
-    this.axialStiffness = 20;
-    this.joinStiffness = 0.7;
-    this.creaseStiffness = 0.7;
-    this.dampingRatio = 0.45;
+    this.#axialStiffness = 20;
+    this.#joinStiffness = 0.7;
+    this.#creaseStiffness = 0.7;
+    this.#dampingRatio = 0.45;
 
     // will get rid of these eventually
     this.nodes = this.fold.vertices_coords.map(makeNode);
@@ -127,9 +127,7 @@ export class Model {
     this.gpuMath.step("zeroThetaTexture", ["u_lastTheta"], "u_theta");
     this.gpuMath.step("zeroThetaTexture", ["u_theta"], "u_lastTheta");
 
-    // todo: save strain
-    //return render(this.gpuMath, this, computeStrain);
-    return render(this.gpuMath, this, false);
+    return render(this.gpuMath, this, this.strain);
   }
 
   /**
@@ -150,11 +148,6 @@ export class Model {
     this.gpuMath.step("zeroTexture", [], "u_velocity");
   }
 
-  setIntegration(integration: string) {
-    this.gpuMath.integrationType = integration;
-    this.reset();
-  }
-
   /**
    * @description Some properties require rewrite to the shader textures,
    * after setting these properties, call this to update the texture data.
@@ -166,7 +159,12 @@ export class Model {
     this.gpuMath.updateMaterials(this, initing);
   }
 
-  setCreasePercent(value: string | number) {
+  set integration(integration: string) {
+    this.gpuMath.integrationType = integration;
+    this.reset();
+  }
+
+  set foldAmount(value: string | number) {
     const number = typeof value === "number" ? value : parseFloat(value);
     this.gpuMath.setProgram("velocityCalc");
     this.gpuMath.setUniformForProgram("velocityCalc", "u_creasePercent", number, "1f");
@@ -180,8 +178,8 @@ export class Model {
     this.update();
   }
 
-  // todo: duplicate methods
-  setAxialStiffness(value: string | number) {
+  get axialStiffness(): number { return this.#axialStiffness; }
+  set axialStiffness(value: string | number) {
     const number = typeof value === "number" ? value : parseFloat(value);
     this.gpuMath.setProgram("velocityCalc");
     this.gpuMath.setUniformForProgram("velocityCalc", "u_axialStiffness", number, "1f");
@@ -192,15 +190,14 @@ export class Model {
       number,
       "1f",
     );
-
-    this.axialStiffness = typeof value === "number" ? value : parseFloat(value);
+    this.#axialStiffness = typeof value === "number" ? value : parseFloat(value);
     this.edges.forEach((edge) => {
-      edge.axialStiffness = this.axialStiffness;
+      edge.axialStiffness = this.#axialStiffness;
     });
     this.update();
   }
 
-  setFaceStiffness(value: string | number) {
+  set faceStiffness(value: string | number) {
     const number = typeof value === "number" ? value : parseFloat(value);
     this.gpuMath.setProgram("velocityCalc");
     this.gpuMath.setUniformForProgram("velocityCalc", "u_faceStiffness", number, "1f");
@@ -214,7 +211,7 @@ export class Model {
     this.update();
   }
 
-  setFaceStrain(value: string | number) {
+  set faceStrain(value: string | number) {
     const number = typeof value === "number" ? value : parseFloat(value);
     this.gpuMath.setProgram("velocityCalc");
     this.gpuMath.setUniformForProgram("velocityCalc", "u_calcFaceStrain", number, "1f");
@@ -228,29 +225,29 @@ export class Model {
     this.update();
   }
 
-  setJoinStiffness(value: number | string): void {
-    this.joinStiffness = typeof value === "number" ? value : parseFloat(value);
+  set joinStiffness(value: number | string) {
+    this.#joinStiffness = typeof value === "number" ? value : parseFloat(value);
     this.creases.forEach((crease) => {
-      crease.joinStiffness = this.joinStiffness;
+      crease.joinStiffness = this.#joinStiffness;
     });
     this.update();
   }
 
-  setCreaseStiffness(value: number | string): void {
-    this.creaseStiffness = typeof value === "number" ? value : parseFloat(value);
+  set creaseStiffness(value: number | string) {
+    this.#creaseStiffness = typeof value === "number" ? value : parseFloat(value);
     this.creases.forEach((crease) => {
-      crease.creaseStiffness = this.creaseStiffness;
+      crease.creaseStiffness = this.#creaseStiffness;
     });
     this.update();
   }
 
-  setDampingRatio(value: number | string): void {
-    this.dampingRatio = typeof value === "number" ? value : parseFloat(value);
+  set dampingRatio(value: number | string) {
+    this.#dampingRatio = typeof value === "number" ? value : parseFloat(value);
     this.creases.forEach((crease) => {
-      crease.dampingRatio = this.dampingRatio;
+      crease.dampingRatio = this.#dampingRatio;
     });
     this.edges.forEach((edge) => {
-      edge.dampingRatio = this.dampingRatio;
+      edge.dampingRatio = this.#dampingRatio;
     });
     this.update();
   }
@@ -260,11 +257,11 @@ export class Model {
    * @param {number} numSteps number of iterations to run the solver
    * @param {boolean} computeStrain should the strain values be computed?
    */
-  solve(numSteps: number = 100, computeStrain: boolean = false): number {
+  solve(numSteps: number = 100): number {
     for (let j = 0; j < numSteps; j += 1) {
       solveStep(this.gpuMath, this.gpuMath);
     }
-    return render(this.gpuMath, this, computeStrain);
+    return render(this.gpuMath, this, this.strain);
   }
 
   export(options?: { triangulated: boolean }): FOLD {

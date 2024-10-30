@@ -190,47 +190,47 @@ export class MeshThree {
     Object.values(this.lines).forEach((line) => line?.material?.dispose());
   }
 
-  setFrontColor(color: number | string): void {
+  set frontColor(color: number | string) {
     this.materials.front.color.set(color);
     this.frontMesh.material.needsUpdate = true;
   }
 
-  setBackColor(color: number | string): void {
+  set backColor(color: number | string) {
     this.materials.back.color.set(color);
     this.backMesh.material.needsUpdate = true;
   }
 
-  setBoundaryColor(color: number | string): void {
+  set boundaryColor(color: number | string) {
     const material = this.lineMaterials.B as THREE.LineBasicMaterial;
     material?.color.set(color);
     this.lines.B.material.needsUpdate = true;
   }
 
-  setMountainColor(color: number | string): void {
+  set mountainColor(color: number | string) {
     const material = this.lineMaterials.M as THREE.LineBasicMaterial;
     material?.color.set(color);
     this.lines.M.material.needsUpdate = true;
   }
 
-  setValleyColor(color: number | string): void {
+  set valleyColor(color: number | string) {
     const material = this.lineMaterials.V as THREE.LineBasicMaterial;
     material?.color.set(color);
     this.lines.V.material.needsUpdate = true;
   }
 
-  setFlatColor(color: number | string): void {
+  set flatColor(color: number | string) {
     const material = this.lineMaterials.F as THREE.LineBasicMaterial;
     material?.color.set(color);
     this.lines.F.material.needsUpdate = true;
   }
 
-  setUnassignedColor(color: number | string): void {
+  set unassignedColor(color: number | string) {
     const material = this.lineMaterials.U as THREE.LineBasicMaterial;
     material?.color.set(color);
     this.lines.U.material.needsUpdate = true;
   }
 
-  setJoinColor(color: number | string): void {
+  set joinColor(color: number | string) {
     const material = this.lineMaterials.J as THREE.LineBasicMaterial;
     material?.color.set(color);
     this.lines.J.material.needsUpdate = true;

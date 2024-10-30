@@ -68,7 +68,7 @@ export class OrigamiSimulator {
   set foldAmount(value: number | string) {
     const number = typeof value === "number" ? value : parseFloat(value);
     this.#foldAmount = !Number.isNaN(number) ? number : 0.0;
-    this.model?.setCreasePercent(this.foldAmount);
+    this.model.foldAmount = this.foldAmount;
   }
 
   get foldAmount(): number {
@@ -111,7 +111,7 @@ export class OrigamiSimulator {
   compute(): void {
     // error is the global error in the folding of the model
     // not a computational error.
-    this.error = this.model?.solve(100, this.strain);
+    this.error = this.model?.solve(100);
     this.mesh.sync();
     //mesh.needsUpdate();
   }
@@ -146,27 +146,27 @@ export class OrigamiSimulator {
   }
 
   set integration(value: string) {
-    this.model?.setIntegration(value);
+    this.model.integration = (value);
   }
 
   set axialStiffness(value: number) {
-    this.model?.setAxialStiffness(value);
+    this.model.axialStiffness = (value);
   }
 
   set faceStiffness(value: number) {
-    this.model?.setFaceStiffness(value);
+    this.model.faceStiffness = (value);
   }
 
   set joinStiffness(value: number) {
-    this.model?.setJoinStiffness(value);
+    this.model.joinStiffness = (value);
   }
 
   set creaseStiffness(value: number) {
-    this.model?.setCreaseStiffness(value);
+    this.model.creaseStiffness = (value);
   }
 
   set dampingRatio(value: number) {
-    this.model?.setDampingRatio(value);
+    this.model.dampingRatio = (value);
   }
 
   /**
@@ -226,22 +226,22 @@ export class OrigamiSimulator {
 
   // line colors by assignment type
   set boundaryColor(color: string | number) {
-    this.mesh.setBoundaryColor(color);
+    this.mesh.boundaryColor = (color);
   }
   set mountainColor(color: string | number) {
-    this.mesh.setMountainColor(color);
+    this.mesh.mountainColor = (color);
   }
   set valleyColor(color: string | number) {
-    this.mesh.setValleyColor(color);
+    this.mesh.valleyColor = (color);
   }
   set flatColor(color: string | number) {
-    this.mesh.setFlatColor(color);
+    this.mesh.flatColor = (color);
   }
   set joinColor(color: string | number) {
-    this.mesh.setJoinColor(color);
+    this.mesh.joinColor = (color);
   }
   set unassignedColor(color: string | number) {
-    this.mesh.setUnassignedColor(color);
+    this.mesh.unassignedColor = (color);
   }
 
   // set the materials directly

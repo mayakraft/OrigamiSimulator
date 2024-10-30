@@ -1,13 +1,11 @@
 <script lang="ts">
-	import { OrigamiSimulator } from "../../src/index.ts";
-	import { RenderTexture } from "../../src/model/RenderTexture.ts";
+  import { Model } from "../../src/model/Model.ts";
+  import { RenderTexture } from "../../src/model/RenderTexture.ts";
 
-  let {
-    simulator,
-  }: { simulator: OrigamiSimulator } = $props();
+  let { model }: { model: Model } = $props();
 
-  //let gpuMath = $derived(simulator?.newModel?.gpuMath);
-  //let gpuMathTextures = $derived(simulator?.newModel?.gpuMath?.textures);
+  //let gpuMath = $derived(model.gpuMath);
+  //let gpuMathTextures = $derived(model.gpuMath?.textures);
 
   // one for each
   let canvas_originalPosition: HTMLCanvasElement = $state();
@@ -26,11 +24,11 @@
 
   const onclicks = locations.map(({ name, size }) => {
     return () => {
-      const arr = simulator?.model?.gpuMath?.[name];
-      const dim = simulator?.model?.gpuMath?.[size];
+      const arr = model?.gpuMath?.[name];
+      const dim = model?.gpuMath?.[size];
       originalPosition.setFloatPixels(arr, dim, dim);
       originalPosition.draw();
-    }
+    };
   });
 </script>
 
