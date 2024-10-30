@@ -72,20 +72,5 @@ export const makeTouches = (
     : raycaster
       // for every intersection point, fill it with additional
       // relevant information specific to the mesh graph.
-      .intersectObjects(mesh.getMesh())
+      .intersectObjects([mesh.frontMesh, mesh.backMesh])
       .map((touch: THREE.Intersection<THREE.Mesh>) => makeTouchObject(touch, model.fold));
-
-//export const makeTouches = (
-//  model: Model,
-//  mesh: MeshThree,
-//  raycaster: THREE.Raycaster,
-//): RayTouch[] => {
-//  const result = !model
-//    ? []
-//    : raycaster
-//      // for every intersection point, fill it with additional
-//      // relevant information specific to the mesh graph.
-//      .intersectObjects([mesh.frontMesh, mesh.backMesh])
-//      .map((touch: THREE.Intersection<THREE.Mesh>) => makeTouchObject(touch, model.fold));
-//  return result;
-//};

@@ -2,8 +2,7 @@
   import * as THREE from "three";
   import { untrack } from "svelte";
   import TrackballView from "./ThreeJS/TrackballView.svelte";
-  import Simulator from "./state/Simulator.svelte.ts";
-  import Solver from "./state/Solver.svelte.ts";
+  import Settings from "./state/Settings.svelte.ts";
   import Style from "./state/Style.svelte.ts";
   // origami simulator
   import { Model } from "../../src/model/Model.ts";
@@ -69,7 +68,7 @@
   const didMount = ({ renderer, scene: defaultScene, camera: defaultCamera }) => {
     scene = defaultScene;
     camera = defaultCamera;
-    mesh = new MeshThree({ scene });
+    lights.forEach((light) => scene.add(light));
     highlights = new Highlights({ parent: scene });
     raycasters = new Raycasters({
       renderer,
@@ -78,21 +77,20 @@
         touches = t;
       },
     });
-    lights.forEach((light) => scene.add(light));
   };
 
   // this is the solver loop, attach this to requestAnimationFrame
   let computeLoopID: number | undefined;
   const computeLoop = () => {
     computeLoopID = window.requestAnimationFrame(computeLoop);
-    Simulator.error = model?.solve(100);
+    Settings.error = model?.solve(100);
     mesh?.sync();
     // The raycaster will update on a mousemove event, but if the origami is
     // in a folding animation, the raycaster will not update and the visuals
     // will mismatch, hence, the raycaster can fire on a frame update if needed
     raycasters?.animate({
-      active: Simulator.active,
-      pull: Simulator.tool === "pull",
+      active: Settings.active,
+      pull: Settings.tool === "pull",
     });
   };
 
@@ -102,7 +100,7 @@
       window.cancelAnimationFrame(computeLoopID);
       computeLoopID = undefined;
     }
-    if (Simulator.active) {
+    if (Settings.active) {
       computeLoop();
     }
   });
@@ -110,18 +108,18 @@
   // on file load.
   // untrack is needed to prevent re-loading at other times too.
   $effect(() => {
-    origami;
+    const fold = $state.snapshot(origami);
     let box: BoundingBox | undefined;
     untrack(() => {
       try {
         model?.dealloc();
-        model = new Model($state.snapshot(origami), {
-          creasePercent: Simulator.foldAmount,
-        });
-        mesh?.setModel(model);
-        box = boundingBox($state.snapshot(origami));
-        Simulator.exportModel = model.export.bind(model);
-        Simulator.reset = model.reset.bind(model);
+        mesh?.dealloc();
+        model = new Model(fold);
+        mesh = new MeshThree(model);
+        mesh.scene = scene;
+        box = boundingBox(fold);
+        Settings.exportModel = model.export.bind(model);
+        Settings.reset = model.reset.bind(model);
         if (highlights) {
           highlights.model = model;
         }
@@ -169,31 +167,31 @@
   });
 
   $effect(() => {
-    model.foldAmount = Simulator.foldAmount;
+    model.foldAmount = Settings.foldAmount;
   });
 
   $effect(() => {
-    model.strain = Simulator.strain;
-    mesh.strain = Simulator.strain;
+    model.strain = Settings.strain;
+    mesh.strain = Settings.strain;
   });
 
   $effect(() => {
-    model.integration = Solver.integration;
+    model.integration = Settings.integration;
   });
   $effect(() => {
-    model.faceStiffness = Solver.faceStiffness;
+    model.faceStiffness = Settings.faceStiffness;
   });
   $effect(() => {
-    model.axialStiffness = Solver.axialStiffness;
+    model.axialStiffness = Settings.axialStiffness;
   });
   $effect(() => {
-    model.joinStiffness = Solver.joinStiffness;
+    model.joinStiffness = Settings.joinStiffness;
   });
   $effect(() => {
-    model.creaseStiffness = Solver.creaseStiffness;
+    model.creaseStiffness = Settings.creaseStiffness;
   });
   $effect(() => {
-    model.dampingRatio = Solver.dampingRatio;
+    model.dampingRatio = Settings.dampingRatio;
   });
 
   $effect(() => {
@@ -244,7 +242,7 @@
 
   // nitpicky ui thing. upon tool change we need raycasterPullVertex to be undefined
   $effect(() => {
-    Simulator.tool;
+    Settings.tool;
     raycasters?.raycasterReleaseHandler();
   });
 
@@ -254,7 +252,7 @@
 <div class="container">
   <div>
     <TrackballView
-      enabled={Simulator.tool !== "pull"}
+      enabled={Settings.tool !== "pull"}
       maxDistance={modelSize * 30}
       minDistance={modelSize * 0.1}
       panSpeed={1}

@@ -1,5 +1,6 @@
 <script>
   import Simulator from "./Simulator.svelte";
+  //import Simulator from "./SimulatorSimple.svelte";
   import Settings from "./Settings.svelte";
 
   // example model
