@@ -2,8 +2,8 @@
  * Created by ghassaei on 9/16/16.
  */
 import type { Node } from "./Node.ts";
+import type { SolverOptions } from "./GPUMath.ts";
 import { magnitude, subtract } from "../general/math.ts";
-import { SolverOptions } from "./GPUMath.ts";
 
 export class Edge {
   type: string;

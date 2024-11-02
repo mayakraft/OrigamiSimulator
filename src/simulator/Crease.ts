@@ -2,7 +2,7 @@
  * Created by amandaghassaei on 2/25/17.
  */
 import type { Edge } from "./Edge.ts";
-import { SolverOptions } from "./GPUMath.ts";
+import type { SolverOptions } from "./GPUMath.ts";
 import type { Node } from "./Node.ts";
 
 export class Crease {
